@@ -41,6 +41,8 @@
   --shadow-glow-purple: 0 0 20px 15px #8a38f5;
   --shadow-glow-cyan: 0 0 20px 10px rgba(0, 255, 230, 0.9);
   --shadow-glow-blue: 0 0 20px 10px rgba(0, 26, 255, 0.9);
+  --shadow-glow-green: 0 0 20px 10px rgba(0, 255, 94, 0.8);
+  --shadow-glow-yellow: 0 0 20px 10px rgba(255, 208, 0, 0.8);
   --shadow-glow-pink-soft: 0 0 18px 2px rgba(255, 0, 204, 0.55);
   --shadow-card-inner: inset -1px 1px 50px 0 rgba(0, 0, 0, 0.5);
   --shadow-panel: 0 11px 114.9px 4px rgba(0, 0, 0, 0.8);
@@ -93,6 +95,61 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+/* Radial accent gradients used as card header art (from Figma card headers) */
+@utility bg-header-purple {
+  background-image: radial-gradient(
+    140% 160% at 50% 35%,
+    #8000ff 0%,
+    #6600cc 50%,
+    #4d0099 100%
+  );
+}
+
+@utility bg-header-blue {
+  background-image: radial-gradient(
+    140% 160% at 50% 35%,
+    #6400ef 0%,
+    #4e00bc 50%,
+    #390089 100%
+  );
+}
+
+@utility bg-header-cyan {
+  background-image: radial-gradient(
+    140% 160% at 50% 35%,
+    #00fff7 0%,
+    #00ccc5 50%,
+    #009994 100%
+  );
+}
+
+@utility bg-header-green {
+  background-image: radial-gradient(
+    140% 160% at 50% 35%,
+    #00ff5e 0%,
+    #00cc4b 50%,
+    #009938 100%
+  );
+}
+
+@utility bg-header-yellow {
+  background-image: radial-gradient(
+    140% 160% at 50% 35%,
+    #ffd000 0%,
+    #cca700 50%,
+    #997d00 100%
+  );
+}
+
+@utility bg-header-pink {
+  background-image: radial-gradient(
+    140% 160% at 50% 35%,
+    #ff00cc 0%,
+    #cc00a3 50%,
+    #99007a 100%
+  );
 }
 
 /* ------------- */

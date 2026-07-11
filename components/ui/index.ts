@@ -9,3 +9,8 @@ export { GlowCard, glowCardVariants, type GlowCardProps } from "./glow-card";
 export { SectionHeader, type SectionHeaderProps } from "./section-header";
 export { StatCard, type StatCardProps } from "./stat-card";
 export { EmptyState, type EmptyStateProps } from "./empty-state";
+export { AvatarStack, type AvatarStackProps } from "./avatar-stack";
+export {
+  NotificationCard,
+  type NotificationCardProps,
+} from "./notification-card";

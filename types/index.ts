@@ -82,3 +82,87 @@ export interface NavLink {
   label: string;
   href: string;
 }
+
+export interface Character {
+  id: string;
+  name: string;
+  /** e.g. "Main Character", "Voice: Junya Enoki". */
+  role?: string;
+  imageUrl?: string;
+  accent?: AccentColor;
+}
+
+export interface Episode {
+  id: string;
+  number: number;
+  title: string;
+  duration?: string;
+  description?: string;
+  thumbnailUrl?: string;
+  releaseDate?: string;
+}
+
+export interface Review {
+  id: string;
+  author: UserSummary;
+  /** Rating out of 10. */
+  rating: number;
+  content: string;
+  createdAt?: string;
+  likeCount?: number;
+}
+
+export type MemberRole = "owner" | "admin" | "moderator" | "member";
+
+export interface UserSummary {
+  id: string;
+  name: string;
+  avatarUrl?: string;
+  /** Fallback avatar circle color when no image. */
+  avatarColor?: string;
+}
+
+export interface Member extends UserSummary {
+  role: MemberRole;
+  online?: boolean;
+  joinedAt?: string;
+}
+
+export interface CommunityPost {
+  id: string;
+  author: UserSummary;
+  content: string;
+  imageUrl?: string;
+  createdAt?: string;
+  likeCount?: number;
+  commentCount?: number;
+  shareCount?: number;
+}
+
+export interface ChatMessage {
+  id: string;
+  author: UserSummary;
+  content: string;
+  sentAt?: string;
+  /** True when the message belongs to the current user. */
+  own?: boolean;
+}
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  description?: string;
+  createdAt?: string;
+  read?: boolean;
+}
+
+export interface WatchParty {
+  id: string;
+  title: string;
+  /** Content being watched, e.g. "Jujutsu Kaisen — S2 E14". */
+  nowPlaying?: string;
+  live?: boolean;
+  viewerCount?: number;
+  participants?: UserSummary[];
+  accent?: AccentColor;
+}
