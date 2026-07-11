@@ -1,26 +1,141 @@
 @import "tailwindcss";
 
+/* ---------------------------------- */
+/* AniVerse design tokens (from Figma) */
+/* ---------------------------------- */
+
+@theme {
+  /* Fonts — Figma uses Segoe UI; fall back to Geist and system fonts */
+  --font-sans:
+    "Segoe UI", var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Colors */
+  --color-background: #120826;
+  --color-surface: #000000;
+  --color-foreground: #ffffff;
+  --color-muted: #f8eaff;
+
+  --color-brand-purple: #ae00ff;
+  --color-brand-fuchsia: #d500dd;
+  --color-brand-magenta: #ff00cc;
+  --color-brand-pink: #fab7ff;
+  --color-glow-violet: #8a38f5;
+
+  /* Translucent card fills */
+  --color-glass-magenta: rgba(216, 2, 220, 0.18);
+  --color-glass-cyan: rgba(0, 251, 255, 0.18);
+  --color-glass-purple: rgba(128, 0, 255, 0.18);
+
+  /* Border radius */
+  --radius-btn: 20px; /* primary/outline buttons */
+  --radius-btn-sm: 15px; /* in-card buttons */
+  --radius-card: 24px; /* step/music cards */
+  --radius-card-md: 25px; /* feature cards */
+  --radius-poster: 26.4px; /* poster/community cards */
+  --radius-card-xl: 32px; /* collection cards */
+  --radius-chip: 25px; /* pills/chips */
+
+  /* Shadows and glows */
+  --shadow-glow-pink: 0 0 25px 5px #ff00cc;
+  --shadow-glow-purple: 0 0 20px 15px #8a38f5;
+  --shadow-glow-cyan: 0 0 20px 10px rgba(0, 255, 230, 0.9);
+  --shadow-glow-blue: 0 0 20px 10px rgba(0, 26, 255, 0.9);
+  --shadow-glow-pink-soft: 0 0 18px 2px rgba(255, 0, 204, 0.55);
+  --shadow-card-inner: inset -1px 1px 50px 0 rgba(0, 0, 0, 0.5);
+  --shadow-panel: 0 11px 114.9px 4px rgba(0, 0, 0, 0.8);
+
+  /* Type scale (Figma: 64 hero, 42 section title, 32 sub-title) */
+  --text-display: 4rem;
+  --text-display--line-height: 0.93;
+  --text-title: 2.625rem;
+  --text-title--line-height: 1.2;
+  --text-heading: 2rem;
+  --text-heading--line-height: 1.25;
+}
+
+/* Gradients (kept as raw CSS vars so they can power both bg and text) */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --gradient-brand: linear-gradient(
+    to left,
+    #ae00ff 0%,
+    #d500dd 49.5%,
+    #ff00cc 100%
+  );
+  --gradient-blue-violet: linear-gradient(90deg, #2563eb 0%, #7c3aed 98%);
+  --gradient-indigo: linear-gradient(91deg, #1e1b4b 0%, #4c1d95 98%);
+  --gradient-teal: linear-gradient(91deg, #10b981 0%, #2dd4bf 98%);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ------------------- */
+/* Gradient utilities  */
+/* ------------------- */
+
+@utility bg-gradient-brand {
+  background-image: var(--gradient-brand);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@utility bg-gradient-blue-violet {
+  background-image: var(--gradient-blue-violet);
+}
+
+@utility bg-gradient-indigo {
+  background-image: var(--gradient-indigo);
+}
+
+@utility bg-gradient-teal {
+  background-image: var(--gradient-teal);
+}
+
+/* Brand gradient text, e.g. the AniVerse logo */
+@utility text-gradient-brand {
+  background-image: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ------------- */
+/* Global styles */
+/* ------------- */
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  min-height: 100dvh;
+}
+
+::selection {
+  background-color: var(--color-brand-magenta);
+  color: #ffffff;
+}
+
+/* Custom scrollbar — thin neon track on dark */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-brand-fuchsia) #0a0416;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0416;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #ae00ff, #ff00cc);
+  border-radius: 9999px;
+  border: 2px solid #0a0416;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #d500dd, #ff00cc);
 }
