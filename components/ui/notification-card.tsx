@@ -23,15 +23,15 @@ export function NotificationCard({
       )}
       {...props}
     >
-      <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-gradient-brand text-white [&_svg]:size-6">
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-brand text-white [&_svg]:size-5">
         {icon ?? <Bell />}
       </div>
       <div className="flex min-w-0 flex-col gap-0.5">
-        <p className="text-base font-semibold text-white">
+        <p className="text-sm font-semibold text-white">
           {notification.title}
         </p>
         {notification.description ? (
-          <p className="truncate text-sm text-muted">
+          <p className="truncate text-xs text-muted">
             {notification.description}
           </p>
         ) : null}

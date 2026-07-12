@@ -32,7 +32,7 @@ export function ChatInput({
     <form
       onSubmit={submit}
       className={cn(
-        "flex h-[72px] w-full items-center gap-3 rounded-btn bg-glass-purple px-4 shadow-card-inner",
+        "flex h-14 w-full items-center gap-3 rounded-btn bg-glass-purple px-4 shadow-card-inner",
         className,
       )}
     >
@@ -42,15 +42,15 @@ export function ChatInput({
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className="h-full flex-1 bg-transparent text-base text-white placeholder:text-muted/60 focus:outline-none"
+        className="h-full flex-1 bg-transparent text-sm text-white placeholder:text-muted/60 focus:outline-none"
       />
       <button
         type="submit"
         disabled={disabled || !value.trim()}
         aria-label="Send message"
-        className="flex size-11 cursor-pointer items-center justify-center rounded-full bg-gradient-brand text-white transition-all hover:shadow-glow-pink-soft disabled:pointer-events-none disabled:opacity-40"
+        className="flex size-9 cursor-pointer items-center justify-center rounded-full bg-gradient-brand text-white transition-all hover:shadow-glow-pink-soft disabled:pointer-events-none disabled:opacity-40"
       >
-        <SendHorizontal className="size-5" />
+        <SendHorizontal className="size-4" />
       </button>
     </form>
   );

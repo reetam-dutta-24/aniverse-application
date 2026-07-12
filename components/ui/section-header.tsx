@@ -25,7 +25,9 @@ export function SectionHeader({
       {...props}
     >
       <h2 className="text-title font-bold text-white">{title}</h2>
-      {subtitle ? <p className="text-xl text-muted">{subtitle}</p> : null}
+      {subtitle ? (
+        <p className="text-subtitle text-muted">{subtitle}</p>
+      ) : null}
     </div>
   );
 }

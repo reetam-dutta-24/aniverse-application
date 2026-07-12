@@ -1,32 +1,92 @@
-import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
+import {
+  chipClassFor,
+  resolveGenreChip,
+  resolveLanguageChip,
+  resolveMusicKindChip,
+  resolveTypeChip,
+  type ChipKey,
+} from "@/lib/chip-styles";
 
-export const chipVariants = cva(
-  "inline-flex h-[25px] items-center justify-center whitespace-nowrap rounded-chip px-2.5 text-xs font-semibold",
-  {
-    variants: {
-      variant: {
-        blue: "bg-gradient-blue-violet text-white",
-        indigo: "bg-gradient-indigo text-white",
-        teal: "bg-gradient-teal text-black",
-        brand: "bg-gradient-brand text-white",
-        magenta: "bg-brand-magenta text-white",
-        outline: "border border-brand-magenta bg-transparent text-white",
-      },
-    },
-    defaultVariants: {
-      variant: "blue",
-    },
-  },
-);
+/** Legacy variant names kept for community/collection cards. */
+const legacyVariantMap: Record<string, ChipKey> = {
+  blue: "action",
+  indigo: "mystery",
+  teal: "drama",
+  brand: "aimatch",
+  magenta: "movie",
+  outline: "default",
+};
 
-export interface ChipProps
-  extends React.HTMLAttributes<HTMLSpanElement>,
-    VariantProps<typeof chipVariants> {}
+export interface ChipProps extends React.HTMLAttributes<HTMLSpanElement> {
+  chipKey?: ChipKey;
+  genreId?: string;
+  genreLabel?: string;
+  mediaType?: Parameters<typeof resolveTypeChip>[0];
+  language?: string;
+  musicKind?: string;
+  /** @deprecated Use chipKey/genreId/mediaType instead. */
+  variant?: keyof typeof legacyVariantMap;
+}
 
-/** Small pill used for genres, member counts, match scores, and statuses. */
-export function Chip({ className, variant, ...props }: ChipProps) {
+/** Small pill — genre-colored gradients, 10px regular weight per Figma. */
+export function Chip({
+  className,
+  chipKey,
+  genreId,
+  genreLabel,
+  mediaType,
+  language,
+  musicKind,
+  variant,
+  children,
+  ...props
+}: ChipProps) {
+  let key: ChipKey = chipKey ?? "default";
+  if (variant) key = legacyVariantMap[variant] ?? "default";
+  else if (genreId) key = resolveGenreChip(genreId, genreLabel);
+  else if (mediaType) key = resolveTypeChip(mediaType);
+  else if (language) key = resolveLanguageChip(language);
+  else if (musicKind) key = resolveMusicKindChip(musicKind);
+
   return (
-    <span className={cn(chipVariants({ variant }), className)} {...props} />
+    <span
+      className={cn(
+        "inline-flex h-5 items-center justify-center whitespace-nowrap rounded-chip px-2 text-[10px] font-normal",
+        chipClassFor(key),
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </span>
+  );
+}
+
+export function RatingChip({
+  rating,
+  className,
+}: {
+  rating: number;
+  className?: string;
+}) {
+  return (
+    <Chip chipKey="rating" className={cn("min-w-[52px]", className)}>
+      ⭐ {rating}
+    </Chip>
+  );
+}
+
+export function MatchChip({
+  score,
+  className,
+}: {
+  score: number;
+  className?: string;
+}) {
+  return (
+    <Chip chipKey="aimatch" className={className}>
+      AI Match {score}%
+    </Chip>
   );
 }

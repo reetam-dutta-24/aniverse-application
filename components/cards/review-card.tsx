@@ -21,7 +21,7 @@ export function ReviewCard({ review, className, ...props }: ReviewCardProps) {
       <div className="flex items-center gap-3">
         <AvatarStack users={[review.author]} size="md" />
         <div className="flex flex-col">
-          <p className="text-lg font-semibold text-white">
+          <p className="text-base font-semibold text-white">
             {review.author.name}
           </p>
           {review.createdAt ? (

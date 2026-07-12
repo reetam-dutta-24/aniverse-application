@@ -1,0 +1,105 @@
+import type { Metadata } from "next";
+import {
+  ActiveFiltersBar,
+  ContentCarouselSection,
+  MusicCarouselSection,
+  WelcomeBanner,
+} from "@/components/dashboard";
+import { getCurrentUser } from "@/lib/data/user";
+import {
+  getActiveFilters,
+  getContinueListening,
+  getContinueWatching,
+  getMusicForYourTaste,
+  getNewReleases,
+  getRecommendedForYou,
+  getTrendingMusic,
+  getTrendingThisWeek,
+} from "@/lib/data/discover";
+
+export const metadata: Metadata = {
+  title: "Discover — AniVerse",
+  description:
+    "Explore trending anime, movies, shows, K-dramas, and music picked for your taste.",
+};
+
+export default async function DiscoverPage() {
+  const [
+    user,
+    filters,
+    trending,
+    recommended,
+    newReleases,
+    continueWatching,
+    musicForTaste,
+    trendingMusic,
+    continueListening,
+  ] = await Promise.all([
+    getCurrentUser(),
+    getActiveFilters(),
+    getTrendingThisWeek(),
+    getRecommendedForYou(),
+    getNewReleases(),
+    getContinueWatching(),
+    getMusicForYourTaste(),
+    getTrendingMusic(),
+    getContinueListening(),
+  ]);
+
+  return (
+    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-6 sm:gap-8">
+      <WelcomeBanner userName={user.name} variant="discover" />
+
+      <ActiveFiltersBar filters={filters} />
+
+      <ContentCarouselSection
+        title="🚀 Trending This Week"
+        subtitle="Most watched across AniVerse"
+        searchPlaceholder="Search Trending Content……. "
+        items={trending}
+      />
+
+      <ContentCarouselSection
+        title="🎯 Recommended For You"
+        subtitle="Based on your genres, ratings, and watch history"
+        searchPlaceholder="Search Recommended Content……. "
+        items={recommended}
+      />
+
+      <ContentCarouselSection
+        title="🆕 New Releases"
+        subtitle="Fresh anime, movies, shows, and music added this week"
+        searchPlaceholder="Search New Content…… "
+        items={newReleases}
+      />
+
+      <ContentCarouselSection
+        title="⏳ Continue Watching"
+        subtitle="Pick up your unfinished stories and episodes"
+        searchPlaceholder="Search Watching Content……. "
+        items={continueWatching}
+      />
+
+      <MusicCarouselSection
+        title="🎧 Recommended For Your Taste"
+        subtitle="Songs, OSTs, and artists matched to your mood and watch history"
+        searchPlaceholder="Search Music Content……. "
+        tracks={musicForTaste}
+      />
+
+      <MusicCarouselSection
+        title="📈 Trending Songs / OSTs / Artists"
+        subtitle="Most played anime songs, soundtracks, and artists across AniVerse"
+        searchPlaceholder="Search Trending Music…… "
+        tracks={trendingMusic}
+      />
+
+      <MusicCarouselSection
+        title="🎵 Continue Listening"
+        subtitle="Resume tracks, albums, and playlists you recently played"
+        searchPlaceholder="Search Listening Content……. "
+        tracks={continueListening}
+      />
+    </div>
+  );
+}

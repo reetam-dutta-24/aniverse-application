@@ -28,7 +28,7 @@ export function MemberRow({
   return (
     <div
       className={cn(
-        "flex h-[79px] items-center gap-3 rounded-btn bg-glass-purple px-4 transition-colors hover:bg-glass-magenta",
+        "flex h-16 items-center gap-3 rounded-btn bg-glass-purple px-4 transition-colors hover:bg-glass-magenta",
         className,
       )}
       {...props}
@@ -40,7 +40,7 @@ export function MemberRow({
         ) : null}
       </div>
       <div className="flex min-w-0 flex-col">
-        <p className="truncate text-lg font-semibold text-white">
+        <p className="truncate text-sm font-semibold text-white">
           {member.name}
         </p>
         {member.joinedAt ? (

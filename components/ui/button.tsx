@@ -2,22 +2,23 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 export const buttonVariants = cva(
-  "inline-flex cursor-pointer items-center justify-center whitespace-nowrap font-semibold text-white transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-magenta focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex cursor-pointer items-center justify-center whitespace-nowrap font-semibold text-white transition-all duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-magenta focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        // Figma "Primary Button" gradient fill
+        // Primary — on hover morphs to secondary outline style (no glow)
         gradient:
-          "bg-gradient-brand hover:shadow-glow-pink-soft hover:brightness-110 active:brightness-95",
-        // Figma outline variant (magenta 1px border)
+          "border border-transparent bg-gradient-brand hover:border-brand-magenta hover:bg-transparent hover:[background-image:none] hover:text-white active:bg-brand-magenta/15",
         outline:
-          "border border-brand-magenta bg-transparent hover:bg-brand-magenta/10 hover:shadow-glow-pink-soft",
+          "border border-brand-magenta bg-transparent hover:bg-brand-magenta/10",
         ghost: "bg-transparent text-white/90 hover:bg-white/10 hover:text-white",
       },
       size: {
-        sm: "h-[35px] rounded-btn-sm px-4 text-base",
-        md: "h-[52px] rounded-btn px-6 text-lg",
-        lg: "h-[62px] rounded-btn px-8 text-lg",
+        sm: "h-8 rounded-btn-sm px-3.5 text-xs",
+        md: "h-10 rounded-btn px-5 text-sm",
+        lg: "h-11 rounded-btn px-6 text-sm",
+        /** Hero CTAs only. */
+        xl: "h-[52px] rounded-btn px-7 text-base",
       },
     },
     defaultVariants: {

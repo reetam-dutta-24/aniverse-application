@@ -13,6 +13,7 @@
   /* Colors */
   --color-background: #120826;
   --color-surface: #000000;
+  --color-sidebar: #0a0618;
   --color-foreground: #ffffff;
   --color-muted: #f8eaff;
 
@@ -28,8 +29,8 @@
   --color-glass-purple: rgba(128, 0, 255, 0.18);
 
   /* Border radius */
-  --radius-btn: 20px; /* primary/outline buttons */
-  --radius-btn-sm: 15px; /* in-card buttons */
+  --radius-btn: 10px; /* primary/outline buttons — mild modern rounding */
+  --radius-btn-sm: 8px; /* in-card/small buttons */
   --radius-card: 24px; /* step/music cards */
   --radius-card-md: 25px; /* feature cards */
   --radius-poster: 26.4px; /* poster/community cards */
@@ -45,28 +46,69 @@
   --shadow-glow-yellow: 0 0 20px 10px rgba(255, 208, 0, 0.8);
   --shadow-glow-pink-soft: 0 0 18px 2px rgba(255, 0, 204, 0.55);
   --shadow-card-inner: inset -1px 1px 50px 0 rgba(0, 0, 0, 0.5);
+  --shadow-section-dim: 0 16px 48px -12px rgba(0, 0, 0, 0.65),
+    0 8px 24px -4px rgba(0, 0, 0, 0.45);
+  --shadow-card-lift: 0 12px 36px rgba(0, 0, 0, 0.5),
+    0 4px 14px rgba(0, 0, 0, 0.35);
   --shadow-panel: 0 11px 114.9px 4px rgba(0, 0, 0, 0.8);
+  --shadow-hover-card: 0 0 250px 300px rgba(138, 56, 245, 0.25);
 
-  /* Type scale (Figma: 64 hero, 42 section title, 32 sub-title) */
+  /*
+   * Type scale. `display` (64px) is reserved for the hero headline only.
+   * The rest is intentionally smaller than the Figma desktop frame for a
+   * cleaner, more spacious modern feel:
+   *   title   — section headings (was 42px)
+   *   heading — sub-section/card headings (was 32px)
+   *   subtitle — section subtitles / lead text
+   */
   --text-display: 4rem;
   --text-display--line-height: 0.93;
-  --text-title: 2.625rem;
+  --text-title: 2rem;
   --text-title--line-height: 1.2;
-  --text-heading: 2rem;
-  --text-heading--line-height: 1.25;
+  --text-heading: 1.5rem;
+  --text-heading--line-height: 1.3;
+  --text-subtitle: 1rem;
+  --text-subtitle--line-height: 1.5;
 }
 
 /* Gradients (kept as raw CSS vars so they can power both bg and text) */
 :root {
   --gradient-brand: linear-gradient(
     to left,
-    #ae00ff 0%,
+    #ff00cc 0%,
     #d500dd 49.5%,
-    #ff00cc 100%
+    #ae00ff 100%
   );
   --gradient-blue-violet: linear-gradient(90deg, #2563eb 0%, #7c3aed 98%);
   --gradient-indigo: linear-gradient(91deg, #1e1b4b 0%, #4c1d95 98%);
   --gradient-teal: linear-gradient(91deg, #10b981 0%, #2dd4bf 98%);
+
+  /* Chip gradients — Figma genre/type palette */
+  --gradient-chip-action: linear-gradient(90deg, #2563eb 0%, #4338ca 100%);
+  --gradient-chip-comedy: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%);
+  --gradient-chip-crime: linear-gradient(90deg, #dc2626 0%, #991b1b 100%);
+  --gradient-chip-drama: linear-gradient(90deg, #10b981 0%, #2dd4bf 100%);
+  --gradient-chip-fantasy: linear-gradient(90deg, #818cf8 0%, #6366f1 100%);
+  --gradient-chip-horror: linear-gradient(90deg, #ea580c 0%, #b91c1c 100%);
+  --gradient-chip-mystery: linear-gradient(90deg, #64748b 0%, #334155 100%);
+  --gradient-chip-romance: linear-gradient(90deg, #f472b6 0%, #ec4899 100%);
+  --gradient-chip-scific: linear-gradient(90deg, #22d3ee 0%, #06b6d4 100%);
+  --gradient-chip-thriller: linear-gradient(90deg, #6b21a8 0%, #4c1d95 100%);
+  --gradient-chip-sports: linear-gradient(90deg, #f97316 0%, #ea580c 100%);
+  --gradient-chip-anime: linear-gradient(90deg, #c026d3 0%, #9333ea 100%);
+  --gradient-chip-show: linear-gradient(90deg, #d946ef 0%, #a855f7 100%);
+  --gradient-chip-movie: linear-gradient(90deg, #ff00cc 0%, #d500dd 100%);
+  --gradient-chip-documentary: linear-gradient(90deg, #7c3aed 0%, #5b21b6 100%);
+  --gradient-chip-kdrama: linear-gradient(90deg, #f43f5e 0%, #e11d48 100%);
+  --gradient-chip-song: linear-gradient(90deg, #ec4899 0%, #db2777 100%);
+  --gradient-chip-album: linear-gradient(90deg, #a855f7 0%, #7e22ce 100%);
+  --gradient-chip-ost: linear-gradient(90deg, #9333ea 0%, #7c3aed 100%);
+  --gradient-chip-music: linear-gradient(90deg, #d500dd 0%, #ff00cc 100%);
+  --gradient-chip-jpop: linear-gradient(90deg, #34d399 0%, #10b981 100%);
+  --gradient-chip-kpop: linear-gradient(90deg, #f472b6 0%, #a855f7 100%);
+  --gradient-chip-aimatch: linear-gradient(90deg, #ff00cc 0%, #ae00ff 100%);
+  --gradient-chip-rating: linear-gradient(90deg, #9333ea 0%, #ff00cc 100%);
+  --gradient-chip-default: linear-gradient(90deg, #7c3aed 0%, #6d28d9 100%);
 }
 
 /* ------------------- */
@@ -88,6 +130,32 @@
 @utility bg-gradient-teal {
   background-image: var(--gradient-teal);
 }
+
+@utility bg-gradient-chip-action { background-image: var(--gradient-chip-action); }
+@utility bg-gradient-chip-comedy { background-image: var(--gradient-chip-comedy); }
+@utility bg-gradient-chip-crime { background-image: var(--gradient-chip-crime); }
+@utility bg-gradient-chip-drama { background-image: var(--gradient-chip-drama); }
+@utility bg-gradient-chip-fantasy { background-image: var(--gradient-chip-fantasy); }
+@utility bg-gradient-chip-horror { background-image: var(--gradient-chip-horror); }
+@utility bg-gradient-chip-mystery { background-image: var(--gradient-chip-mystery); }
+@utility bg-gradient-chip-romance { background-image: var(--gradient-chip-romance); }
+@utility bg-gradient-chip-scific { background-image: var(--gradient-chip-scific); }
+@utility bg-gradient-chip-thriller { background-image: var(--gradient-chip-thriller); }
+@utility bg-gradient-chip-sports { background-image: var(--gradient-chip-sports); }
+@utility bg-gradient-chip-anime { background-image: var(--gradient-chip-anime); }
+@utility bg-gradient-chip-show { background-image: var(--gradient-chip-show); }
+@utility bg-gradient-chip-movie { background-image: var(--gradient-chip-movie); }
+@utility bg-gradient-chip-documentary { background-image: var(--gradient-chip-documentary); }
+@utility bg-gradient-chip-kdrama { background-image: var(--gradient-chip-kdrama); }
+@utility bg-gradient-chip-song { background-image: var(--gradient-chip-song); }
+@utility bg-gradient-chip-album { background-image: var(--gradient-chip-album); }
+@utility bg-gradient-chip-ost { background-image: var(--gradient-chip-ost); }
+@utility bg-gradient-chip-music { background-image: var(--gradient-chip-music); }
+@utility bg-gradient-chip-jpop { background-image: var(--gradient-chip-jpop); }
+@utility bg-gradient-chip-kpop { background-image: var(--gradient-chip-kpop); }
+@utility bg-gradient-chip-aimatch { background-image: var(--gradient-chip-aimatch); }
+@utility bg-gradient-chip-rating { background-image: var(--gradient-chip-rating); }
+@utility bg-gradient-chip-default { background-image: var(--gradient-chip-default); }
 
 /* Brand gradient text, e.g. the AniVerse logo */
 @utility text-gradient-brand {
@@ -150,6 +218,22 @@
     #cc00a3 50%,
     #99007a 100%
   );
+}
+
+/* Card hover content reveal */
+@keyframes card-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animate-card-reveal {
+  animation: card-reveal 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* ------------- */

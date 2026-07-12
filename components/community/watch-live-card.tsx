@@ -46,7 +46,7 @@ export function WatchLiveCard({
       <div className="flex flex-1 flex-col justify-center gap-3 bg-surface p-8 shadow-panel">
         <h3 className="text-heading font-bold text-white">{party.title}</h3>
         {party.nowPlaying ? (
-          <p className="text-lg text-muted">{party.nowPlaying}</p>
+          <p className="text-sm text-muted">{party.nowPlaying}</p>
         ) : null}
         <div className="flex flex-wrap items-center gap-3">
           {party.viewerCount != null ? (

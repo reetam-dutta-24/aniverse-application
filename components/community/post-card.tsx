@@ -20,7 +20,7 @@ export function PostCard({ post, className, ...props }: PostCardProps) {
       <div className="flex items-center gap-3">
         <AvatarStack users={[post.author]} />
         <div className="flex flex-col">
-          <p className="text-lg font-semibold text-white">{post.author.name}</p>
+          <p className="text-sm font-semibold text-white">{post.author.name}</p>
           {post.createdAt ? (
             <p className="text-xs text-muted">{post.createdAt}</p>
           ) : null}

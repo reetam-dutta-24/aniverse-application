@@ -19,13 +19,13 @@ export function CharacterCard({
   return (
     <div
       className={cn(
-        "flex w-[225px] flex-col items-center gap-2.5 overflow-hidden rounded-card bg-glass-magenta px-2 py-6 shadow-card-inner transition-shadow duration-300",
+        "flex w-[210px] flex-col items-center gap-2.5 overflow-hidden rounded-card bg-glass-magenta px-2 py-5 shadow-card-inner transition-shadow duration-300",
         accent.hoverGlow,
         className,
       )}
       {...props}
     >
-      <div className="relative h-[190px] w-[209px] overflow-hidden rounded-card">
+      <div className="relative h-[170px] w-[186px] overflow-hidden rounded-card">
         {character.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -38,7 +38,7 @@ export function CharacterCard({
         )}
         <div className="absolute inset-0 rounded-[inherit] shadow-[inset_2px_0px_50px_10px_rgba(0,0,0,0.5)]" />
       </div>
-      <p className="text-center text-xl font-semibold text-white">
+      <p className="text-center text-base font-semibold text-white">
         {character.name}
       </p>
       {character.role ? <Chip variant="indigo">{character.role}</Chip> : null}

@@ -51,7 +51,7 @@ export function EpisodeCard({
       </div>
       <div className="flex flex-col gap-2 p-4">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-lg font-semibold text-white">
+          <p className="text-base font-semibold text-white">
             E{episode.number} · {episode.title}
           </p>
           {episode.duration ? (

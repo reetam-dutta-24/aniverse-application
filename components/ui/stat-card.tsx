@@ -10,13 +10,13 @@ export function StatCard({ label, value, className, ...props }: StatCardProps) {
   return (
     <div
       className={cn(
-        "flex h-[190px] w-[300px] flex-col items-center justify-center gap-2 rounded-[20px] bg-gradient-blue-violet p-2.5 text-center text-white",
+        "mx-auto flex h-auto min-h-[150px] w-full max-w-[260px] flex-col items-center justify-center gap-1.5 rounded-[20px] bg-gradient-blue-violet p-2.5 text-center text-white",
         className,
       )}
       {...props}
     >
-      <p className="text-2xl font-bold">{label}</p>
-      <p className="text-display font-bold">{value}</p>
+      <p className="text-base font-bold">{label}</p>
+      <p className="text-4xl font-bold">{value}</p>
     </div>
   );
 }

@@ -35,7 +35,7 @@ export function AvatarStack({
           key={user.id}
           className={cn(
             "flex items-center justify-center overflow-hidden rounded-full text-center font-semibold text-black",
-            size === "md" ? "size-10 text-lg" : "size-7 text-sm",
+            size === "md" ? "size-9 text-base" : "size-7 text-xs",
           )}
           style={{
             backgroundColor:
@@ -56,7 +56,7 @@ export function AvatarStack({
         </span>
       ))}
       {label ? (
-        <span className="ms-1.5 text-lg font-semibold text-white">{label}</span>
+        <span className="ms-1.5 text-sm font-semibold text-white">{label}</span>
       ) : null}
     </div>
   );

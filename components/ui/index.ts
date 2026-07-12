@@ -3,7 +3,7 @@ export {
   GradientButton,
   type GradientButtonProps,
 } from "./gradient-button";
-export { Chip, chipVariants, type ChipProps } from "./chip";
+export { Chip, RatingChip, MatchChip, type ChipProps } from "./chip";
 export { GlassCard, glassCardVariants, type GlassCardProps } from "./glass-card";
 export { GlowCard, glowCardVariants, type GlowCardProps } from "./glow-card";
 export { SectionHeader, type SectionHeaderProps } from "./section-header";

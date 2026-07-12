@@ -4,6 +4,8 @@ export type MediaType =
   | "anime"
   | "show"
   | "movie"
+  | "documentary"
+  | "kdrama"
   | "song"
   | "album"
   | "artist"
@@ -44,6 +46,22 @@ export interface ContentItem {
   accent?: AccentColor;
 }
 
+/** A song/OST/track shown on music cards. */
+export interface MusicTrack {
+  id: string;
+  title: string;
+  artist: string;
+  kind: "ost" | "song" | "album";
+  /** Source show the track belongs to, e.g. "Demon Slayer". */
+  source?: string;
+  /** e.g. "Japanese", "Jpop", "English". */
+  language?: string;
+  rating?: number;
+  /** AI compatibility score, 0–100. */
+  matchScore?: number;
+  imageUrl?: string;
+}
+
 export interface Community {
   id: string;
   name: string;
@@ -57,6 +75,7 @@ export interface Community {
   createdAt?: string;
   lastActiveAt?: string;
   accent?: AccentColor;
+  imageUrl?: string;
 }
 
 export interface Collection {
@@ -69,6 +88,7 @@ export interface Collection {
   createdAt?: string;
   updatedAt?: string;
   accent?: AccentColor;
+  imageUrl?: string;
 }
 
 /** A single metric shown in the analytics/stats strip. */
