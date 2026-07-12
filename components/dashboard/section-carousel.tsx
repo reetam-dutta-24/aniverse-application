@@ -5,8 +5,8 @@ import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { SearchPill } from "@/components/dashboard/search-pill";
 
 export interface SectionCarouselProps {
-  /** Section heading, e.g. "🚀 Trending This Week". */
-  title: string;
+  /** Section heading, e.g. "🚀 Trending This Week". Omit for scroll-only rows. */
+  title?: string;
   subtitle?: string;
   searchPlaceholder?: string;
   /** Hide the decorative expand chevron under the row. */
@@ -15,8 +15,8 @@ export interface SectionCarouselProps {
 }
 
 /**
- * Dashboard content row: heading + search on top, horizontally scrollable
- * cards with arrow controls, and an expand chevron below.
+ * Dashboard content row: optional heading + search, horizontally scrollable
+ * cards with arrow controls.
  */
 export function SectionCarousel({
   title,
@@ -26,6 +26,7 @@ export function SectionCarousel({
   children,
 }: SectionCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const showHeader = Boolean(title || searchPlaceholder);
 
   function scrollByCards(direction: 1 | -1) {
     scrollRef.current?.scrollBy({
@@ -36,30 +37,36 @@ export function SectionCarousel({
 
   return (
     <section className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-start justify-between gap-4 px-11">
-        <div>
-          <h2 className="text-heading font-bold text-white">{title}</h2>
-          {subtitle ? (
-            <p className="mt-1 text-sm text-white/90">{subtitle}</p>
+      {showHeader ? (
+        <div className="flex flex-col gap-3 px-2 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-4 sm:px-4 lg:px-6">
+          {title ? (
+            <div className="min-w-0">
+              <h2 className="text-lg font-bold text-white sm:text-heading">
+                {title}
+              </h2>
+              {subtitle ? (
+                <p className="mt-1 text-sm text-white/90">{subtitle}</p>
+              ) : null}
+            </div>
+          ) : null}
+          {searchPlaceholder ? (
+            <SearchPill placeholder={searchPlaceholder} />
           ) : null}
         </div>
-        {searchPlaceholder ? (
-          <SearchPill placeholder={searchPlaceholder} />
-        ) : null}
-      </div>
+      ) : null}
 
       <div className="relative">
         <button
           type="button"
           onClick={() => scrollByCards(-1)}
           aria-label="Scroll left"
-          className="absolute left-0 top-1/2 z-10 -translate-y-1/2 cursor-pointer p-1 text-brand-magenta transition-colors hover:text-brand-pink"
+          className="absolute left-0 top-1/2 z-10 -translate-y-1/2 cursor-pointer p-1 text-brand-magenta transition-colors hover:text-brand-pink sm:left-1"
         >
-          <ChevronLeft className="size-7" strokeWidth={3} />
+          <ChevronLeft className="size-6 sm:size-7" strokeWidth={3} />
         </button>
         <div
           ref={scrollRef}
-          className="flex items-center gap-7 overflow-x-auto px-11 py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="flex items-stretch gap-4 overflow-x-auto px-8 py-4 [scrollbar-width:none] sm:gap-6 sm:px-10 lg:px-12 [&::-webkit-scrollbar]:hidden"
         >
           {children}
         </div>
@@ -67,13 +74,13 @@ export function SectionCarousel({
           type="button"
           onClick={() => scrollByCards(1)}
           aria-label="Scroll right"
-          className="absolute right-0 top-1/2 z-10 -translate-y-1/2 cursor-pointer p-1 text-brand-magenta transition-colors hover:text-brand-pink"
+          className="absolute right-0 top-1/2 z-10 -translate-y-1/2 cursor-pointer p-1 text-brand-magenta transition-colors hover:text-brand-pink sm:right-1"
         >
-          <ChevronRight className="size-7" strokeWidth={3} />
+          <ChevronRight className="size-6 sm:size-7" strokeWidth={3} />
         </button>
       </div>
 
-      {!hideExpand ? (
+      {!hideExpand && title ? (
         <ChevronDown
           className="mx-auto size-5 text-brand-magenta"
           strokeWidth={3}

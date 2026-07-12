@@ -1,3 +1,5 @@
+import type { AccentColor } from "@/types";
+
 export interface CardTint {
   glass: string;
   header: string;
@@ -30,6 +32,36 @@ const TINT_POOL: CardTint[] = [
   { glass: "rgba(245, 158, 11, 0.16)", header: "bg-header-yellow" },
   { glass: "rgba(34, 197, 94, 0.14)", header: "bg-header-green" },
 ];
+
+/** Accent-mapped tints — used for character cards and themed inner shadows. */
+const ACCENT_TINT: Record<AccentColor, CardTint> = {
+  pink: { glass: "rgba(255, 0, 204, 0.22)", header: "bg-header-pink" },
+  purple: { glass: "rgba(128, 0, 255, 0.2)", header: "bg-header-purple" },
+  cyan: { glass: "rgba(0, 251, 255, 0.16)", header: "bg-header-cyan" },
+  yellow: { glass: "rgba(255, 208, 0, 0.18)", header: "bg-header-yellow" },
+  blue: { glass: "rgba(37, 99, 235, 0.2)", header: "bg-header-blue" },
+  green: { glass: "rgba(16, 185, 129, 0.17)", header: "bg-header-green" },
+};
+
+export function getAccentTint(accent: AccentColor = "purple"): CardTint {
+  return ACCENT_TINT[accent];
+}
+
+/** Outer neon glow derived from a card tint (episode/character hover). */
+export function getTintOuterGlow(glass: string, spread = 12): string {
+  const [r, g, b] = getTintRgb(glass);
+  return `0 0 ${spread}px 4px rgba(${r},${g},${b},0.75), 0 0 ${spread * 2}px 8px rgba(${r},${g},${b},0.35)`;
+}
+
+/** Glow from a hex avatar/profile color (review cards). */
+export function getHexOuterGlow(hex: string, spread = 10): string {
+  const normalized = hex.replace("#", "");
+  if (normalized.length < 6) return getTintOuterGlow("rgba(128, 0, 255, 0.2)", spread);
+  const r = Number.parseInt(normalized.slice(0, 2), 16);
+  const g = Number.parseInt(normalized.slice(2, 4), 16);
+  const b = Number.parseInt(normalized.slice(4, 6), 16);
+  return `0 0 ${spread}px 3px rgba(${r},${g},${b},0.65), 0 0 ${spread * 1.6}px 6px rgba(${r},${g},${b},0.3)`;
+}
 
 function hashId(id: string): number {
   let h = 0;

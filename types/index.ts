@@ -106,8 +106,10 @@ export interface NavLink {
 export interface Character {
   id: string;
   name: string;
-  /** e.g. "Main Character", "Voice: Junya Enoki". */
+  /** e.g. "Role: Main Character". */
   role?: string;
+  /** Voice actor display name, e.g. "Junya Enoki". */
+  voiceActor?: string;
   imageUrl?: string;
   accent?: AccentColor;
 }
@@ -120,6 +122,19 @@ export interface Episode {
   description?: string;
   thumbnailUrl?: string;
   releaseDate?: string;
+  /** Season number, e.g. 1 for S1. */
+  seasonNumber?: number;
+  /** Resume / continue-watching marker. */
+  isLastPlayed?: boolean;
+  tags?: string[];
+  /** Episode rating out of 10. */
+  rating?: number;
+  /** Display views, e.g. "2.4M". */
+  views?: string;
+  /** Display likes, e.g. "15k". */
+  likes?: string;
+  /** Primary audio language label. */
+  language?: string;
 }
 
 export interface Review {
@@ -128,8 +143,87 @@ export interface Review {
   /** Rating out of 10. */
   rating: number;
   content: string;
+  /** Short pull-quote shown above the body. */
+  headline?: string;
   createdAt?: string;
   likeCount?: number;
+  accent?: AccentColor;
+}
+
+/** Engagement stat tile on a content detail page. */
+export interface ContentEngagementStat {
+  id: string;
+  label: string;
+  value: string;
+}
+
+/** Structured metadata block — maps 1:1 to DB columns. */
+export interface ContentMetadata {
+  studio?: string;
+  airingDay?: string;
+  languages?: string[];
+  seasonLabel?: string;
+  lastUpdate?: string;
+  imdbRating?: number;
+  malScore?: number;
+  ageRating?: string;
+  composer?: string;
+  director?: string;
+  originalAuthor?: string;
+  sourceMaterial?: string;
+  producers?: string;
+  network?: string;
+  country?: string;
+  status?: string;
+  airedFrom?: string;
+  airedTo?: string;
+  broadcast?: string;
+  episodeDuration?: string;
+  releaseYear?: number;
+}
+
+export interface ContentSeason {
+  id: string;
+  label: string;
+  episodeCount: number;
+}
+
+/**
+ * Full content detail — every field maps to a future DB/API response.
+ * Used by `/content/[contentid]`.
+ */
+export interface ContentDetail {
+  id: string;
+  title: string;
+  nativeTitle?: string;
+  type: MediaType;
+  rating: number;
+  trendingLabel?: string;
+  genres: Genre[];
+  synopsis: string;
+  /** e.g. "AI Match 98%", "All Seasons". */
+  highlightTags: string[];
+  metadata: ContentMetadata;
+  imageUrl: string;
+  backdropUrl?: string;
+  matchScore?: number;
+  /** Card accent — drives hero section inner-boundary glow. */
+  accent?: AccentColor;
+  engagementStats: ContentEngagementStat[];
+  seasons: ContentSeason[];
+  episodes: Episode[];
+  characters: Character[];
+  featuredOsts: MusicTrack[];
+  relatedContent: ContentItem[];
+  collections: Collection[];
+  communities: Community[];
+  reviews: Review[];
+  /** User watch progress — drives Continue Watching vs Watch Now CTA. */
+  watchProgress?: {
+    seasonNumber: number;
+    episodeNumber: number;
+    episodeTitle?: string;
+  };
 }
 
 export type MemberRole = "owner" | "admin" | "moderator" | "member";

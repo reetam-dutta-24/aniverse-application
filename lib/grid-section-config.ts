@@ -3,6 +3,12 @@ export const GRID_COLS = 6;
 export const GRID_ROWS = 2;
 export const GRID_ITEMS_PER_PAGE = GRID_COLS * GRID_ROWS;
 
+/** Carousel pagination — fixed items per page (app-wide default). */
+export const CAROUSEL_ITEMS_CONTENT = 6;
+export const CAROUSEL_ITEMS_COMMUNITY = 5;
+export const CAROUSEL_ITEMS_EPISODE = 3;
+export const CAROUSEL_ITEMS_REVIEW = 3;
+
 /** Community / collection grid — up to 5 columns × 2 rows per page. */
 export const COMMUNITY_GRID_COLS = 5;
 export const COMMUNITY_GRID_ROWS = 2;

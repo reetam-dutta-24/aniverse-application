@@ -1,195 +1,195 @@
-"use client";
-
-import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { PosterCard } from "@/components/cards/poster-card";
-import {
-  CarouselCardSlot,
-  CarouselRowViewport,
-} from "@/components/dashboard/carousel-row-viewport";
-import { PaginationDots } from "@/components/dashboard/pagination-dots";
-import { SearchPill } from "@/components/dashboard/search-pill";
-import { useColumnCount } from "@/hooks/use-column-count";
-import { getCardTint, sectionTintSeed } from "@/lib/card-theme";
-import { CAROUSEL_COLS_BREAKPOINTS } from "@/lib/grid-section-config";
-import type { ContentItem } from "@/types";
-
-export interface ContentCarouselSectionProps {
-  title: string;
-  subtitle?: string;
-  searchPlaceholder: string;
-  items: ContentItem[];
-}
-
-function filterContent(items: ContentItem[], query: string) {
-  const q = query.trim().toLowerCase();
-  if (!q) return items;
-  return items.filter(
-    (item) =>
-      item.title.toLowerCase().includes(q) ||
-      item.genres.some((g) => g.label.toLowerCase().includes(q)) ||
-      item.type.toLowerCase().includes(q),
-  );
-}
-
-function chunk<T>(arr: T[], size: number): T[][] {
-  const pages: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) {
-    pages.push(arr.slice(i, i + size));
-  }
-  return pages.length ? pages : [[]];
-}
-
-/** Paginated content row — responsive columns, strict clip, no bleed. */
-export function ContentCarouselSection({
-  title,
-  subtitle,
-  searchPlaceholder,
-  items,
-}: ContentCarouselSectionProps) {
-  const [query, setQuery] = useState("");
-  const [page, setPage] = useState(0);
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const { cols, itemsPerPage } = useColumnCount(CAROUSEL_COLS_BREAKPOINTS, 1);
-
-  const filtered = useMemo(
-    () => filterContent(items, query),
-    [items, query],
-  );
-
-  const pages = useMemo(
-    () => chunk(filtered, itemsPerPage),
-    [filtered, itemsPerPage],
-  );
-
-  const tintSeed = sectionTintSeed(title);
-  const totalPages = pages.length;
-  const safePage = Math.min(page, totalPages - 1);
-
-  const hoveredTintGlass = useMemo(() => {
-    if (!hoveredId) return null;
-    const item = filtered.find((i) => i.id === hoveredId);
-    if (!item) return null;
-    return getCardTint(item.id, tintSeed).glass;
-  }, [hoveredId, filtered, tintSeed]);
-
-  useEffect(() => {
-    setPage((current) => Math.min(current, Math.max(0, totalPages - 1)));
-  }, [totalPages, itemsPerPage]);
-
-  function goTo(next: number) {
-    const wrapped =
-      ((next % totalPages) + totalPages) % totalPages;
-    setPage(wrapped);
-    setHoveredId(null);
-  }
-
-  function handleSearch(value: string) {
-    setQuery(value);
-    setPage(0);
-    setHoveredId(null);
-  }
-
-  return (
-    <section className="flex flex-col gap-3">
-      <div className="flex flex-col gap-3 px-2 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-4">
-        <div className="min-w-0">
-          <h2 className="text-lg font-bold text-white sm:text-heading">{title}</h2>
-          {subtitle ? (
-            <p className="mt-1 text-sm font-normal text-white/90">{subtitle}</p>
-          ) : null}
-        </div>
-        <SearchPill
-          placeholder={searchPlaceholder}
-          value={query}
-          onChange={handleSearch}
-        />
-      </div>
-
-      <div className="relative px-2">
-        {totalPages > 1 ? (
-          <button
-            type="button"
-            onClick={() => goTo(safePage - 1)}
-            aria-label="Previous page"
-            className="absolute -left-1 top-1/2 z-20 -translate-y-1/2 cursor-pointer p-1 text-brand-magenta transition-colors hover:text-brand-pink sm:left-0"
-          >
-            <ChevronLeft className="size-6" strokeWidth={3} />
-          </button>
-        ) : null}
-
-        <CarouselRowViewport
-          active={hoveredId != null}
-          tintGlass={hoveredTintGlass}
-        >
-          <div className="overflow-hidden">
-            <div
-              className="flex w-full transition-transform duration-700 ease-in-out"
-              style={{ transform: `translateX(-${safePage * 100}%)` }}
-            >
-              {pages.map((pageItems, pageIndex) => (
-                <div
-                  key={pageIndex}
-                  className="grid w-full min-w-full shrink-0 gap-3 overflow-hidden sm:gap-6"
-                  style={{
-                    gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-                  }}
-                >
-                  {pageItems.length > 0 ? (
-                    pageItems.map((item) => (
-                      <CarouselCardSlot
-                        key={item.id}
-                        id={item.id}
-                        hoveredId={hoveredId}
-                      >
-                        <PosterCard
-                          item={item}
-                          tintSeed={tintSeed}
-                          onHoverChange={(hovered) =>
-                            setHoveredId(hovered ? item.id : null)
-                          }
-                        />
-                      </CarouselCardSlot>
-                    ))
-                  ) : (
-                    <p
-                      className="text-sm text-muted"
-                      style={{ gridColumn: "1 / -1" }}
-                    >
-                      No results for &ldquo;{query}&rdquo;
-                    </p>
-                  )}
-                  {pageItems.length > 0 && pageItems.length < itemsPerPage
-                    ? Array.from({
-                        length: itemsPerPage - pageItems.length,
-                      }).map((_, i) => (
-                        <div key={`pad-${i}`} aria-hidden />
-                      ))
-                    : null}
-                </div>
-              ))}
-            </div>
-          </div>
-        </CarouselRowViewport>
-
-        {totalPages > 1 ? (
-          <button
-            type="button"
-            onClick={() => goTo(safePage + 1)}
-            aria-label="Next page"
-            className="absolute -right-1 top-1/2 z-20 -translate-y-1/2 cursor-pointer p-1 text-brand-magenta transition-colors hover:text-brand-pink sm:right-0"
-          >
-            <ChevronRight className="size-6" strokeWidth={3} />
-          </button>
-        ) : null}
-      </div>
-
-      <PaginationDots
-        total={totalPages}
-        current={safePage}
-        onChange={goTo}
-      />
-    </section>
-  );
-}
-
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { PosterCard } from "@/components/cards/poster-card";
+import {
+  CarouselCardSlot,
+  CarouselRowViewport,
+} from "@/components/dashboard/carousel-row-viewport";
+import { PaginationDots } from "@/components/dashboard/pagination-dots";
+import { SearchPill } from "@/components/dashboard/search-pill";
+import { useColumnCount } from "@/hooks/use-column-count";
+import { getCardTint, sectionTintSeed } from "@/lib/card-theme";
+import { CAROUSEL_COLS_BREAKPOINTS } from "@/lib/grid-section-config";
+import type { ContentItem } from "@/types";
+
+export interface ContentCarouselSectionProps {
+  title: string;
+  subtitle?: string;
+  searchPlaceholder: string;
+  items: ContentItem[];
+}
+
+function filterContent(items: ContentItem[], query: string) {
+  const q = query.trim().toLowerCase();
+  if (!q) return items;
+  return items.filter(
+    (item) =>
+      item.title.toLowerCase().includes(q) ||
+      item.genres.some((g) => g.label.toLowerCase().includes(q)) ||
+      item.type.toLowerCase().includes(q),
+  );
+}
+
+function chunk<T>(arr: T[], size: number): T[][] {
+  const pages: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    pages.push(arr.slice(i, i + size));
+  }
+  return pages.length ? pages : [[]];
+}
+
+/** Paginated content row — responsive columns, strict clip, no bleed. */
+export function ContentCarouselSection({
+  title,
+  subtitle,
+  searchPlaceholder,
+  items,
+}: ContentCarouselSectionProps) {
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(0);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const { cols, itemsPerPage } = useColumnCount(CAROUSEL_COLS_BREAKPOINTS, 1);
+
+  const filtered = useMemo(
+    () => filterContent(items, query),
+    [items, query],
+  );
+
+  const pages = useMemo(
+    () => chunk(filtered, itemsPerPage),
+    [filtered, itemsPerPage],
+  );
+
+  const tintSeed = sectionTintSeed(title);
+  const totalPages = pages.length;
+  const safePage = Math.min(page, totalPages - 1);
+
+  const hoveredTintGlass = useMemo(() => {
+    if (!hoveredId) return null;
+    const item = filtered.find((i) => i.id === hoveredId);
+    if (!item) return null;
+    return getCardTint(item.id, tintSeed).glass;
+  }, [hoveredId, filtered, tintSeed]);
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, Math.max(0, totalPages - 1)));
+  }, [totalPages, itemsPerPage]);
+
+  function goTo(next: number) {
+    const wrapped =
+      ((next % totalPages) + totalPages) % totalPages;
+    setPage(wrapped);
+    setHoveredId(null);
+  }
+
+  function handleSearch(value: string) {
+    setQuery(value);
+    setPage(0);
+    setHoveredId(null);
+  }
+
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 px-2 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0">
+          <h2 className="text-lg font-bold text-white sm:text-heading">{title}</h2>
+          {subtitle ? (
+            <p className="mt-1 text-sm font-normal text-white/90">{subtitle}</p>
+          ) : null}
+        </div>
+        <SearchPill
+          placeholder={searchPlaceholder}
+          value={query}
+          onChange={handleSearch}
+        />
+      </div>
+
+      <div className="relative px-2">
+        {totalPages > 1 ? (
+          <button
+            type="button"
+            onClick={() => goTo(safePage - 1)}
+            aria-label="Previous page"
+            className="absolute -left-1 top-1/2 z-20 -translate-y-1/2 cursor-pointer p-1 text-brand-magenta transition-colors hover:text-brand-pink sm:left-0"
+          >
+            <ChevronLeft className="size-6" strokeWidth={3} />
+          </button>
+        ) : null}
+
+        <CarouselRowViewport
+          active={hoveredId != null}
+          tintGlass={hoveredTintGlass}
+        >
+          <div className="overflow-hidden">
+            <div
+              className="flex w-full transition-transform duration-700 ease-in-out"
+              style={{ transform: `translateX(-${safePage * 100}%)` }}
+            >
+              {pages.map((pageItems, pageIndex) => (
+                <div
+                  key={pageIndex}
+                  className="grid w-full min-w-full shrink-0 gap-3 overflow-hidden sm:gap-6"
+                  style={{
+                    gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                  }}
+                >
+                  {pageItems.length > 0 ? (
+                    pageItems.map((item) => (
+                      <CarouselCardSlot
+                        key={item.id}
+                        id={item.id}
+                        hoveredId={hoveredId}
+                      >
+                        <PosterCard
+                          item={item}
+                          tintSeed={tintSeed}
+                          onHoverChange={(hovered) =>
+                            setHoveredId(hovered ? item.id : null)
+                          }
+                        />
+                      </CarouselCardSlot>
+                    ))
+                  ) : (
+                    <p
+                      className="text-sm text-muted"
+                      style={{ gridColumn: "1 / -1" }}
+                    >
+                      No results for &ldquo;{query}&rdquo;
+                    </p>
+                  )}
+                  {pageItems.length > 0 && pageItems.length < itemsPerPage
+                    ? Array.from({
+                        length: itemsPerPage - pageItems.length,
+                      }).map((_, i) => (
+                        <div key={`pad-${i}`} aria-hidden />
+                      ))
+                    : null}
+                </div>
+              ))}
+            </div>
+          </div>
+        </CarouselRowViewport>
+
+        {totalPages > 1 ? (
+          <button
+            type="button"
+            onClick={() => goTo(safePage + 1)}
+            aria-label="Next page"
+            className="absolute -right-1 top-1/2 z-20 -translate-y-1/2 cursor-pointer p-1 text-brand-magenta transition-colors hover:text-brand-pink sm:right-0"
+          >
+            <ChevronRight className="size-6" strokeWidth={3} />
+          </button>
+        ) : null}
+      </div>
+
+      <PaginationDots
+        total={totalPages}
+        current={safePage}
+        onChange={goTo}
+      />
+    </section>
+  );
+}
+

@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { PlayCircle } from "lucide-react";
+import { getContentDetailPath } from "@/lib/content-routes";
 import { cn } from "@/lib/utils";
 import { getCardTint } from "@/lib/card-theme";
 import { SLOT_H, SLOT_W } from "@/lib/card-dimensions";
@@ -64,10 +66,19 @@ export function PosterCard({
   className,
   ...props
 }: PosterCardProps) {
+  const router = useRouter();
   const [hovered, setHovered] = useState(false);
   const tint = getCardTint(item.id, tintSeed);
   const description = item.description ?? defaultDescription(item.title);
   const { meta, year } = resolveMeta(item);
+
+  function handleViewDetails() {
+    if (onViewDetails) {
+      onViewDetails();
+      return;
+    }
+    router.push(getContentDetailPath(item.id));
+  }
 
   return (
     <div
@@ -211,7 +222,7 @@ export function PosterCard({
                 </button>
                 <button
                   type="button"
-                  onClick={onViewDetails}
+                  onClick={handleViewDetails}
                   className="cursor-pointer rounded-full border border-brand-magenta px-2 py-0.5 text-[10px] font-normal text-white transition-colors hover:bg-brand-magenta/15"
                 >
                   View Details
