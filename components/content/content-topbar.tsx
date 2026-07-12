@@ -1,14 +1,20 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
-import { Bell, CircleUserRound, Search } from "lucide-react";
+import { Bell, CircleUserRound } from "lucide-react";
+import { GlobalSearch } from "@/components/search/global-search";
 
 export interface ContentTopbarProps {
   userName: string;
+  initialSearchQuery?: string;
 }
 
-/** Content detail top bar — logo, search, notifications, user. No dashboard sidebar. */
-export function ContentTopbar({ userName }: ContentTopbarProps) {
+/** Content detail top bar — logo, global search, notifications, user. */
+export function ContentTopbar({
+  userName,
+  initialSearchQuery,
+}: ContentTopbarProps) {
   return (
     <header className="sticky top-0 z-50 w-full bg-background/90 shadow-[0_10px_40px_rgba(0,0,0,0.8)] backdrop-blur-md">
       <div className="mx-auto flex h-14 w-full max-w-[1440px] items-center gap-4 px-4 sm:h-[72px] sm:gap-6 sm:px-8 lg:px-12">
@@ -18,14 +24,16 @@ export function ContentTopbar({ userName }: ContentTopbarProps) {
           </span>
         </Link>
 
-        <label className="mx-auto flex h-10 w-full max-w-[340px] items-center gap-2 rounded-full border border-white/25 bg-surface/60 px-4 transition-colors focus-within:border-brand-magenta sm:max-w-[400px]">
-          <input
-            type="search"
-            placeholder="Search Here…………………"
-            className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-muted/60 focus:outline-none"
+        <Suspense
+          fallback={
+            <div className="mx-auto h-10 w-full max-w-[340px] rounded-full border border-white/25 bg-surface/60 sm:max-w-[400px]" />
+          }
+        >
+          <GlobalSearch
+            className="mx-auto max-w-[340px] sm:max-w-[400px]"
+            initialQuery={initialSearchQuery}
           />
-          <Search className="size-4 shrink-0 text-white/80" />
-        </label>
+        </Suspense>
 
         <div className="flex shrink-0 items-center gap-3 sm:gap-4">
           <button
