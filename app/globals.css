@@ -280,3 +280,20 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #d500dd, #ff00cc);
 }
+
+/* Detail-route hero: visible space between consecutive side-by-side CTAs */
+.detail-hero-btn-pair {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+}
+
+.detail-hero-btn-pair > :not(:last-child) {
+  margin-inline-end: 3.5rem;
+}
+
+@media (min-width: 640px) {
+  .detail-hero-btn-pair > :not(:last-child) {
+    margin-inline-end: 4rem;
+  }
+}

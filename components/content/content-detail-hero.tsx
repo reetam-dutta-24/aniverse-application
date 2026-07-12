@@ -1,6 +1,7 @@
 import {
   Eye,
   FolderOpen,
+  Headphones,
   Heart,
   Plus,
   PlayCircle,
@@ -10,16 +11,19 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  getAccentTint,
+  detailHeroBtnBase,
+  DETAIL_HERO_BTN_GROUP,
+  DETAIL_HERO_BTN_PAIR,
+} from "@/lib/detail-route-ui";
+import {
   getCardTint,
-  getTintRgb,
-  type CardTint,
+  getDetailHeroBoundaryGlow,
 } from "@/lib/card-theme";
 import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { Chip, MatchChip } from "@/components/ui/chip";
 import { ContentHeroActions } from "@/components/content/content-hero-actions";
-import type { ContentDetail, ContentEngagementStat, ContentMetadata, Episode } from "@/types";
+import type { ContentDetail, ContentEngagementStat, ContentMetadata, Episode, MediaType } from "@/types";
 
 export interface ContentDetailHeroProps {
   content: ContentDetail;
@@ -28,12 +32,17 @@ export interface ContentDetailHeroProps {
 const STAT_ICONS: Record<string, LucideIcon> = {
   likes: Heart,
   watching: Users,
+  listening: Headphones,
   views: Eye,
   collections: FolderOpen,
   playlists: FolderOpen,
   ranked: FolderOpen,
   favorite: Heart,
 };
+
+function isSongMedia(type: MediaType) {
+  return type === "song" || type === "album" || type === "playlist";
+}
 
 const DETAIL_CHIP =
   "h-7 shrink-0 px-3 text-[11px] font-medium sm:h-8 sm:px-3.5 sm:text-xs";
@@ -59,9 +68,9 @@ function seasonCount(content: ContentDetail) {
   return content.seasons.filter((season) => season.id !== "movie").length;
 }
 
-function resolveHeroTint(content: ContentDetail): CardTint {
-  if (content.accent) return getAccentTint(content.accent);
-  return getCardTint(content.id);
+/** Hero inner glow matches the card template bg for this item (not accent keys). */
+function resolveHeroTint(content: ContentDetail) {
+  return getCardTint(content.id, 0);
 }
 
 function resolveContinueEpisode(content: ContentDetail): Episode | null {
@@ -113,7 +122,19 @@ function buildMetadataChips(metadata: ContentMetadata): React.ReactNode[] {
 
 function buildMetadataRows(
   metadata: ContentMetadata,
+  type: MediaType,
 ): { label: string; value: string }[] {
+  if (isSongMedia(type)) {
+    return [
+      metadata.studio ? { label: "Artist", value: metadata.studio } : null,
+      metadata.director ? { label: "Album", value: metadata.director } : null,
+      metadata.originalAuthor
+        ? { label: "Source", value: metadata.originalAuthor }
+        : null,
+      metadata.airedFrom ? { label: "Released", value: metadata.airedFrom } : null,
+    ].filter(Boolean) as { label: string; value: string }[];
+  }
+
   const aired =
     metadata.airedFrom != null
       ? metadata.airedTo
@@ -139,31 +160,26 @@ function buildMetadataRows(
 /** Figma hero — full-width, themed inner boundary, neutral poster vignette. */
 export function ContentDetailHero({ content }: ContentDetailHeroProps) {
   const tint = resolveHeroTint(content);
-  const [r, g, b] = getTintRgb(tint.glass);
+  const heroGlow = getDetailHeroBoundaryGlow(tint.glass);
   const titleLine = content.nativeTitle
     ? `${content.title} | ${content.nativeTitle}`
     : content.title;
   const languages = content.metadata.languages ?? [];
   const trailerSeason = content.seasons[0]?.label ?? "Season 1";
+  const songMedia = isSongMedia(content.type);
   const metadataChips = buildMetadataChips(content.metadata);
-  const metadataRows = buildMetadataRows(content.metadata);
+  const metadataRows = buildMetadataRows(content.metadata, content.type);
   const continueEpisode = resolveContinueEpisode(content);
-
-  const sectionGlow = {
-    boxShadow: `inset 0 0 100px 20px rgba(${r},${g},${b},0.38), inset 0 32px 64px rgba(${r},${g},${b},0.22), inset 0 -32px 64px rgba(${r},${g},${b},0.18), inset 32px 0 64px rgba(${r},${g},${b},0.2), inset -32px 0 64px rgba(${r},${g},${b},0.26)`,
-  };
 
   return (
     <section
       className="relative w-full lg:max-h-[calc(100dvh-4.5rem)]"
-      style={sectionGlow}
+      style={{ boxShadow: heroGlow.boxShadow }}
     >
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
-        style={{
-          background: `radial-gradient(ellipse 100% 80% at 0% 0%, rgba(${r},${g},${b},0.14) 0%, transparent 55%), radial-gradient(ellipse 70% 90% at 100% 50%, rgba(${r},${g},${b},0.1) 0%, transparent 60%)`,
-        }}
+        style={{ background: heroGlow.radialBackground }}
       />
 
       <div className="relative grid w-full grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(300px,36vw)] lg:min-h-[calc(100dvh-4.5rem)]">
@@ -179,6 +195,12 @@ export function ContentDetailHero({ content }: ContentDetailHeroProps) {
             <h1 className={TITLE_CLASS}>{titleLine}</h1>
           </div>
 
+          {content.creditLabel ? (
+            <p className="text-sm font-medium text-white/85">
+              {content.creditLabel}
+            </p>
+          ) : null}
+
           {content.trendingLabel ? (
             <p className="text-sm font-semibold text-brand-pink">
               {content.trendingLabel}
@@ -186,10 +208,12 @@ export function ContentDetailHero({ content }: ContentDetailHeroProps) {
           ) : null}
 
           <div className={CHIP_ROW}>
-            <Chip mediaType={content.type} className={DETAIL_CHIP}>
-              {content.type === "anime"
-                ? "Anime"
-                : content.type.charAt(0).toUpperCase() + content.type.slice(1)}
+            <Chip chipKey="default" className={DETAIL_CHIP}>
+              {songMedia && content.metadata.sourceMaterial
+                ? content.metadata.sourceMaterial
+                : content.type === "anime"
+                  ? "Anime"
+                  : content.type.charAt(0).toUpperCase() + content.type.slice(1)}
             </Chip>
             {content.metadata.releaseYear ? (
               <Chip chipKey="movie" className={DETAIL_CHIP}>
@@ -216,13 +240,30 @@ export function ContentDetailHero({ content }: ContentDetailHeroProps) {
             {content.matchScore != null ? (
               <MatchChip score={content.matchScore} className={DETAIL_CHIP} />
             ) : null}
-            <Chip chipKey="default" className={DETAIL_CHIP}>
-              {seasonCount(content)} Seasons
-            </Chip>
-            <Chip chipKey="default" className={DETAIL_CHIP}>
-              {totalEpisodes(content)} Episodes
-            </Chip>
-            {metadataChips}
+            {songMedia ? (
+              <>
+                {content.metadata.originalAuthor ? (
+                  <Chip chipKey="action" className={DETAIL_CHIP}>
+                    {content.metadata.originalAuthor}
+                  </Chip>
+                ) : null}
+                {content.metadata.episodeDuration ? (
+                  <Chip chipKey="default" className={DETAIL_CHIP}>
+                    {content.metadata.episodeDuration}
+                  </Chip>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <Chip chipKey="default" className={DETAIL_CHIP}>
+                  {seasonCount(content)} Seasons
+                </Chip>
+                <Chip chipKey="default" className={DETAIL_CHIP}>
+                  {totalEpisodes(content)} Episodes
+                </Chip>
+                {metadataChips}
+              </>
+            )}
             {languages.map((lang) => (
               <Chip key={lang} language={lang} className={DETAIL_CHIP}>
                 {lang}
@@ -248,24 +289,25 @@ export function ContentDetailHero({ content }: ContentDetailHeroProps) {
               <span />
             )}
 
-            <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+            <div className={cn(DETAIL_HERO_BTN_PAIR, "shrink-0 sm:justify-end")}>
               <Button
                 size="sm"
-                className={cn(
-                  "h-8 gap-1.5 rounded-full border-transparent bg-gradient-blue-violet px-4 text-xs",
-                  "hover:border-brand-magenta hover:bg-transparent hover:[background-image:none]",
+                className={detailHeroBtnBase(
+                  "border-transparent bg-gradient-blue-violet hover:border-brand-magenta hover:bg-transparent hover:[background-image:none]",
                 )}
               >
-                <Plus className="size-3.5" />
-                Add To Existing Collection
+                <Plus className="size-3.5 shrink-0" />
+                <span className="truncate">Add To Collection</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 gap-1.5 rounded-full border-brand-magenta px-4 text-xs text-white"
+                className={detailHeroBtnBase(
+                  "border-brand-magenta text-white",
+                )}
               >
-                <Heart className="size-3.5 text-brand-magenta" />
-                Add To Favourites
+                <Heart className="size-3.5 shrink-0 text-brand-magenta" />
+                <span className="truncate">Add To Favourites</span>
               </Button>
             </div>
           </div>
@@ -319,28 +361,39 @@ export function ContentDetailHero({ content }: ContentDetailHeroProps) {
               className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/92 via-black/15 to-black/35"
             />
 
-            <div className="absolute inset-x-0 bottom-0 flex gap-2.5 bg-gradient-to-t from-black/95 via-black/80 to-transparent px-4 pb-4 pt-10 sm:px-5 sm:pb-5">
+            <div
+              className={cn(
+                DETAIL_HERO_BTN_GROUP,
+                "absolute inset-x-0 bottom-0 justify-center bg-gradient-to-t from-black/95 via-black/80 to-transparent px-4 pb-4 pt-10 sm:px-5 sm:pb-5",
+              )}
+            >
               <GradientButton
                 size="sm"
-                className="h-10 flex-1 gap-2 rounded-full px-3 sm:h-11"
+                className={detailHeroBtnBase("gap-1.5")}
               >
                 <PlayCircle className="size-4 shrink-0" />
-                <span className="flex flex-col items-start leading-tight">
-                  <span className="text-xs font-semibold sm:text-sm">
-                    Watch Trailer
+                <span className="flex min-w-0 flex-col items-start leading-tight">
+                  <span className="truncate text-[10px] font-semibold sm:text-[11px]">
+                    {songMedia ? "Play Now" : "Watch Trailer"}
                   </span>
-                  <span className="text-[10px] font-normal opacity-90">
-                    {trailerSeason}
+                  <span className="truncate text-[9px] font-normal opacity-90">
+                    {songMedia
+                      ? (content.metadata.episodeDuration ?? "Full Track")
+                      : trailerSeason}
                   </span>
                 </span>
               </GradientButton>
               <Button
                 variant="outline"
                 size="sm"
-                className="h-10 flex-1 gap-1.5 rounded-full border-brand-magenta bg-black/60 text-xs text-white sm:h-11"
+                className={detailHeroBtnBase(
+                  "border-brand-magenta bg-black/60 text-white",
+                )}
               >
                 <Plus className="size-3.5 shrink-0 text-brand-magenta" />
-                Add To Watchlist
+                <span className="truncate">
+                  {songMedia ? "Add To Playlist" : "Add To Watchlist"}
+                </span>
               </Button>
             </div>
           </div>

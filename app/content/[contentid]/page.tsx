@@ -65,51 +65,60 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
       <ContentPageSection
         title="Characters"
         variant="content"
-        items={content.characters.map((character) => (
-          <ContentCharacterCard
-            key={character.id}
-            character={character}
-            contentId={content.id}
-            contentAccent={content.accent}
-          />
-        ))}
+        rowHover={false}
+        slides={content.characters.map((character) => ({
+          id: character.id,
+          node: (
+            <ContentCharacterCard
+              character={character}
+              contentId={content.id}
+              contentAccent={content.accent}
+              interactive={false}
+            />
+          ),
+        }))}
       />
 
       <ContentPageSection
         title={`Featured OSTs of ${content.title}`}
         variant="content"
-        items={content.featuredOsts.map((track) => (
-          <MusicCard key={track.id} track={track} />
-        ))}
+        slides={content.featuredOsts.map((track) => ({
+          id: track.id,
+          node: <MusicCard track={track} />,
+        }))}
       />
 
       <ContentPageSection
         title="You May Also Like"
         variant="content"
-        items={content.relatedContent.map((item) => (
-          <PosterCard key={item.id} item={item} />
-        ))}
+        slides={content.relatedContent.map((item) => ({
+          id: item.id,
+          node: <PosterCard item={item} />,
+        }))}
       />
 
       <ContentPageSection
         title="Included in Collections"
         variant="community"
-        items={content.collections.map((collection) => (
-          <CollectionCard key={collection.id} collection={collection} />
-        ))}
+        slides={content.collections.map((collection) => ({
+          id: collection.id,
+          node: <CollectionCard collection={collection} />,
+        }))}
       />
 
       <ContentPageSection
         title={`Communities Involving ${content.title}`}
         variant="community"
-        items={content.communities.map((community) => (
-          <CommunityCard
-            key={community.id}
-            community={community}
-            members={members}
-            ctaMode="join"
-          />
-        ))}
+        slides={content.communities.map((community) => ({
+          id: community.id,
+          node: (
+            <CommunityCard
+              community={community}
+              members={members}
+              ctaMode="join"
+            />
+          ),
+        }))}
       />
 
       <ContentReviewSection

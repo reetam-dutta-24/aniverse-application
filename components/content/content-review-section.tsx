@@ -25,14 +25,15 @@ export function ContentReviewSection({
   subtitle,
   className,
 }: ContentReviewSectionProps) {
-  const items = reviews.map((review) => (
-    <ContentReviewCard key={review.id} review={review} />
-  ));
+  const slides = reviews.map((review) => ({
+    id: review.id,
+    node: <ContentReviewCard review={review} />,
+  }));
 
   return (
     <section
       className={cn(
-        "mx-auto w-full max-w-[1440px] overflow-visible px-4 sm:px-8 lg:px-12",
+        "mx-auto w-full max-w-[1440px] px-4 sm:px-8 lg:px-12",
         className,
       )}
     >
@@ -46,9 +47,10 @@ export function ContentReviewSection({
         {action}
       </div>
       <ContentCarouselSection
-        items={items}
+        slides={slides}
+        sectionTitle={title}
         variant="review"
-        overflowVisible
+        rowHover={false}
         autoAdvanceMs={REVIEW_AUTO_ADVANCE_MS}
       />
     </section>

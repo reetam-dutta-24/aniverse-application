@@ -6,7 +6,7 @@ import { MusicCard } from "@/components/cards/music-card";
 import {
   CarouselCardSlot,
   CarouselRowViewport,
-} from "@/components/dashboard/carousel-row-viewport";
+} from "@/components/carousel/carousel-row-viewport";
 import { PaginationDots } from "@/components/dashboard/pagination-dots";
 import { SearchPill } from "@/components/dashboard/search-pill";
 import { useColumnCount } from "@/hooks/use-column-count";

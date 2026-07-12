@@ -4,6 +4,7 @@ export {
   ContentCarouselSection,
   type ContentCarouselSectionProps,
   type ContentCarouselVariant,
+  type CarouselSlide,
 } from "./content-carousel-section";
 export {
   ContentCharacterCard,
@@ -30,3 +31,11 @@ export {
   type ContentReviewCardProps,
 } from "./content-review-card";
 export { ContentTopbar, type ContentTopbarProps } from "./content-topbar";
+export {
+  DETAIL_HERO_BTN_GROUP,
+  DETAIL_HERO_BTN_PAIR,
+  DETAIL_HERO_BTN_PAIR_GAP,
+  DETAIL_HERO_BTN_PAIR_ROW,
+  DETAIL_HERO_BTN_WIDTH,
+  detailHeroBtnBase,
+} from "@/lib/detail-route-ui";

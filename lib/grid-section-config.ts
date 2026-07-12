@@ -26,6 +26,11 @@ export const CAROUSEL_COLS_BREAKPOINTS = [
 /** Watchlist / poster grid — same breakpoints as carousel. */
 export const POSTER_GRID_COLS_BREAKPOINTS = CAROUSEL_COLS_BREAKPOINTS;
 
+/** Music grid — 6 columns × 3 rows per page (artist song browse). */
+export const MUSIC_GRID_COLS = 6;
+export const MUSIC_GRID_ROWS = 3;
+export const MUSIC_GRID_ITEMS_PER_PAGE = MUSIC_GRID_COLS * MUSIC_GRID_ROWS;
+
 /** Community / collection card grid — scales from 2 to 5 cols. */
 export const CARD_GRID_COLS_BREAKPOINTS = [
   { minWidth: 1280, cols: 5 },

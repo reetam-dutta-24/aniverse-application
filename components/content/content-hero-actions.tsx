@@ -3,7 +3,15 @@
 import { PlayCircle, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import type { AccentColor, ContentDetail, Episode } from "@/types";
+import {
+  DETAIL_HERO_BTN_PAIR_ROW,
+  detailHeroBtnBase,
+} from "@/lib/detail-route-ui";
+import type { AccentColor, ContentDetail, Episode, MediaType } from "@/types";
+
+function isSongMedia(type: MediaType) {
+  return type === "song" || type === "album" || type === "playlist";
+}
 
 export interface ContentHeroActionsProps {
   content: ContentDetail;
@@ -62,10 +70,18 @@ export function ContentHeroActions({
   const episodeNum = continueEpisode?.number ?? 1;
   const accent = content.accent ?? "blue";
   const cta = CTA_PAIR[accent];
+  const songMedia = isSongMedia(content.type);
+  const hasResume = songMedia
+    ? Boolean(content.resumeLabel)
+    : isWatching;
 
-  const watchLabel = isWatching
-    ? `Continue Watching from S${season} E${episodeNum}`
-    : "Watch Now";
+  const watchLabel = songMedia
+    ? hasResume
+      ? `Continue Listening from ${content.resumeLabel}`
+      : "Play Now"
+    : isWatching
+      ? `Continue Watching from S${season} E${episodeNum}`
+      : "Watch Now";
 
   async function handleShare() {
     const url = window.location.href;
@@ -92,13 +108,10 @@ export function ContentHeroActions({
   }
 
   return (
-    <div className="mt-3 flex w-full items-center justify-between gap-3">
+    <div className={DETAIL_HERO_BTN_PAIR_ROW}>
       <Button
         size="sm"
-        className={cn(
-          "h-10 min-w-0 shrink gap-2 rounded-full px-4 text-sm sm:px-5",
-          cta.watch,
-        )}
+        className={cn(detailHeroBtnBase("min-w-0"), cta.watch)}
       >
         <PlayCircle className="size-4 shrink-0" />
         <span className="truncate">{watchLabel}</span>
@@ -108,10 +121,7 @@ export function ContentHeroActions({
         variant="outline"
         size="sm"
         onClick={handleShare}
-        className={cn(
-          "h-10 shrink-0 gap-2 rounded-full px-5 text-sm text-white",
-          cta.share,
-        )}
+        className={cn(detailHeroBtnBase(), "text-white", cta.share)}
       >
         <Share2 className={cn("size-4 shrink-0", cta.shareIcon)} />
         Share

@@ -10,33 +10,51 @@ export interface ContentCharacterCardProps {
   character: Character;
   contentId: string;
   contentAccent?: AccentColor;
+  /** When false, fixed portrait with no hover expand or glow. */
+  interactive?: boolean;
 }
 
-/** Character portrait — name only by default; voice actor + detail tint glow on hover. */
+/** Character portrait — interactive: voice actor + glow on hover; static: fixed card only. */
 export function ContentCharacterCard({
   character,
   contentAccent = "purple",
+  interactive = true,
 }: ContentCharacterCardProps) {
   const [hovered, setHovered] = useState(false);
   const accent = accentStyles[character.accent ?? "purple"];
   const tint = getAccentTint(contentAccent);
   const shortName = character.name.split(" ")[0];
+  const subtitle = character.voiceActor
+    ? `Played by ${character.voiceActor}`
+    : character.role;
+  const isHovered = interactive && hovered;
 
   return (
     <article
       className={cn(
-        "relative mx-auto shrink-0 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
-        hovered ? "z-20 w-[210px] scale-[1.03]" : "z-0 w-[168px] sm:w-[180px]",
+        "relative mx-auto shrink-0",
+        interactive &&
+          "transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        interactive
+          ? isHovered
+            ? "z-20 w-[210px] scale-[1.03]"
+            : "z-0 w-[168px] sm:w-[180px]"
+          : "z-0 w-[168px] sm:w-[180px]",
       )}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={interactive ? () => setHovered(true) : undefined}
+      onMouseLeave={interactive ? () => setHovered(false) : undefined}
     >
       <div
-        className="relative overflow-hidden rounded-2xl transition-all duration-500"
+        className={cn(
+          "relative overflow-hidden rounded-2xl",
+          interactive && "transition-all duration-500",
+        )}
         style={{
-          height: hovered ? 322 : 268,
-          backgroundColor: hovered ? "rgba(0,0,0,0.65)" : "rgba(0,0,0,0.55)",
-          boxShadow: hovered
+          height: isHovered ? 322 : 268,
+          backgroundColor: isHovered
+            ? "rgba(0,0,0,0.65)"
+            : "rgba(0,0,0,0.55)",
+          boxShadow: isHovered
             ? `${getTintOuterGlow(tint.glass, 12)}, inset 0 -48px 56px ${tint.glass}`
             : "inset 0 -32px 40px rgba(0,0,0,0.65), inset 0 0 20px rgba(0,0,0,0.35)",
         }}
@@ -48,18 +66,22 @@ export function ContentCharacterCard({
               src={character.imageUrl}
               alt={character.name}
               className={cn(
-                "size-full object-cover object-top transition-transform duration-500",
-                hovered && "scale-105",
+                "size-full object-cover object-top",
+                interactive && "transition-transform duration-500",
+                isHovered && "scale-105",
               )}
             />
           ) : (
             <div className={cn("size-full", accent.header)} />
           )}
           <div
-            className="absolute inset-0 transition-all duration-500"
+            className={cn(
+              "absolute inset-0",
+              interactive && "transition-all duration-500",
+            )}
             style={{
-              boxShadow: hovered
-                ? `inset 0 -72px 60px rgba(0,0,0,0.75)`
+              boxShadow: isHovered
+                ? "inset 0 -72px 60px rgba(0,0,0,0.75)"
                 : "inset 0 -48px 36px rgba(0,0,0,0.75)",
             }}
           />
@@ -68,24 +90,27 @@ export function ContentCharacterCard({
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent px-3 pb-3 pt-12">
           <p
             className={cn(
-              "font-bold text-white transition-all duration-300",
-              hovered ? "text-lg" : "text-base",
+              "font-bold text-white",
+              interactive && "transition-all duration-300",
+              isHovered ? "text-lg" : "text-base",
             )}
           >
             {shortName}
           </p>
-          <p
-            className={cn(
-              "text-white/85 transition-all duration-300",
-              hovered
-                ? "mt-1 max-h-8 text-xs opacity-100"
-                : "max-h-0 overflow-hidden text-[10px] opacity-0",
-            )}
-          >
-            {character.voiceActor
-              ? `Played by ${character.voiceActor}`
-              : character.role}
-          </p>
+          {interactive ? (
+            <p
+              className={cn(
+                "text-white/85 transition-all duration-300",
+                isHovered
+                  ? "mt-1 max-h-8 text-xs opacity-100"
+                  : "max-h-0 overflow-hidden text-[10px] opacity-0",
+              )}
+            >
+              {subtitle}
+            </p>
+          ) : subtitle ? (
+            <p className="mt-0.5 text-[10px] text-white/70">{subtitle}</p>
+          ) : null}
         </div>
       </div>
     </article>

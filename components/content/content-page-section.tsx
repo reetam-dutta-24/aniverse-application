@@ -1,20 +1,25 @@
 import { cn } from "@/lib/utils";
 import {
   ContentCarouselSection,
+  type CarouselSlide,
   type ContentCarouselVariant,
 } from "@/components/content/content-carousel-section";
+
+export type { CarouselSlide };
 
 export interface ContentPageSectionProps {
   title: string;
   subtitle?: string;
   action?: React.ReactNode;
-  items: React.ReactNode[];
+  slides: CarouselSlide[];
   variant?: ContentCarouselVariant;
   itemsPerPage?: number;
   overflowVisible?: boolean;
   itemsCenter?: boolean;
   compact?: boolean;
   className?: string;
+  /** Disable Spotify-style row hover wash (e.g. character portrait rows). */
+  rowHover?: boolean;
 }
 
 /** Content detail section — heading + paginated carousel (shared app structure). */
@@ -22,13 +27,14 @@ export function ContentPageSection({
   title,
   subtitle,
   action,
-  items,
+  slides,
   variant = "content",
   itemsPerPage,
   overflowVisible = false,
   itemsCenter = false,
   compact = false,
   className,
+  rowHover = true,
 }: ContentPageSectionProps) {
   return (
     <section
@@ -53,12 +59,14 @@ export function ContentPageSection({
         {action}
       </div>
       <ContentCarouselSection
-        items={items}
+        slides={slides}
+        sectionTitle={title}
         variant={variant}
         itemsPerPage={itemsPerPage}
         overflowVisible={overflowVisible}
         itemsCenter={itemsCenter}
         compact={compact}
+        rowHover={rowHover}
       />
     </section>
   );

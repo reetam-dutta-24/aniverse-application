@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Headphones, PlayCircle } from "lucide-react";
+import { getSongDetailPath } from "@/lib/song-routes";
+import { useCarouselTintSeed } from "@/components/carousel/carousel-section-context";
 import { cn } from "@/lib/utils";
 import { getCardTint } from "@/lib/card-theme";
 import { SLOT_H, SLOT_W } from "@/lib/card-dimensions";
@@ -39,15 +42,26 @@ const layerTransition =
 /** Music card — compact default, fixed-size black expanded panel on hover. */
 export function MusicCard({
   track,
-  tintSeed = 0,
+  tintSeed: tintSeedProp,
   onListen,
   onViewDetails,
   onHoverChange,
   className,
   ...props
 }: MusicCardProps) {
+  const router = useRouter();
+  const contextTintSeed = useCarouselTintSeed();
+  const tintSeed = tintSeedProp ?? contextTintSeed;
   const [hovered, setHovered] = useState(false);
   const tint = getCardTint(track.id, tintSeed);
+
+  function handleViewDetails() {
+    if (onViewDetails) {
+      onViewDetails();
+      return;
+    }
+    router.push(getSongDetailPath(track.id));
+  }
   const langLabel =
     track.language?.toLowerCase() === "japanese"
       ? "Jpop"
@@ -181,7 +195,7 @@ export function MusicCard({
                 </button>
                 <button
                   type="button"
-                  onClick={onViewDetails}
+                  onClick={handleViewDetails}
                   className="flex cursor-pointer items-center gap-1 rounded-full border border-brand-magenta px-2 py-0.5 text-[10px] font-normal text-white transition-colors hover:bg-brand-magenta/15"
                 >
                   <PlayCircle className="size-3.5 text-brand-magenta" />

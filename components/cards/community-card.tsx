@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { getCommunityDetailPath } from "@/lib/community-routes";
 import { accentStyles } from "@/lib/accents";
 import type { Community, UserSummary } from "@/types";
 import { Chip } from "@/components/ui/chip";
@@ -42,10 +44,19 @@ export function CommunityCard({
   className,
   ...props
 }: CommunityCardProps) {
+  const router = useRouter();
   const [hovered, setHovered] = useState(false);
   const accent = accentStyles[community.accent ?? "cyan"];
   const ctaLabel =
     hovered || ctaMode === "view" ? "View Community" : "Join Community";
+
+  function handleAction() {
+    if (onAction) {
+      onAction();
+      return;
+    }
+    router.push(getCommunityDetailPath(community.id));
+  }
 
   return (
     <div
@@ -121,7 +132,7 @@ export function CommunityCard({
             variant="gradient"
             size="sm"
             className="h-6 w-[100px] rounded-full px-2 text-[9px] font-normal"
-            onClick={onAction}
+            onClick={handleAction}
           >
           {ctaLabel}
         </Button>

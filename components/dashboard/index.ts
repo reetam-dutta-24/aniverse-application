@@ -26,6 +26,10 @@ export {
   type MusicCarouselSectionProps,
 } from "./music-carousel-section";
 export {
+  MusicGridSection,
+  type MusicGridSectionProps,
+} from "./music-grid-section";
+export {
   CommunityGridSection,
   type CommunityGridSectionProps,
 } from "./community-grid-section";

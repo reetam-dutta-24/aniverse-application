@@ -48,20 +48,22 @@ export function ContentEpisodeSection({
     </label>
   );
 
-  const items = filtered.map((episode) => (
-    <ContentEpisodeCard
-      key={episode.id}
-      episode={episode}
-      contentId={contentId}
-      contentAccent={contentAccent}
-    />
-  ));
+  const slides = filtered.map((episode) => ({
+    id: episode.id,
+    node: (
+      <ContentEpisodeCard
+        episode={episode}
+        contentId={contentId}
+        contentAccent={contentAccent}
+      />
+    ),
+  }));
 
   return (
     <ContentPageSection
       title="Watch All Episodes"
       action={seasonAction}
-      items={items}
+      slides={slides}
       variant="episode"
       overflowVisible
       itemsCenter

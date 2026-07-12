@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PlayCircle } from "lucide-react";
 import { getContentDetailPath } from "@/lib/content-routes";
+import { getArtistDetailPath } from "@/lib/artist-routes";
+import { useCarouselTintSeed } from "@/components/carousel/carousel-section-context";
 import { cn } from "@/lib/utils";
 import { getCardTint } from "@/lib/card-theme";
 import { SLOT_H, SLOT_W } from "@/lib/card-dimensions";
@@ -59,7 +61,7 @@ const layerTransition =
 /** Content poster — compact default, fixed-size black expanded panel on hover. */
 export function PosterCard({
   item,
-  tintSeed = 0,
+  tintSeed: tintSeedProp,
   onWatch,
   onViewDetails,
   onHoverChange,
@@ -67,6 +69,8 @@ export function PosterCard({
   ...props
 }: PosterCardProps) {
   const router = useRouter();
+  const contextTintSeed = useCarouselTintSeed();
+  const tintSeed = tintSeedProp ?? contextTintSeed;
   const [hovered, setHovered] = useState(false);
   const tint = getCardTint(item.id, tintSeed);
   const description = item.description ?? defaultDescription(item.title);
@@ -75,6 +79,10 @@ export function PosterCard({
   function handleViewDetails() {
     if (onViewDetails) {
       onViewDetails();
+      return;
+    }
+    if (item.type === "artist") {
+      router.push(getArtistDetailPath(item.id));
       return;
     }
     router.push(getContentDetailPath(item.id));

@@ -91,6 +91,65 @@ export interface Collection {
   imageUrl?: string;
 }
 
+/** Featured in-progress item shown in the collection hero (right panel). */
+export interface CollectionCurrentActivity {
+  title: string;
+  /** Full line e.g. "Currently Watching Death Note". */
+  statusLabel: string;
+  progressLabel?: string;
+  episodeLabel?: string;
+  seasonLabel?: string;
+  imageUrl: string;
+  contentId: string;
+}
+
+/**
+ * Full collection detail — every field maps to a future DB/API response.
+ * Used by `/collection/[collectionid]`.
+ */
+export interface CollectionDetail {
+  id: string;
+  name: string;
+  description: string;
+  rating: number;
+  trendingLabel?: string;
+  genres: Genre[];
+  visibility: CommunityVisibility;
+  createdAt: string;
+  updatedAt?: string;
+  itemCount: number;
+  favoriteCount: number;
+  /** AI compatibility for the collection as a whole. */
+  matchScore?: number;
+  highlightTags: string[];
+  imageUrl?: string;
+  engagementStats: ContentEngagementStat[];
+  contributors: UserSummary[];
+  /** e.g. "Rahul_89, Lk45_89 and Karan_singh45 are 3 contributors". */
+  contributorSummary?: string;
+  favoriteItems: ContentItem[];
+  currentActivity?: CollectionCurrentActivity;
+  allItems: ContentItem[];
+  continueWatching: ContentItem[];
+  watchedMost: ContentItem[];
+  musicTracks: MusicTrack[];
+  similarCollections: Collection[];
+  communities: Community[];
+}
+
+/**
+ * Music collection detail — same shape as `CollectionDetail` plus artist roster.
+ * Used by `/music-collection/[collectionid]`.
+ */
+export interface MusicCollectionDetail extends CollectionDetail {
+  popularArtists: ContentItem[];
+  allTracks: MusicTrack[];
+  favoriteTracks: MusicTrack[];
+  continueListeningTracks: MusicTrack[];
+  mostListenedTracks: MusicTrack[];
+  similarVibesSongs: MusicTrack[];
+}
+
 /** A single metric shown in the analytics/stats strip. */
 export interface StatMetric {
   id: string;
@@ -224,6 +283,10 @@ export interface ContentDetail {
     episodeNumber: number;
     episodeTitle?: string;
   };
+  /** Song/OST artist credit line under the title. */
+  creditLabel?: string;
+  /** Audio resume position label, e.g. "1:24". */
+  resumeLabel?: string;
 }
 
 export type MemberRole = "owner" | "admin" | "moderator" | "member";
@@ -248,6 +311,7 @@ export interface CommunityPost {
   content: string;
   imageUrl?: string;
   createdAt?: string;
+  authorRole?: MemberRole;
   likeCount?: number;
   commentCount?: number;
   shareCount?: number;
@@ -279,4 +343,187 @@ export interface WatchParty {
   viewerCount?: number;
   participants?: UserSummary[];
   accent?: AccentColor;
+  imageUrl?: string;
+}
+
+export interface VoiceChannel {
+  id: string;
+  title: string;
+  subtitle?: string;
+  memberCount?: number;
+  participants?: UserSummary[];
+  accent?: AccentColor;
+  hostName?: string;
+}
+
+export interface CommunityDashboardSettings {
+  allowMemberPosts: boolean;
+  requireApproval: boolean;
+  showOnlineStatus: boolean;
+  enableWatchParties: boolean;
+  enableVoiceChannels: boolean;
+}
+
+/** Mini player state shown in the artist hero right panel. */
+export interface ArtistNowPlaying {
+  title: string;
+  album?: string;
+  songId?: string;
+  progressPercent?: number;
+  elapsedLabel?: string;
+  durationLabel?: string;
+  imageUrl?: string;
+}
+
+/**
+ * Full artist detail — maps to `/artist/[artistid]`.
+ * Reuses shared card/section types for carousels and reviews.
+ */
+export interface ArtistDetail {
+  id: string;
+  title: string;
+  nativeTitle?: string;
+  rating: number;
+  /** e.g. "#10 in Kpop music" */
+  rankLeft?: string;
+  /** e.g. "#1 in your favourite artist" */
+  rankRight?: string;
+  genres: Genre[];
+  synopsis: string;
+  /** Row-one hero chips — Dance Pop, K-pop, Since 2015, etc. */
+  primaryTags: string[];
+  metadata: ContentMetadata;
+  /** Hero banner / right-panel group photo */
+  imageUrl: string;
+  accent?: AccentColor;
+  matchScore?: number;
+  songCount?: number;
+  albumCount?: number;
+  engagementStats: ContentEngagementStat[];
+  members: Character[];
+  nowPlaying?: ArtistNowPlaying;
+  /** Social followers shown in the right hero panel. */
+  connections: UserSummary[];
+  connectionSummary?: string;
+  trendingSongs: MusicTrack[];
+  allSongs: MusicTrack[];
+  mostPlayed: MusicTrack[];
+  mostLiked: MusicTrack[];
+  albums: MusicTrack[];
+  similarArtists: ContentItem[];
+  collections: Collection[];
+  communities: Community[];
+  reviews: Review[];
+}
+
+/** Mini player state shown in the profile hero right panel. */
+export interface ProfileNowListening {
+  title: string;
+  artist: string;
+  artistId?: string;
+  album?: string;
+  songId?: string;
+}
+
+export interface ProfileCurrentlyWatching {
+  title: string;
+  episodeLabel: string;
+  contentId: string;
+}
+
+/** Mixed content + music entry for the profile hero activity carousel. */
+export type ProfileRecentActivityItem =
+  | { kind: "content"; item: ContentItem }
+  | { kind: "music"; track: MusicTrack };
+
+/**
+ * Full user profile — maps to `/profile/[userid]`.
+ * Reuses shared card/section types for carousels and reviews.
+ */
+export interface UserProfileDetail {
+  id: string;
+  name: string;
+  /** Public handle shown in the hero panel, e.g. Reetam_Dutta_2423 */
+  handle: string;
+  bio: string;
+  avatarColor: string;
+  avatarUrl?: string;
+  /** Large hero panel portrait */
+  portraitUrl: string;
+  location: string;
+  online: boolean;
+  followerCount: number;
+  joinedAt: string;
+  /** e.g. "Currently Watching Death Note Ep 24" */
+  activitySubtitle?: string;
+  matchScore?: number;
+  primaryTags: string[];
+  engagementStats: ContentEngagementStat[];
+  nowListening?: ProfileNowListening;
+  currentlyWatching?: ProfileCurrentlyWatching;
+  favoriteTypes: string[];
+  favoriteGenres: string[];
+  /** Follower avatars shown in the hero right panel. */
+  followers: UserSummary[];
+  followerSummary?: string;
+  recentActivity: ProfileRecentActivityItem[];
+  currentActivity: ContentItem[];
+  likedContent: ContentItem[];
+  watchedMost: ContentItem[];
+  likedSongs: MusicTrack[];
+  mostPlayedSongs: MusicTrack[];
+  likedAlbums: MusicTrack[];
+  topArtists: ContentItem[];
+  collections: Collection[];
+  communities: Community[];
+  reviews: Review[];
+}
+
+export interface CommunityDashboardNavItem {
+  id: string;
+  label: string;
+}
+
+/**
+ * Full community detail — maps to `/community/[communityid]`.
+ * Reuses shared card/section types for carousels and dashboard preview.
+ */
+export interface CommunityDetail {
+  id: string;
+  name: string;
+  rating: number;
+  rankLeft?: string;
+  rankRight?: string;
+  genres: Genre[];
+  description: string;
+  primaryTags: string[];
+  matchScore?: number;
+  wallpaperUrl: string;
+  accent?: AccentColor;
+  engagementStats: ContentEngagementStat[];
+  members: UserSummary[];
+  memberSummary?: string;
+  collectionCount?: number;
+  popularityLabel?: string;
+  globalRankLabel?: string;
+  favoriteItems: ContentItem[];
+  dashboardOnlineCount: number;
+  dashboardPostsToday: number;
+  dashboardPosts: CommunityPost[];
+  onlineMembers: Member[];
+  dashboardNav: CommunityDashboardNavItem[];
+  dashboardChatMessages: ChatMessage[];
+  dashboardAnimeChatMessages: ChatMessage[];
+  dashboardWatchParties: WatchParty[];
+  dashboardVoiceChannels: VoiceChannel[];
+  dashboardAnnouncements: CommunityPost[];
+  dashboardAnalytics: ContentEngagementStat[];
+  dashboardMembersWatching: number;
+  dashboardMembersInVc: number;
+  dashboardSettings: CommunityDashboardSettings;
+  watchedMost: ContentItem[];
+  trending: ContentItem[];
+  musicTracks: MusicTrack[];
+  collections: Collection[];
+  similarCommunities: Community[];
 }
