@@ -2,6 +2,7 @@ import type {
   Collection,
   Community,
   ContentItem,
+  Review,
   StatMetric,
   UserSummary,
 } from "@/types";
@@ -164,11 +165,76 @@ const trendingCommunities: Community[] = [
   },
 ];
 
+const featuredReviews: Review[] = [
+  {
+    id: "lr-1",
+    author: { id: "u-aki", name: "Akira Tan", avatarColor: "#00e5ff" },
+    rating: 10,
+    content:
+      "AniVerse's AI match is scary good. It recommended Vinland Saga after my Berserk binge and now it's my favorite anime of all time.",
+    likeCount: 3120,
+    createdAt: "4 Jul, 2026",
+    accent: "cyan",
+  },
+  {
+    id: "lr-2",
+    author: { id: "u-mina", name: "Mina Park", avatarColor: "#ff00cc" },
+    rating: 9,
+    content:
+      "Finally one app for my K-pop playlists AND my K-drama watchlist. The TWICE Fanverse community feels like home — chat is always alive.",
+    likeCount: 2480,
+    createdAt: "28 Jun, 2026",
+    accent: "pink",
+  },
+  {
+    id: "lr-3",
+    author: { id: "u-leo", name: "Leo Fernandez", avatarColor: "#ffd000" },
+    rating: 9,
+    content:
+      "The watch rooms are a game changer. Synced Money Heist rewatch with 40 strangers who are now friends. Collections keep everything organized.",
+    likeCount: 1870,
+    createdAt: "21 Jun, 2026",
+    accent: "yellow",
+  },
+  {
+    id: "lr-4",
+    author: { id: "u-yuki", name: "Yuki Sato", avatarColor: "#9d4bff" },
+    rating: 10,
+    content:
+      "My taste profile analytics blew my mind — 214 hours of OSTs tracked, genre patterns I never noticed. AniVerse knows me better than I do.",
+    likeCount: 2940,
+    createdAt: "15 Jun, 2026",
+    accent: "purple",
+  },
+  {
+    id: "lr-5",
+    author: { id: "u-sara", name: "Sara Ahmed", avatarColor: "#22e584" },
+    rating: 9,
+    content:
+      "Went from lurking to running a 5K-member fandom in two months. The community dashboard with posts, announcements, and stats is pure product depth.",
+    likeCount: 1640,
+    createdAt: "9 Jun, 2026",
+    accent: "green",
+  },
+  {
+    id: "lr-6",
+    author: { id: "u-dev", name: "Dev Malhotra", avatarColor: "#4b7bff" },
+    rating: 10,
+    content:
+      "Global search across anime, songs, artists, and communities in one bar — instant results. This is what every entertainment app should feel like.",
+    likeCount: 2210,
+    createdAt: "2 Jun, 2026",
+    accent: "blue",
+  },
+];
+
 const tasteStats: StatMetric[] = [
   { id: "watched", label: "Content Watched", value: "186" },
   { id: "listened", label: "Music Listened", value: "214 h" },
   { id: "communities", label: "Communities Joined", value: "24" },
   { id: "collections", label: "Collections Created", value: "18" },
+  { id: "reviews", label: "Reviews Written", value: "57" },
+  { id: "artists", label: "Artists Followed", value: "36" },
 ];
 
 export async function getLandingFeatures(): Promise<LandingFeature[]> {
@@ -195,6 +261,10 @@ export async function getFeaturedCollection(): Promise<Collection> {
 
 export async function getTrendingCommunities(): Promise<Community[]> {
   return trendingCommunities;
+}
+
+export async function getFeaturedReviews(): Promise<Review[]> {
+  return featuredReviews;
 }
 
 export async function getTasteStats(): Promise<StatMetric[]> {

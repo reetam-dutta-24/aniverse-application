@@ -34,11 +34,12 @@ export function HowItWorksSection() {
         title="How AniVerse Works"
         subtitle="Start with your taste. AniVerse does the rest."
       />
-      <div className="flex flex-wrap items-center justify-center gap-8 py-6">
+      <div className="w-full overflow-x-auto py-6">
+        <div className="mx-auto flex w-max flex-nowrap items-stretch gap-6 px-2 lg:gap-8">
         {steps.map((step) => (
           <div
             key={step.number}
-            className="mx-auto flex h-auto min-h-[220px] w-full max-w-[250px] flex-col items-center gap-3 rounded-card bg-glass-magenta px-4 py-7 shadow-glow-pink-soft transition-shadow duration-300 hover:shadow-glow-pink"
+            className="flex h-auto min-h-[220px] w-[230px] shrink-0 flex-col items-center gap-3 rounded-card bg-glass-magenta px-4 py-7 shadow-glow-pink-soft transition-shadow duration-300 hover:shadow-glow-pink lg:w-[250px]"
           >
             <div className="flex w-full items-center justify-center gap-5">
               <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-brand text-lg font-black text-white">
@@ -53,6 +54,7 @@ export function HowItWorksSection() {
             </p>
           </div>
         ))}
+        </div>
       </div>
     </section>
   );

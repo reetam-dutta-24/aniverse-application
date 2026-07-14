@@ -15,7 +15,7 @@ export async function StatsSection() {
         title="Understand your entertainment taste"
         subtitle="Track what you watch, hear, save, and love"
       />
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid w-full max-w-[1200px] grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
         {stats.map((stat) => (
           <StatCard key={stat.id} label={stat.label} value={stat.value} />
         ))}
