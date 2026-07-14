@@ -1,17 +1,13 @@
-const PROFILE_ALIASES: Record<string, string> = {
-  "user-1": "reetam-dutta",
-};
-
-/** Normalize session/user IDs to a stable profile detail slug. */
+/** Normalize user IDs to a stable profile detail slug (public handle). */
 export function normalizeProfileSlug(id: string): string {
-  return PROFILE_ALIASES[id] ?? id;
+  return id;
 }
 
-export function getProfilePath(userId: string): string {
-  return `/profile/${normalizeProfileSlug(userId)}`;
+/** Build the public profile URL from a user's handle. */
+export function getProfilePath(handle: string): string {
+  return `/profile/${handle}`;
 }
 
 export function isProfileId(id: string): boolean {
-  const slug = normalizeProfileSlug(id);
-  return slug === "reetam-dutta";
+  return Boolean(id);
 }

@@ -1,14 +1,14 @@
 import { ContentTopbar } from "@/components/content/content-topbar";
-import { getCurrentUser } from "@/lib/data/user";
+import { getOptionalUser } from "@/lib/data/user";
 
 export default async function ProfileLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const user = await getCurrentUser();
+  const user = await getOptionalUser();
 
   return (
     <div className="min-h-dvh bg-background">
-      <ContentTopbar userName={user.name} />
+      <ContentTopbar userName={user?.name ?? "Guest"} />
       <main className="w-full pb-16">{children}</main>
     </div>
   );

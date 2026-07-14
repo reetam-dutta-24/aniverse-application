@@ -28,10 +28,13 @@ export function LoginForm() {
 
     setPending(false);
     if (result?.error) {
-      setError("Invalid credentials. Password must be at least 6 characters.");
+      setError("Invalid email/username or password.");
       return;
     }
-    router.push("/dashboard");
+
+    const destRes = await fetch("/api/auth/redirect-destination");
+    const destData = (await destRes.json()) as { destination?: string };
+    router.push(destData.destination ?? "/dashboard");
     router.refresh();
   }
 

@@ -2,16 +2,11 @@ import NextAuth, { type NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import Discord from "next-auth/providers/discord";
-
-/**
- * NextAuth (Auth.js v5) configuration.
- *
- * The credentials provider currently authenticates a demo user so the UI
- * flow works end-to-end without a database. When the backend is ready:
- *  1. Add a DB adapter (e.g. @auth/prisma-adapter) below.
- *  2. Replace `authorize` with a real user lookup + password hash check.
- *  3. Set AUTH_GOOGLE_ID/SECRET and AUTH_DISCORD_ID/SECRET to enable OAuth.
- */
+import {
+  findUserForLogin,
+  verifyPassword,
+} from "@/lib/services/user.service";
+import { loginSchema } from "@/lib/validators/auth";
 
 const providers: NextAuthConfig["providers"] = [
   Credentials({
@@ -21,26 +16,28 @@ const providers: NextAuthConfig["providers"] = [
       password: { label: "Password", type: "password" },
     },
     async authorize(credentials) {
-      const identifier = credentials?.identifier as string | undefined;
-      const password = credentials?.password as string | undefined;
+      const parsed = loginSchema.safeParse(credentials);
+      if (!parsed.success) return null;
 
-      // TODO(backend): replace with real user lookup + hashed password check.
-      if (!identifier || !password || password.length < 6) {
-        return null;
-      }
+      const { identifier, password } = parsed.data;
+      const user = await findUserForLogin(identifier);
+      if (!user) return null;
 
-      const isEmail = identifier.includes("@");
+      const valid = await verifyPassword(password, user.passwordHash);
+      if (!valid) return null;
+
       return {
-        id: "demo-user",
-        name: isEmail ? identifier.split("@")[0] : identifier,
-        email: isEmail ? identifier : `${identifier}@aniverse.demo`,
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        handle: user.handle,
+        image: user.avatarUrl ?? undefined,
+        onboardingCompleted: !!user.onboardingCompletedAt,
       };
     },
   }),
 ];
 
-// OAuth providers are only registered when their env vars exist, so the
-// app builds and runs before OAuth apps are configured.
 if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
   providers.push(Google);
 }
@@ -57,4 +54,33 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     strategy: "jwt",
   },
   trustHost: true,
+  callbacks: {
+    /**
+     * JWT callback — runs when a user signs in.
+     * We copy the database user id into the token so every request
+     * knows who is logged in without hitting the DB on every call.
+     */
+    async jwt({ token, user, trigger, session }) {
+      if (user) {
+        token.id = user.id;
+        token.handle = user.handle;
+        token.onboardingCompleted = user.onboardingCompleted ?? false;
+      }
+
+      // Client calls session.update() after onboarding completes
+      if (trigger === "update" && session?.onboardingCompleted === true) {
+        token.onboardingCompleted = true;
+      }
+
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.handle = token.handle as string;
+        session.user.onboardingCompleted = token.onboardingCompleted === true;
+      }
+      return session;
+    },
+  },
 });

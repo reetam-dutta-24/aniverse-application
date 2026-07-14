@@ -294,6 +294,8 @@ export type MemberRole = "owner" | "admin" | "moderator" | "member";
 export interface UserSummary {
   id: string;
   name: string;
+  /** Public profile handle used in URLs, e.g. reetam_dutta */
+  handle?: string;
   avatarUrl?: string;
   /** Fallback avatar circle color when no image. */
   avatarColor?: string;

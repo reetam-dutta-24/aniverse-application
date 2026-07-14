@@ -9,6 +9,11 @@ export {
 } from "./dashboard-bottom-nav";
 export { DashboardTopbar, type DashboardTopbarProps } from "./topbar";
 export {
+  UserProfileMenu,
+  type DashboardUser,
+  type UserProfileMenuProps,
+} from "./user-profile-menu";
+export {
   WelcomeBanner,
   type WelcomeBannerProps,
   type WelcomeBannerVariant,

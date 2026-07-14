@@ -1,10 +1,20 @@
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import { getCurrentUser } from "@/lib/data/user";
+import { requireCompletedOnboarding } from "@/lib/auth-guards";
+import { getUserById } from "@/lib/services/user.service";
 
 export default async function DashboardLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const user = await getCurrentUser();
+  const userId = await requireCompletedOnboarding();
+  const user = await getUserById(userId);
 
-  return <DashboardShell userName={user.name}>{children}</DashboardShell>;
+  const dashboardUser = {
+    name: user?.name ?? "User",
+    handle: user?.handle ?? "user",
+    email: user?.email ?? "",
+    avatarColor: user?.avatarColor ?? "#ff00cc",
+    avatarUrl: user?.avatarUrl ?? undefined,
+  };
+
+  return <DashboardShell user={dashboardUser}>{children}</DashboardShell>;
 }

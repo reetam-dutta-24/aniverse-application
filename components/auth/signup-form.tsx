@@ -22,10 +22,6 @@ export function SignupForm() {
     const password = String(form.get("password") ?? "");
     const confirm = String(form.get("confirmPassword") ?? "");
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
     if (password !== confirm) {
       setError("Passwords do not match.");
       return;
@@ -33,21 +29,46 @@ export function SignupForm() {
 
     setPending(true);
 
-    // TODO(backend): call the registration API to create the user before
-    // signing in. For now the demo credentials provider creates the session.
-    const result = await signIn("credentials", {
-      identifier: form.get("email"),
-      password,
-      redirect: false,
-    });
+    try {
+      // Step 1 — create the user in PostgreSQL via our API
+      const registerRes = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: form.get("fullName"),
+          username: form.get("username"),
+          email: form.get("email"),
+          password,
+        }),
+      });
 
-    setPending(false);
-    if (result?.error) {
-      setError("Could not create your account. Please try again.");
-      return;
+      const registerData = (await registerRes.json()) as { error?: string };
+
+      if (!registerRes.ok) {
+        setError(registerData.error ?? "Could not create your account.");
+        return;
+      }
+
+      // Step 2 — sign in so NextAuth creates a session cookie
+      const result = await signIn("credentials", {
+        identifier: form.get("email"),
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Account created, but sign-in failed. Please log in.");
+        router.push("/login");
+        return;
+      }
+
+      router.push("/onboarding");
+      router.refresh();
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setPending(false);
     }
-    router.push("/onboarding");
-    router.refresh();
   }
 
   return (

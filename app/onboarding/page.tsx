@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { OnboardingFlow } from "@/components/onboarding";
-import { getCurrentUser } from "@/lib/data/user";
+import { requireIncompleteOnboarding } from "@/lib/auth-guards";
+import { getUserById } from "@/lib/services/user.service";
 
 export const metadata: Metadata = {
   title: "Set Up Your Universe — AniVerse",
@@ -9,7 +10,9 @@ export const metadata: Metadata = {
 };
 
 export default async function OnboardingPage() {
-  const user = await getCurrentUser();
+  const userId = await requireIncompleteOnboarding();
+  const user = await getUserById(userId);
+  const userName = user?.name ?? "there";
 
   return (
     <main className="flex min-h-dvh w-full flex-col items-center bg-[#0a0416] px-4 py-8 sm:px-6">
@@ -18,7 +21,7 @@ export default async function OnboardingPage() {
           AniVerse
         </span>
       </header>
-      <OnboardingFlow userName={user.name} />
+      <OnboardingFlow userName={userName} />
     </main>
   );
 }

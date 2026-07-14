@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -60,6 +60,7 @@ function CardRow({
 /** Post-signup taste test — picks preferences, then previews the matched universe. */
 export function OnboardingFlow({ userName }: { userName: string }) {
   const router = useRouter();
+  const { update } = useSession();
   const [stepIndex, setStepIndex] = useState(0);
   const [selection, setSelection] = useState<OnboardingSelection>(
     emptyOnboardingSelection,
@@ -76,6 +77,21 @@ export function OnboardingFlow({ userName }: { userName: string }) {
   const canContinue = isOptional || picked.length >= (step?.min ?? 1);
   const isLastStep = stepIndex === onboardingSteps.length - 1;
   const tintSeed = sectionTintSeed("onboarding-recommendations");
+
+  async function markOnboardingComplete(tasteScore?: number) {
+    await fetch("/api/onboarding/complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tasteScore }),
+    });
+  }
+
+  async function goToDashboard(tasteScore?: number) {
+    await markOnboardingComplete(tasteScore);
+    await update({ onboardingCompleted: true });
+    router.push("/dashboard");
+    router.refresh();
+  }
 
   function toggleOption(optionId: string) {
     if (!step) return;
@@ -189,12 +205,13 @@ export function OnboardingFlow({ userName }: { userName: string }) {
           Start {isRetake ? "Retake" : "Taste Test"}
           <ArrowRight className="ms-1.5 size-4" />
         </GradientButton>
-        <Link
-          href="/dashboard"
+        <button
+          type="button"
+          onClick={() => goToDashboard()}
           className="text-xs text-muted transition-colors hover:text-brand-pink"
         >
           Skip for now — take me to the dashboard
-        </Link>
+        </button>
       </div>
     );
   }
@@ -323,7 +340,7 @@ export function OnboardingFlow({ userName }: { userName: string }) {
         <GradientButton
           size="md"
           className="mt-2 w-full max-w-[320px] rounded-full"
-          onClick={() => router.push("/dashboard")}
+          onClick={() => goToDashboard(recommendations.tasteScore)}
         >
           Enter Your Universe
           <ArrowRight className="ms-1.5 size-4" />
@@ -445,12 +462,13 @@ export function OnboardingFlow({ userName }: { userName: string }) {
         </GradientButton>
       </div>
 
-      <Link
-        href="/dashboard"
+      <button
+        type="button"
+        onClick={() => goToDashboard()}
         className="text-xs text-muted transition-colors hover:text-brand-pink"
       >
         Skip for now — take me to the dashboard
-      </Link>
+      </button>
     </div>
   );
 }

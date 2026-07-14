@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Navbar } from "@/components/landing/navbar";
 import { Hero } from "@/components/landing/hero";
 import { FeaturesSection } from "@/components/landing/features-section";
@@ -9,8 +10,11 @@ import { StatsSection } from "@/components/landing/stats-section";
 import { getFeaturedReviews } from "@/lib/data/landing";
 import { CtaSection } from "@/components/landing/cta-section";
 import { Footer } from "@/components/landing/footer";
+import { redirectAuthenticatedAway } from "@/lib/auth-guards";
 
 export default async function LandingPage() {
+  await redirectAuthenticatedAway();
+
   const reviews = await getFeaturedReviews();
 
   return (

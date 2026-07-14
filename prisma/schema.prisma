@@ -1,0 +1,410 @@
+// AniVerse — PostgreSQL schema
+// Designed to match the UI flows: auth, onboarding, watchlist, collections,
+// communities, reviews, notifications, and analytics.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth & identity ─────────────────────────────────────────────────────────
+
+model User {
+  id                    String    @id @default(cuid())
+  email                 String    @unique
+  emailVerified         DateTime?
+  handle                String    @unique
+  name                  String
+  passwordHash          String?
+  avatarColor           String    @default("#ff00cc")
+  avatarUrl             String?
+  portraitUrl           String?
+  bio                   String    @default("")
+  location              String    @default("")
+  aiTasteScore          Int       @default(0)
+  onboardingCompletedAt DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  accounts              Account[]
+  tasteProfile          TasteProfile?
+  preferences           UserPreferences?
+  watchlistItems        WatchlistItem[]
+  collections           Collection[]
+  reviews               Review[]
+  notifications         Notification[]
+  communityMemberships  CommunityMember[]
+  communityPosts        CommunityPost[]
+  ratings               Rating[]
+  watchEvents           WatchEvent[]
+  listenEvents          ListenEvent[]
+
+  @@index([handle])
+}
+
+/// OAuth accounts (Google, Discord) — NextAuth standard shape.
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+/// Onboarding taste test results — persisted after quiz completion.
+model TasteProfile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  tasteScore     Int
+  summaryChips   Json     @default("[]")
+  tasteBreakdown Json     @default("[]")
+  selections     Json     @default("{}")
+  goalLinks      Json     @default("[]")
+  completedAt    DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Settings page — notification, privacy, and app preferences.
+model UserPreferences {
+  id               String  @id @default(cuid())
+  userId           String  @unique
+  newEpisodes      Boolean @default(true)
+  watchParties     Boolean @default(true)
+  musicDrops       Boolean @default(true)
+  communityPosts   Boolean @default(false)
+  weeklyRecap      Boolean @default(true)
+  emailDigest      Boolean @default(false)
+  publicProfile    Boolean @default(true)
+  showActivity     Boolean @default(true)
+  showWatchHistory Boolean @default(false)
+  allowMessages    Boolean @default(true)
+  language         String  @default("English")
+  autoplayPreviews Boolean @default(true)
+  spoilerWarnings  Boolean @default(true)
+  matureContent    Boolean @default(false)
+  reducedMotion    Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── Content catalog ─────────────────────────────────────────────────────────
+
+enum MediaType {
+  ANIME
+  SHOW
+  MOVIE
+  DOCUMENTARY
+  KDRAMA
+  SONG
+  ALBUM
+  ARTIST
+  PLAYLIST
+}
+
+enum Visibility {
+  PUBLIC
+  PRIVATE
+}
+
+model Content {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  type        MediaType
+  description String?   @db.Text
+  synopsis    String?   @db.Text
+  imageUrl    String?
+  rating      Float?
+  year        Int?
+  accent      String?
+  meta        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  genres           ContentGenre[]
+  watchlistItems   WatchlistItem[]
+  collectionItems  CollectionItem[]
+  reviews          Review[]
+  ratings          Rating[]
+  watchEvents      WatchEvent[]
+
+  @@index([type])
+  @@index([slug])
+}
+
+model Genre {
+  id       String         @id @default(cuid())
+  label    String         @unique
+  contents ContentGenre[]
+}
+
+model ContentGenre {
+  contentId String
+  genreId   String
+  content   Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  genre     Genre   @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([contentId, genreId])
+}
+
+model MusicTrack {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  artist    String
+  kind      String
+  source    String?
+  language  String?
+  rating    Float?
+  imageUrl  String?
+  artistId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  artistRef       Artist?          @relation(fields: [artistId], references: [id], onDelete: SetNull)
+  collectionItems CollectionItem[]
+  listenEvents    ListenEvent[]
+  reviews         Review[]
+
+  @@index([slug])
+}
+
+model Artist {
+  id        String       @id @default(cuid())
+  slug      String       @unique
+  title     String
+  synopsis  String?      @db.Text
+  imageUrl  String?
+  accent    String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  tracks  MusicTrack[]
+  reviews Review[]
+
+  @@index([slug])
+}
+
+// ─── User libraries ──────────────────────────────────────────────────────────
+
+enum WatchlistPriority {
+  NORMAL
+  HIGH
+}
+
+enum WatchlistStatus {
+  PENDING
+  WATCHING
+  COMPLETED
+  DROPPED
+}
+
+model WatchlistItem {
+  id        String            @id @default(cuid())
+  userId    String
+  contentId String
+  priority  WatchlistPriority @default(NORMAL)
+  status    WatchlistStatus   @default(PENDING)
+  addedAt   DateTime          @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contentId])
+  @@index([userId])
+}
+
+model Collection {
+  id            String     @id @default(cuid())
+  slug          String     @unique
+  userId        String
+  name          String
+  description   String?    @db.Text
+  visibility    Visibility @default(PUBLIC)
+  accent        String?
+  imageUrl      String?
+  itemCount     Int        @default(0)
+  favoriteCount Int        @default(0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CollectionItem[]
+
+  @@index([userId])
+  @@index([slug])
+}
+
+model CollectionItem {
+  id           String   @id @default(cuid())
+  collectionId String
+  contentId    String?
+  trackId      String?
+  position     Int      @default(0)
+  addedAt      DateTime @default(now())
+
+  collection Collection  @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  content    Content?    @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  track      MusicTrack? @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@index([collectionId])
+}
+
+// ─── Communities & social ────────────────────────────────────────────────────
+
+enum MemberRole {
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
+model Community {
+  id            String     @id @default(cuid())
+  slug          String     @unique
+  name          String
+  category      String
+  description   String?    @db.Text
+  visibility    Visibility @default(PUBLIC)
+  activityLevel String?
+  accent        String?
+  imageUrl      String?
+  wallpaperUrl  String?
+  memberCount   Int        @default(0)
+  postCount     Int        @default(0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  members CommunityMember[]
+  posts   CommunityPost[]
+
+  @@index([slug])
+}
+
+model CommunityMember {
+  id          String     @id @default(cuid())
+  userId      String
+  communityId String
+  role        MemberRole @default(MEMBER)
+  joinedAt    DateTime   @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, communityId])
+  @@index([communityId])
+}
+
+model CommunityPost {
+  id           String   @id @default(cuid())
+  communityId  String
+  authorId     String
+  content      String   @db.Text
+  imageUrl     String?
+  likeCount    Int      @default(0)
+  commentCount Int      @default(0)
+  shareCount   Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([communityId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  authorId  String
+  contentId String?
+  trackId   String?
+  artistId  String?
+  rating    Float
+  headline  String?
+  body      String   @db.Text
+  likeCount Int      @default(0)
+  createdAt DateTime @default(now())
+
+  author  User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content Content?    @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  track   MusicTrack? @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  artist  Artist?     @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+}
+
+// ─── Notifications ───────────────────────────────────────────────────────────
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  category    String?
+  description String?  @db.Text
+  imageUrl    String?
+  href        String?
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+}
+
+// ─── Analytics events ────────────────────────────────────────────────────────
+
+model Rating {
+  id        String   @id @default(cuid())
+  userId    String
+  contentId String
+  score     Float
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contentId])
+}
+
+model WatchEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  contentId String
+  minutes   Int
+  watchedAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@index([userId, watchedAt])
+}
+
+model ListenEvent {
+  id         String   @id @default(cuid())
+  userId     String
+  trackId    String
+  minutes    Int
+  listenedAt DateTime @default(now())
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@index([userId, listenedAt])
+}

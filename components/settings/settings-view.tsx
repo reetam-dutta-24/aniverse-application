@@ -394,7 +394,7 @@ export function SettingsView({ data }: SettingsViewProps) {
         </GradientButton>
         <button
           type="button"
-          onClick={() => signOut({ callbackUrl: "/login" })}
+          onClick={() => signOut({ callbackUrl: "/" })}
           className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-white/25 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10 sm:w-auto"
         >
           <LogOut className="size-4" />

@@ -2,9 +2,13 @@
 
 import { usePathname } from "next/navigation";
 import { Suspense, useState } from "react";
-import { CircleUserRound, Menu, Search, X } from "lucide-react";
+import { Menu, Search, X } from "lucide-react";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { GlobalSearch } from "@/components/search/global-search";
+import {
+  UserProfileMenu,
+  type DashboardUser,
+} from "@/components/dashboard/user-profile-menu";
 
 const titles: Record<string, string> = {
   "/dashboard": "Home",
@@ -20,14 +24,14 @@ const titles: Record<string, string> = {
 };
 
 export interface DashboardTopbarProps {
-  userName: string;
+  user: DashboardUser;
   onMenuClick?: () => void;
   initialSearchQuery?: string;
 }
 
 /** Sticky header — stacks on mobile, full row on desktop. */
 export function DashboardTopbar({
-  userName,
+  user,
   onMenuClick,
   initialSearchQuery,
 }: DashboardTopbarProps) {
@@ -80,12 +84,7 @@ export function DashboardTopbar({
 
             <NotificationBell />
 
-            <div className="hidden items-center gap-2 sm:flex">
-              <CircleUserRound className="size-8 text-white" strokeWidth={1.25} />
-              <span className="max-w-[120px] truncate text-sm font-medium text-white lg:max-w-none">
-                {userName}
-              </span>
-            </div>
+            <UserProfileMenu user={user} placement="topbar" />
           </div>
         </div>
 

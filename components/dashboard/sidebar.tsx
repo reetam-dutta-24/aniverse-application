@@ -6,7 +6,6 @@ import {
   BarChart3,
   Bell,
   BookOpen,
-  CircleUserRound,
   Clapperboard,
   Home,
   PlayCircle,
@@ -14,6 +13,10 @@ import {
   Settings,
   Users,
 } from "lucide-react";
+import {
+  UserProfileMenu,
+  type DashboardUser,
+} from "@/components/dashboard/user-profile-menu";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -29,14 +32,14 @@ const navItems = [
 ];
 
 export interface DashboardSidebarProps {
-  userName: string;
+  user: DashboardUser;
   mobileOpen?: boolean;
   onNavigate?: () => void;
 }
 
 /** Fixed left rail on desktop; slide-in drawer on mobile. */
 export function DashboardSidebar({
-  userName,
+  user,
   mobileOpen = false,
   onNavigate,
 }: DashboardSidebarProps) {
@@ -80,9 +83,12 @@ export function DashboardSidebar({
         })}
       </nav>
 
-      <div className="mt-auto flex items-center gap-2.5 px-2">
-        <CircleUserRound className="size-8 shrink-0 text-white" strokeWidth={1.25} />
-        <span className="truncate text-xs font-medium text-white">{userName}</span>
+      <div className="mt-auto px-1">
+        <UserProfileMenu
+          user={user}
+          placement="sidebar"
+          onNavigate={onNavigate}
+        />
       </div>
     </aside>
   );
