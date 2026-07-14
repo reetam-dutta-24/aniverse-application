@@ -126,7 +126,7 @@ export function ProfileDetailHero({ profile }: ProfileDetailHeroProps) {
           </div>
 
           <div className="flex shrink-0 flex-col gap-1">
-            <h2 className="text-sm font-bold text-white sm:text-base">Bio</h2>
+            <h2 className="text-sm font-bold text-white sm:text-base">📝 Bio</h2>
             <p className="line-clamp-2 max-w-3xl text-sm leading-relaxed text-white/85 sm:text-[15px] sm:leading-6">
               {profile.bio}
             </p>

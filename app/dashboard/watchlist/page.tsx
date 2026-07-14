@@ -59,7 +59,7 @@ export default async function WatchlistPage() {
 
       <section className="rounded-2xl bg-surface/40 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-          <h2 className="text-lg font-bold text-white sm:text-heading">Your Watchlist</h2>
+          <h2 className="text-lg font-bold text-white sm:text-heading">📋 Your Watchlist</h2>
           <GradientButton size="sm" className="w-full rounded-full px-4 sm:w-auto">
             <Plus className="me-1.5 size-4" />
             Add To Watchlist
@@ -90,13 +90,13 @@ export default async function WatchlistPage() {
       </section>
 
       <WatchlistGridSection
-        title={`High Priority Watchlist  (${stats.highPriority})`}
+        title={`🔥 High Priority Watchlist  (${stats.highPriority})`}
         searchPlaceholder="Search Priority Content……. "
         items={highPriority}
       />
 
       <WatchlistGridSection
-        title={`All Watchlist Items  (${stats.savedItems})`}
+        title={`📋 All Watchlist Items  (${stats.savedItems})`}
         searchPlaceholder="Search Watchlist Content……. "
         items={allItems}
       />

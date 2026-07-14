@@ -46,7 +46,7 @@ export function SignupForm() {
       setError("Could not create your account. Please try again.");
       return;
     }
-    router.push("/dashboard");
+    router.push("/onboarding");
     router.refresh();
   }
 

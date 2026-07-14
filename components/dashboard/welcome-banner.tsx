@@ -4,7 +4,9 @@ export type WelcomeBannerVariant =
   | "collections"
   | "foryou"
   | "watchlist"
-  | "community";
+  | "community"
+  | "analytics"
+  | "settings";
 
 export interface WelcomeBannerProps {
   userName: string;
@@ -73,6 +75,26 @@ const copy: Record<
       "💬 1,283 posts viewed this month",
       "🔥 12 very active groups in your feed",
       "⭐ Avg AI Compatibility: 92%",
+    ],
+  },
+  analytics: {
+    message:
+      "Track your watching, listening, genres, and taste patterns — your entertainment life in numbers.",
+    highlights: [
+      "🎬 186 hours watched this year",
+      "🎧 214 hours of music listened",
+      "🎯 AI match accuracy at an all-time 93%",
+      "🔥 24-day activity streak going strong",
+    ],
+  },
+  settings: {
+    message:
+      "Manage your profile, notifications, privacy, and how AniVerse works for you.",
+    highlights: [
+      "👤 Profile & account details",
+      "🔔 Notification preferences",
+      "🔒 Privacy controls",
+      "🎯 Retake your taste test anytime",
     ],
   },
 };

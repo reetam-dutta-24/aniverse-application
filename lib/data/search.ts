@@ -392,25 +392,54 @@ export async function getSearchPageData(query: string): Promise<SearchPageData |
     twiceArtist?.similarArtists ??
     artistCatalog.filter((a) => a.id !== "twice");
 
-  const findContent = (matcher: (item: ContentItem) => boolean) =>
-    contentPool.find(matcher);
+  // Rank every pool entry against the query so ALL matching titles surface
+  // in top results (e.g. "death" → Death Note AND Death Parade), best first.
+  const rankMatches = <T,>(
+    pool: T[],
+    score: (item: T) => number,
+    min = 70,
+  ): T[] =>
+    pool
+      .map((item) => ({ item, score: score(item) }))
+      .filter((entry) => entry.score >= min)
+      .sort((a, b) => b.score - a.score)
+      .map((entry) => entry.item);
 
-  const findSong = (matcher: (track: MusicTrack) => boolean) =>
-    songPool.find(matcher);
+  const contentMatches = rankMatches(
+    contentPool.filter((item) => item.type !== "artist"),
+    (item) => scoreSearchMatch(item.title, q),
+  );
+  const topContentMatches = contentMatches.length
+    ? contentMatches.slice(0, 6)
+    : contentPool.slice(0, 1);
+  const topContent = topContentMatches[0];
 
-  const topContent =
-    findContent((item) => scoreSearchMatch(item.title, q) >= 70) ??
-    findContent((item) => item.title.toLowerCase().includes("death")) ??
-    contentPool[0];
+  const songMatches = rankMatches(songPool, (track) =>
+    bestFieldScore([track.title, track.artist], q),
+  );
+  const fallbackSong = songPool.find((t) => t.id === "gurenge") ?? songPool[0];
+  const topSongMatches = songMatches.length
+    ? songMatches.slice(0, 6)
+    : fallbackSong
+      ? [fallbackSong]
+      : [];
+  const topSong = topSongMatches[0];
 
-  const topSong =
-    findSong((track) => scoreSearchMatch(track.title, q) >= 70) ??
-    songPool.find((t) => t.id === "gurenge") ??
-    songPool[0];
-
-  const topArtist =
-    artistCatalog.find((a) => scoreSearchMatch(a.title, q) >= 60) ??
-    artistCatalog[0];
+  const artistPool = [
+    ...artistCatalog,
+    ...similarArtists.filter(
+      (artist) => !artistCatalog.some((a) => a.id === artist.id),
+    ),
+  ];
+  const artistMatches = rankMatches(
+    artistPool,
+    (artist) => scoreSearchMatch(artist.title, q),
+    60,
+  );
+  const topArtistMatches = artistMatches.length
+    ? artistMatches.slice(0, 6)
+    : artistCatalog.slice(0, 1);
+  const topArtist = topArtistMatches[0];
 
   const topProfile =
     profileCatalog.find(
@@ -419,12 +448,15 @@ export async function getSearchPageData(query: string): Promise<SearchPageData |
         scoreSearchMatch(p.handle, q) >= 60,
     ) ?? profileCatalog[0];
 
+  const topContentIds = new Set(topContentMatches.map((item) => item.id));
+  const topSongIds = new Set(topSongMatches.map((track) => track.id));
+
   const similarContent = contentSimilarPool
-    .filter((item) => item.id !== topContent?.id)
+    .filter((item) => !topContentIds.has(item.id))
     .slice(0, 8);
 
   const similarSongs = songPool
-    .filter((t) => t.id !== topSong?.id)
+    .filter((t) => !topSongIds.has(t.id))
     .slice(0, 8);
 
   const artistSongs = twiceArtist?.allSongs.slice(0, 18) ?? [];
@@ -452,6 +484,9 @@ export async function getSearchPageData(query: string): Promise<SearchPageData |
     topSong,
     topArtist,
     topProfile,
+    topContentMatches,
+    topSongMatches,
+    topArtistMatches,
     similarContent,
     similarSongs,
     similarArtists,

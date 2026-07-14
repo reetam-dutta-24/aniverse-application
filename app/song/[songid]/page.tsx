@@ -47,7 +47,7 @@ export default async function SongDetailPage({ params }: SongPageProps) {
       <ContentDetailHero content={song} />
 
       <ContentPageSection
-        title="Artists, Album And Show/Anime/Movie"
+        title="🎤 Artists, Album And Show/Anime/Movie"
         variant="content"
         rowHover={false}
         slides={song.characters.map((character) => ({
@@ -64,7 +64,7 @@ export default async function SongDetailPage({ params }: SongPageProps) {
       />
 
       <ContentPageSection
-        title={`Songs/OSTs Similar To ${song.title}`}
+        title={`🎵 Songs/OSTs Similar To ${song.title}`}
         variant="content"
         slides={song.featuredOsts.map((track) => ({
           id: track.id,
@@ -73,7 +73,7 @@ export default async function SongDetailPage({ params }: SongPageProps) {
       />
 
       <ContentPageSection
-        title="Included in Collections"
+        title="📒 Included in Collections"
         variant="community"
         slides={song.collections.map((collection) => ({
           id: collection.id,
@@ -82,7 +82,7 @@ export default async function SongDetailPage({ params }: SongPageProps) {
       />
 
       <ContentPageSection
-        title={`Communities Involving ${song.title}`}
+        title={`👥 Communities Involving ${song.title}`}
         variant="community"
         slides={song.communities.map((community) => ({
           id: community.id,
@@ -97,7 +97,7 @@ export default async function SongDetailPage({ params }: SongPageProps) {
       />
 
       <ContentReviewSection
-        title={`Reviews Of ${song.title}`}
+        title={`✍️ Reviews Of ${song.title}`}
         action={
           <GradientButton size="sm" className="gap-1.5 rounded-full px-5">
             <Plus className="size-4" />

@@ -1,0 +1,190 @@
+import type { Metadata } from "next";
+import {
+  AnalyticsKpiGrid,
+  ChartPanel,
+  MilestonesStrip,
+  MonthComparisonPanel,
+  RankingList,
+} from "@/components/analytics";
+import {
+  AniAreaChart,
+  AniBarChart,
+  AniLineChart,
+  AniPieChart,
+  AniRadarChart,
+} from "@/components/charts";
+import { WelcomeBanner } from "@/components/dashboard";
+import { getAnalyticsData } from "@/lib/data/analytics";
+import { getCurrentUser } from "@/lib/data/user";
+
+export const metadata: Metadata = {
+  title: "Analytics — AniVerse",
+  description:
+    "Track your watching, listening, genres, community activity, and taste patterns.",
+};
+
+export default async function AnalyticsPage() {
+  const [user, data] = await Promise.all([getCurrentUser(), getAnalyticsData()]);
+
+  return (
+    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-6 sm:gap-8">
+      <WelcomeBanner userName={user.name} variant="analytics" />
+
+      {/* 1 — Headline KPIs */}
+      <AnalyticsKpiGrid kpis={data.kpis} />
+
+      {/* 2 — Milestones */}
+      <MilestonesStrip milestones={data.milestones} />
+
+      {/* 3 + 4 — Watch/listen trend + watchlist progress */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <ChartPanel
+          title="📈 Watch & Listen Hours"
+          subtitle="Monthly hours across the last 12 months"
+          className="lg:col-span-2"
+        >
+          <AniAreaChart
+            data={data.timeTrend}
+            xKey="month"
+            series={[
+              { key: "watching", label: "Watching (h)", color: "#ff00cc" },
+              { key: "listening", label: "Listening (h)", color: "#2dd4bf" },
+            ]}
+            height={300}
+          />
+        </ChartPanel>
+        <ChartPanel
+          title="📋 Watchlist Progress"
+          subtitle="Where your 185 saved titles stand"
+        >
+          <AniPieChart data={data.watchlistStatus} innerRadius={60} height={300} />
+        </ChartPanel>
+      </div>
+
+      {/* 5 + 6 — Genre split + taste radar */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ChartPanel
+          title="🎭 Genre Distribution"
+          subtitle="Hours watched per genre this year"
+        >
+          <AniPieChart data={data.genreDistribution} height={300} />
+        </ChartPanel>
+        <ChartPanel
+          title="🧠 AI Taste Profile"
+          subtitle="How strongly each mood defines your taste"
+        >
+          <AniRadarChart data={data.tasteProfile} name="Taste Score" height={300} />
+        </ChartPanel>
+      </div>
+
+      {/* 7 + 8 — Weekly rhythm + peak hours */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ChartPanel
+          title="📅 Weekly Activity"
+          subtitle="Average daily hours by weekday"
+        >
+          <AniBarChart
+            data={data.weeklyActivity}
+            xKey="day"
+            series={[
+              { key: "watching", label: "Watching (h)", color: "#ff00cc" },
+              { key: "listening", label: "Listening (h)", color: "#2563eb" },
+            ]}
+            height={280}
+          />
+        </ChartPanel>
+        <ChartPanel
+          title="⏰ Peak Activity Hours"
+          subtitle="When you watch and listen the most"
+        >
+          <AniBarChart
+            data={data.peakHours}
+            xKey="slot"
+            series={[{ key: "hours", label: "Hours" }]}
+            colorByCategory
+            showLegend={false}
+            height={280}
+          />
+        </ChartPanel>
+      </div>
+
+      {/* 9 + 10 — AI accuracy trend + month comparison */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <ChartPanel
+          title="🎯 AI Match Accuracy"
+          subtitle="How well recommendations fit you over time"
+          className="lg:col-span-2"
+        >
+          <AniLineChart
+            data={data.matchAccuracy}
+            xKey="month"
+            series={[{ key: "accuracy", label: "Accuracy %", color: "#00ff8c" }]}
+            height={280}
+          />
+        </ChartPanel>
+        <ChartPanel
+          title="🗓️ This Month vs Last"
+          subtitle="July compared with June"
+        >
+          <MonthComparisonPanel rows={data.monthComparison} />
+        </ChartPanel>
+      </div>
+
+      {/* 11 + 12 — Ratings given + content type split */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ChartPanel
+          title="⭐ Ratings You Give"
+          subtitle="How many titles received each score"
+        >
+          <AniBarChart
+            data={data.ratingsGiven}
+            xKey="rating"
+            series={[{ key: "titles", label: "Titles" }]}
+            colorByCategory
+            showLegend={false}
+            height={280}
+          />
+        </ChartPanel>
+        <ChartPanel
+          title="🎬 Content Type Split"
+          subtitle="Share of watch time by format"
+        >
+          <AniPieChart data={data.contentTypes} innerRadius={60} height={280} />
+        </ChartPanel>
+      </div>
+
+      {/* 13 — Community engagement */}
+      <ChartPanel
+        title="👥 Community Engagement"
+        subtitle="Posts, likes, and chat messages per month"
+      >
+        <AniBarChart
+          data={data.communityEngagement}
+          xKey="month"
+          series={[
+            { key: "posts", label: "Posts", color: "#ff00cc" },
+            { key: "likes", label: "Likes", color: "#ae00ff" },
+            { key: "chats", label: "Chats", color: "#2dd4bf" },
+          ]}
+          height={300}
+        />
+      </ChartPanel>
+
+      {/* 14 + 15 — Top titles + top artists */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ChartPanel
+          title="🏆 Most Watched Titles"
+          subtitle="Your top 5 by hours watched"
+        >
+          <RankingList items={data.topTitles} />
+        </ChartPanel>
+        <ChartPanel
+          title="🎤 Most Played Artists"
+          subtitle="Your top 5 by listening hours"
+        >
+          <RankingList items={data.topArtists} />
+        </ChartPanel>
+      </div>
+    </div>
+  );
+}

@@ -2,7 +2,8 @@
 
 import { usePathname } from "next/navigation";
 import { Suspense, useState } from "react";
-import { Bell, CircleUserRound, Menu, Search, X } from "lucide-react";
+import { CircleUserRound, Menu, Search, X } from "lucide-react";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { GlobalSearch } from "@/components/search/global-search";
 
 const titles: Record<string, string> = {
@@ -12,6 +13,7 @@ const titles: Record<string, string> = {
   "/dashboard/watchlist": "Watchlist",
   "/dashboard/for-you": "For You",
   "/dashboard/analytics": "Analytics",
+  "/dashboard/notifications": "Notifications",
   "/dashboard/community": "Community",
   "/dashboard/settings": "Settings",
   "/search": "Search",
@@ -76,13 +78,7 @@ export function DashboardTopbar({
               )}
             </button>
 
-            <button
-              type="button"
-              aria-label="Notifications"
-              className="cursor-pointer rounded-lg p-1.5 text-white transition-colors hover:bg-white/10 hover:text-brand-pink"
-            >
-              <Bell className="size-5" />
-            </button>
+            <NotificationBell />
 
             <div className="hidden items-center gap-2 sm:flex">
               <CircleUserRound className="size-8 text-white" strokeWidth={1.25} />

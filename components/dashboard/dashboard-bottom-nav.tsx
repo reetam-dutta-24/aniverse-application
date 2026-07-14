@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BarChart3,
   BookOpen,
   Clapperboard,
   Home,
@@ -17,6 +18,7 @@ const items = [
   { label: "For You", href: "/dashboard/for-you", icon: PlayCircle },
   { label: "Watchlist", href: "/dashboard/watchlist", icon: Clapperboard },
   { label: "Collections", href: "/dashboard/collections", icon: BookOpen },
+  { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
 ] as const;
 
 /** Mobile bottom tab bar — primary dashboard routes. */

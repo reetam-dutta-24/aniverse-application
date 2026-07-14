@@ -70,7 +70,7 @@ export default async function DashboardHomePage() {
 
       <section className="rounded-2xl bg-surface/40 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
         <h2 className="text-lg font-bold text-white sm:text-heading">
-          Your Universe at a Glance
+          🌌 Your Universe at a Glance
         </h2>
         <p className="mt-1 text-sm text-white/75">
           A snapshot of your taste, saves, and activity across AniVerse.

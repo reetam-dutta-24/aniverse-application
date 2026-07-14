@@ -63,7 +63,7 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
       />
 
       <ContentPageSection
-        title="Characters"
+        title="🎭 Characters"
         variant="content"
         rowHover={false}
         slides={content.characters.map((character) => ({
@@ -80,7 +80,7 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
       />
 
       <ContentPageSection
-        title={`Featured OSTs of ${content.title}`}
+        title={`🎼 Featured OSTs of ${content.title}`}
         variant="content"
         slides={content.featuredOsts.map((track) => ({
           id: track.id,
@@ -89,7 +89,7 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
       />
 
       <ContentPageSection
-        title="You May Also Like"
+        title="💡 You May Also Like"
         variant="content"
         slides={content.relatedContent.map((item) => ({
           id: item.id,
@@ -98,7 +98,7 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
       />
 
       <ContentPageSection
-        title="Included in Collections"
+        title="📒 Included in Collections"
         variant="community"
         slides={content.collections.map((collection) => ({
           id: collection.id,
@@ -107,7 +107,7 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
       />
 
       <ContentPageSection
-        title={`Communities Involving ${content.title}`}
+        title={`👥 Communities Involving ${content.title}`}
         variant="community"
         slides={content.communities.map((community) => ({
           id: community.id,
@@ -122,7 +122,7 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
       />
 
       <ContentReviewSection
-        title={`Reviews Of ${content.title}`}
+        title={`✍️ Reviews Of ${content.title}`}
         action={
           <GradientButton size="sm" className="gap-1.5 rounded-full px-5">
             <Plus className="size-4" />

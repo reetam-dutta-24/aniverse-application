@@ -83,13 +83,13 @@ export default async function MusicCollectionDetailPage({
         />
 
         <MusicCarouselSection
-          title="Most Listened Music In This Community"
+          title="🎧 Most Listened Music In This Community"
           searchPlaceholder="Search tracks…"
           tracks={collection.musicTracks}
         />
 
         <ContentPageSection
-          title="Similar Vibes Songs You Will Love! (Not in Your Collection)"
+          title="✨ Similar Vibes Songs You Will Love! (Not in Your Collection)"
           variant="content"
           slides={collection.similarVibesSongs.map((track) => ({
             id: track.id,
@@ -98,7 +98,7 @@ export default async function MusicCollectionDetailPage({
         />
 
         <ContentPageSection
-          title="Popular Artists In Collection"
+          title="🎤 Popular Artists In Collection"
           variant="content"
           slides={collection.popularArtists.map((artist) => ({
             id: artist.id,
@@ -107,7 +107,7 @@ export default async function MusicCollectionDetailPage({
         />
 
         <ContentPageSection
-          title="Similar Collections"
+          title="📒 Similar Collections"
           variant="community"
           slides={collection.similarCollections.map((entry) => ({
             id: entry.id,
@@ -116,7 +116,7 @@ export default async function MusicCollectionDetailPage({
         />
 
         <ContentPageSection
-          title={`Communities Involving ${collection.name}`}
+          title={`👥 Communities Involving ${collection.name}`}
           variant="community"
           slides={collection.communities.map((community) => ({
             id: community.id,

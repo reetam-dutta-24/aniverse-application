@@ -329,9 +329,15 @@ export interface ChatMessage {
 export interface AppNotification {
   id: string;
   title: string;
+  /** Notification kind label, e.g. "Episode", "Watch Party". */
+  category?: string;
   description?: string;
   createdAt?: string;
   read?: boolean;
+  /** Thumbnail shown on the right of the notification. */
+  imageUrl?: string;
+  /** Related content the notification links out to. */
+  href?: string;
 }
 
 export interface WatchParty {

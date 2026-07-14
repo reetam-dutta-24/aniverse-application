@@ -94,7 +94,7 @@ export function CommunityDetailHero({ community }: CommunityDetailHeroProps) {
           <div className="min-h-0 flex-1">
             <CollectionHeroSpotlightSlider
               variant="content"
-              title="Most Liked Content"
+              title="❤️ Most Liked Content"
               items={community.favoriteItems}
             />
           </div>

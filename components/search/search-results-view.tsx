@@ -28,7 +28,7 @@ function ProfileResultsRow({
   return (
     <section className="flex flex-col gap-4 px-2">
       <h2 className="text-lg font-bold text-white sm:text-heading">
-        Similar Profiles
+        👤 Similar Profiles
       </h2>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {profiles.map((profile) => (
@@ -83,7 +83,7 @@ export function SearchResultsView({ data }: SearchResultsViewProps) {
 
       {data.primaryType === "content" ? (
         <ContentCarouselSection
-          title={`Content Similar To ${queryLabel}`}
+          title={`🎬 Content Similar To ${queryLabel}`}
           searchPlaceholder="Search All Items…"
           items={data.similarContent}
         />
@@ -92,12 +92,12 @@ export function SearchResultsView({ data }: SearchResultsViewProps) {
       {data.primaryType === "song" ? (
         <>
           <MusicCarouselSection
-            title={`Songs/OSTs Similar To ${queryLabel}`}
+            title={`🎵 Songs/OSTs Similar To ${queryLabel}`}
             searchPlaceholder="Search tracks…"
             tracks={data.similarSongs}
           />
           <ContentCarouselSection
-            title={`Artists Similar To ${data.topSong?.artist ?? "LiSA"}`}
+            title={`🎤 Artists Similar To ${data.topSong?.artist ?? "LiSA"}`}
             searchPlaceholder="Search artists…"
             items={data.similarArtists}
           />
@@ -107,12 +107,12 @@ export function SearchResultsView({ data }: SearchResultsViewProps) {
       {data.primaryType === "artist" ? (
         <>
           <MusicGridSection
-            title="From Music/OSTs"
+            title="🎧 From Music/OSTs"
             searchPlaceholder="Search tracks…"
             tracks={data.artistSongs}
           />
           <ContentCarouselSection
-            title={`Artists Similar To ${queryLabel}`}
+            title={`🎤 Artists Similar To ${queryLabel}`}
             searchPlaceholder="Search artists…"
             items={data.similarArtists}
           />
@@ -122,7 +122,7 @@ export function SearchResultsView({ data }: SearchResultsViewProps) {
       {data.primaryType === "profile" ? (
         <>
           <ContentCarouselSection
-            title="Content They Love"
+            title="❤️ Content They Love"
             searchPlaceholder="Search titles…"
             items={data.similarContent}
           />
@@ -131,13 +131,13 @@ export function SearchResultsView({ data }: SearchResultsViewProps) {
       ) : null}
 
       <CollectionGridSection
-        title="From Your And Other Public Collections"
+        title="📒 From Your And Other Public Collections"
         searchPlaceholder="Search collections…"
         collections={data.collections}
       />
 
       <CommunityGridSection
-        title="From Your And Other Global Communities"
+        title="👥 From Your And Other Global Communities"
         searchPlaceholder="Search communities…"
         communities={data.communities}
         members={members}

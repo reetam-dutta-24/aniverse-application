@@ -2,7 +2,8 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
-import { Bell, CircleUserRound } from "lucide-react";
+import { CircleUserRound } from "lucide-react";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { GlobalSearch } from "@/components/search/global-search";
 
 export interface ContentTopbarProps {
@@ -36,13 +37,7 @@ export function ContentTopbar({
         </Suspense>
 
         <div className="flex shrink-0 items-center gap-3 sm:gap-4">
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="cursor-pointer rounded-lg p-1.5 text-white transition-colors hover:text-brand-pink"
-          >
-            <Bell className="size-5" />
-          </button>
+          <NotificationBell />
           <div className="hidden items-center gap-2 sm:flex">
             <CircleUserRound className="size-8 text-white" strokeWidth={1.25} />
             <span className="max-w-[140px] truncate text-sm font-medium text-white">

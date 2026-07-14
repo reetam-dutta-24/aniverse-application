@@ -1,3 +1,4 @@
+export { ArtistCard, type ArtistCardProps } from "./artist-card";
 export { PosterCard, type PosterCardProps } from "./poster-card";
 export { CollectionCard, type CollectionCardProps } from "./collection-card";
 export { CommunityCard, type CommunityCardProps } from "./community-card";

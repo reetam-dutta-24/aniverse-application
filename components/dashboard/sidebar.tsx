@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  Bell,
   BookOpen,
   CircleUserRound,
   Clapperboard,
@@ -22,6 +23,7 @@ const navItems = [
   { label: "Watchlist", href: "/dashboard/watchlist", icon: Clapperboard },
   { label: "For You", href: "/dashboard/for-you", icon: PlayCircle },
   { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+  { label: "Notifications", href: "/dashboard/notifications", icon: Bell },
   { label: "Community", href: "/dashboard/community", icon: Users },
   { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ];

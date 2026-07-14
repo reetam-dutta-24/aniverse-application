@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ArtistCard } from "@/components/cards/artist-card";
 import { PosterCard } from "@/components/cards/poster-card";
 import {
   CarouselCardSlot,
@@ -142,13 +143,23 @@ export function ContentCarouselSection({
                         id={item.id}
                         hoveredId={hoveredId}
                       >
-                        <PosterCard
-                          item={item}
-                          tintSeed={tintSeed}
-                          onHoverChange={(hovered) =>
-                            setHoveredId(hovered ? item.id : null)
-                          }
-                        />
+                        {item.type === "artist" ? (
+                          <ArtistCard
+                            item={item}
+                            tintSeed={tintSeed}
+                            onHoverChange={(hovered) =>
+                              setHoveredId(hovered ? item.id : null)
+                            }
+                          />
+                        ) : (
+                          <PosterCard
+                            item={item}
+                            tintSeed={tintSeed}
+                            onHoverChange={(hovered) =>
+                              setHoveredId(hovered ? item.id : null)
+                            }
+                          />
+                        )}
                       </CarouselCardSlot>
                     ))
                   ) : (

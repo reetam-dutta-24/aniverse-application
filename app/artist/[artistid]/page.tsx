@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Plus } from "lucide-react";
-import { CollectionCard, CommunityCard, PosterCard } from "@/components/cards";
+import { ArtistCard, CollectionCard, CommunityCard } from "@/components/cards";
 import { ArtistDetailHero, ArtistKpiSection } from "@/components/artist";
 import {
   ContentCharacterCard,
@@ -50,31 +50,31 @@ export default async function ArtistDetailPage({ params }: ArtistPageProps) {
 
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-10 px-4 pt-10 sm:gap-12 sm:px-8 lg:gap-14 lg:px-12">
         <MusicGridSection
-          title={`All ${artist.title} Songs`}
+          title={`🎵 All ${artist.title} Songs`}
           searchPlaceholder="Search tracks…"
           tracks={artist.allSongs}
         />
 
         <MusicCarouselSection
-          title={`Most Played ${artist.title} Songs`}
+          title={`▶️ Most Played ${artist.title} Songs`}
           searchPlaceholder="Search tracks…"
           tracks={artist.mostPlayed}
         />
 
         <MusicCarouselSection
-          title={`Most Liked ${artist.title} Songs`}
+          title={`❤️ Most Liked ${artist.title} Songs`}
           searchPlaceholder="Search tracks…"
           tracks={artist.mostLiked}
         />
 
         <MusicCarouselSection
-          title={`Most Popular ${artist.title} Albums`}
+          title={`💿 Most Popular ${artist.title} Albums`}
           searchPlaceholder="Search albums…"
           tracks={artist.albums}
         />
 
         <ContentPageSection
-          title={`${artist.title} Band Members`}
+          title={`👥 ${artist.title} Band Members`}
           variant="content"
           rowHover={false}
           slides={artist.members.map((member) => ({
@@ -91,16 +91,16 @@ export default async function ArtistDetailPage({ params }: ArtistPageProps) {
         />
 
         <ContentPageSection
-          title={`Artists Similar To ${artist.title}`}
+          title={`🎤 Artists Similar To ${artist.title}`}
           variant="content"
           slides={artist.similarArtists.map((entry) => ({
             id: entry.id,
-            node: <PosterCard item={entry} />,
+            node: <ArtistCard item={entry} />,
           }))}
         />
 
         <ContentPageSection
-          title="EP Collections"
+          title="📀 EP Collections"
           variant="community"
           slides={artist.collections.map((collection) => ({
             id: collection.id,
@@ -109,7 +109,7 @@ export default async function ArtistDetailPage({ params }: ArtistPageProps) {
         />
 
         <ContentPageSection
-          title={`Communities Involving ${artist.title}`}
+          title={`👥 Communities Involving ${artist.title}`}
           variant="community"
           slides={artist.communities.map((community) => ({
             id: community.id,
@@ -124,7 +124,7 @@ export default async function ArtistDetailPage({ params }: ArtistPageProps) {
         />
 
         <ContentReviewSection
-          title={`Reviews Of ${artist.title}`}
+          title={`✍️ Reviews Of ${artist.title}`}
           action={
             <GradientButton size="sm" className="gap-1.5 rounded-full px-5">
               <Plus className="size-4" />

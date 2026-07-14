@@ -35,6 +35,10 @@ export interface SearchPageData {
   topSong?: import("@/types").MusicTrack;
   topArtist?: import("@/types").ContentItem;
   topProfile?: ProfileSearchItem;
+  /** All ranked matches for the query (best first), not just the single top hit. */
+  topContentMatches: import("@/types").ContentItem[];
+  topSongMatches: import("@/types").MusicTrack[];
+  topArtistMatches: import("@/types").ContentItem[];
   similarContent: import("@/types").ContentItem[];
   similarSongs: import("@/types").MusicTrack[];
   similarArtists: import("@/types").ContentItem[];

@@ -55,43 +55,43 @@ export default async function ProfileDetailPage({ params }: ProfilePageProps) {
 
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-10 px-4 pt-10 sm:gap-12 sm:px-8 lg:gap-14 lg:px-12">
         <ContentCarouselSection
-          title="Current Activity"
+          title="⚡ Current Activity"
           searchPlaceholder="Search activity…"
           items={profile.currentActivity}
         />
 
         <ContentCarouselSection
-          title={`Content ${firstName} Liked The Most`}
+          title={`❤️ Content ${firstName} Liked The Most`}
           searchPlaceholder="Search titles…"
           items={profile.likedContent}
         />
 
         <ContentCarouselSection
-          title={`Most Watched Content By ${firstName}`}
+          title={`🎬 Most Watched Content By ${firstName}`}
           searchPlaceholder="Search titles…"
           items={profile.watchedMost}
         />
 
         <MusicCarouselSection
-          title={`Songs ${firstName} Liked The Most`}
+          title={`❤️ Songs ${firstName} Liked The Most`}
           searchPlaceholder="Search tracks…"
           tracks={profile.likedSongs}
         />
 
         <MusicCarouselSection
-          title={`Most Played Songs By ${firstName}`}
+          title={`▶️ Most Played Songs By ${firstName}`}
           searchPlaceholder="Search tracks…"
           tracks={profile.mostPlayedSongs}
         />
 
         <MusicCarouselSection
-          title={`Most Liked Albums By ${firstName}`}
+          title={`💿 Most Liked Albums By ${firstName}`}
           searchPlaceholder="Search albums…"
           tracks={profile.likedAlbums}
         />
 
         <ContentPageSection
-          title={`Top Artists ${firstName} Listens To`}
+          title={`🎤 Top Artists ${firstName} Listens To`}
           variant="content"
           slides={profile.topArtists.map((artist) => ({
             id: artist.id,
@@ -100,7 +100,7 @@ export default async function ProfileDetailPage({ params }: ProfilePageProps) {
         />
 
         <ContentPageSection
-          title={`Collections By ${firstName}`}
+          title={`📒 Collections By ${firstName}`}
           variant="community"
           slides={profile.collections.map((collection) => ({
             id: collection.id,
@@ -109,7 +109,7 @@ export default async function ProfileDetailPage({ params }: ProfilePageProps) {
         />
 
         <ContentPageSection
-          title={`Communities ${firstName} Is Part Of`}
+          title={`👥 Communities ${firstName} Is Part Of`}
           variant="community"
           slides={profile.communities.map((community) => ({
             id: community.id,
@@ -124,7 +124,7 @@ export default async function ProfileDetailPage({ params }: ProfilePageProps) {
         />
 
         <ContentReviewSection
-          title={`Recent Posts & Reviews By ${firstName}`}
+          title={`✍️ Recent Posts & Reviews By ${firstName}`}
           action={
             <GradientButton size="sm" className="gap-1.5 rounded-full px-5">
               <Plus className="size-4" />

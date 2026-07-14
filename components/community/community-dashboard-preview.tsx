@@ -93,7 +93,7 @@ export function CommunityDashboardPreview({
       )}
     >
       <h2 className="mb-4 text-lg font-bold text-white/90 sm:mb-5 sm:text-heading">
-        Community Dashboard
+        🏠 Community Dashboard
       </h2>
 
       <div className="relative overflow-hidden rounded-[24px] border border-white/[0.08] bg-black/50 shadow-section-dim backdrop-blur-xl">

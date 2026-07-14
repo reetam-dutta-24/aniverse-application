@@ -84,7 +84,7 @@ export function ProfileHeroActivitySlider({
       <div className="flex shrink-0 flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <h2 className="text-sm font-bold text-white sm:text-base">
-            Recent Activity Of {userName}
+            ⚡ Recent Activity Of {userName}
           </h2>
           {activitySubtitle ? (
             <p className="mt-0.5 text-xs text-white/75 sm:text-sm">

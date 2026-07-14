@@ -94,7 +94,7 @@ export function ArtistDetailHero({ artist }: ArtistDetailHeroProps) {
           </div>
 
           <ArtistHeroTrendingSlider
-            title={`Currently Trending ${artist.title} Songs`}
+            title={`🔥 Currently Trending ${artist.title} Songs`}
             tracks={artist.trendingSongs}
           />
         </div>

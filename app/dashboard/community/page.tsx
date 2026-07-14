@@ -89,7 +89,7 @@ export default async function CommunityPage() {
 
       <section className="rounded-2xl bg-surface/40 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between">
-          <h2 className="text-lg font-bold text-white sm:text-heading">Community Hub</h2>
+          <h2 className="text-lg font-bold text-white sm:text-heading">👥 Community Hub</h2>
           <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap lg:w-auto">
             <GradientButton size="sm" className="w-full rounded-full px-4 sm:w-auto">
               <Plus className="me-1.5 size-4" />

@@ -306,7 +306,7 @@ export function CommunityDashboardSectionContent({
       return (
         <>
           <SectionHeader>
-            <p className="text-sm font-medium text-white/85">Community Analytics</p>
+            <p className="text-sm font-medium text-white/85">📊 Community Analytics</p>
             <span className="text-xs italic text-white/50">Last 7 days</span>
           </SectionHeader>
           <ScrollBody>
@@ -331,7 +331,7 @@ export function CommunityDashboardSectionContent({
       return (
         <>
           <SectionHeader>
-            <p className="text-sm font-medium text-white/85">Community Settings</p>
+            <p className="text-sm font-medium text-white/85">⚙️ Community Settings</p>
             <span className="text-xs text-white/50">Admin only</span>
           </SectionHeader>
           <ScrollBody className="flex max-w-xl flex-col gap-3">
