@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import type { ActiveFilter } from "@/lib/data/discover";
+import { ONBOARDING_RETAKE_PATH } from "@/lib/onboarding-routes";
 import { resolveGenreChip } from "@/lib/chip-styles";
 import { Chip } from "@/components/ui/chip";
 import { GradientButton } from "@/components/ui/gradient-button";
@@ -34,7 +35,7 @@ export function ActiveFiltersBar({ filters }: ActiveFiltersBarProps) {
       <GradientButton
         size="sm"
         className="w-full rounded-full px-5 sm:w-auto"
-        onClick={() => router.push("/onboarding")}
+        onClick={() => router.push(ONBOARDING_RETAKE_PATH)}
       >
         Retake Test
       </GradientButton>

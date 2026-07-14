@@ -33,6 +33,7 @@ const providers: NextAuthConfig["providers"] = [
         handle: user.handle,
         image: user.avatarUrl ?? undefined,
         onboardingCompleted: !!user.onboardingCompletedAt,
+        role: user.role,
       };
     },
   }),
@@ -65,6 +66,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id;
         token.handle = user.handle;
         token.onboardingCompleted = user.onboardingCompleted ?? false;
+        token.role = user.role;
       }
 
       // Client calls session.update() after onboarding completes
@@ -79,6 +81,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.id = token.id as string;
         session.user.handle = token.handle as string;
         session.user.onboardingCompleted = token.onboardingCompleted === true;
+        session.user.role = (token.role as import("@prisma/client").PlatformRole) ?? "USER";
       }
       return session;
     },

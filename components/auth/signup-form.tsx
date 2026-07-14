@@ -8,6 +8,7 @@ import { Lock, Mail, User } from "lucide-react";
 import { AuthInput } from "@/components/auth/auth-input";
 import { SocialButtons } from "@/components/auth/social-buttons";
 import { GradientButton } from "@/components/ui/gradient-button";
+import { clearLegacyOnboardingProfile } from "@/lib/onboarding-store";
 
 export function SignupForm() {
   const router = useRouter();
@@ -62,6 +63,7 @@ export function SignupForm() {
         return;
       }
 
+      clearLegacyOnboardingProfile();
       router.push("/onboarding");
       router.refresh();
     } catch {

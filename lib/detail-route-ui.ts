@@ -14,6 +14,15 @@ export function detailHeroBtnBase(className?: string) {
   );
 }
 
+/** Filled hero CTA — solid teal → light cyan-blue, dark label, no glow. */
+export const DETAIL_HERO_BTN_ACCENT_SOLID = cn(
+  "border border-transparent bg-gradient-teal-blue font-bold text-black",
+  "transition-opacity duration-300 hover:opacity-90",
+);
+
+/** Filled hero CTA with play/watch hover — used on content & artist primary actions. */
+export const DETAIL_HERO_BTN_ACCENT_PLAY = DETAIL_HERO_BTN_ACCENT_SOLID;
+
 /**
  * Horizontal space between two side-by-side hero CTAs.
  * Uses `.detail-hero-btn-pair` in globals.css so spacing survives glow/shadow bleed.

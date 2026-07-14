@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import type {
+  OnboardingGoalLink,
+  OnboardingSelection,
+  TasteBreakdownItem,
+} from "@/lib/data/onboarding";
 import { completeOnboarding } from "@/lib/services/onboarding.service";
 
 /**
@@ -16,9 +21,24 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json().catch(() => ({}))) as {
       tasteScore?: number;
+      selection?: OnboardingSelection;
+      summaryChips?: string[];
+      tasteBreakdown?: TasteBreakdownItem[];
+      goalLinks?: OnboardingGoalLink[];
     };
 
-    await completeOnboarding(session.user.id, body.tasteScore);
+    const tasteProfile =
+      body.selection && body.tasteScore != null
+        ? {
+            tasteScore: body.tasteScore,
+            selection: body.selection,
+            summaryChips: body.summaryChips ?? [],
+            tasteBreakdown: body.tasteBreakdown ?? [],
+            goalLinks: body.goalLinks ?? [],
+          }
+        : undefined;
+
+    await completeOnboarding(session.user.id, body.tasteScore, tasteProfile);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

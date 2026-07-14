@@ -16,6 +16,7 @@ import {
   detailHeroBtnBase,
   DETAIL_HERO_BTN_GROUP,
   DETAIL_HERO_BTN_PAIR,
+  DETAIL_HERO_BTN_ACCENT_SOLID,
 } from "@/lib/detail-route-ui";
 import { AvatarStack } from "@/components/ui/avatar-stack";
 import type { ArtistNowPlaying, UserSummary } from "@/types";
@@ -138,9 +139,7 @@ export function ArtistNowPlayingPanel({
           {nowPlaying?.songId ? (
             <Link
               href={getSongDetailPath(nowPlaying.songId)}
-              className={detailHeroBtnBase(
-                "border-transparent bg-gradient-to-r from-amber-500 to-yellow-500 font-bold text-black",
-              )}
+              className={detailHeroBtnBase(DETAIL_HERO_BTN_ACCENT_SOLID)}
             >
               <span className="truncate">View Song Details</span>
             </Link>

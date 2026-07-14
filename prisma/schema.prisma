@@ -13,22 +13,29 @@ datasource db {
 
 // ─── Auth & identity ─────────────────────────────────────────────────────────
 
+enum PlatformRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
 model User {
-  id                    String    @id @default(cuid())
-  email                 String    @unique
+  id                    String       @id @default(cuid())
+  email                 String       @unique
   emailVerified         DateTime?
-  handle                String    @unique
+  handle                String       @unique
   name                  String
   passwordHash          String?
-  avatarColor           String    @default("#ff00cc")
+  role                  PlatformRole @default(USER)
+  avatarColor           String       @default("#ff00cc")
   avatarUrl             String?
   portraitUrl           String?
-  bio                   String    @default("")
-  location              String    @default("")
-  aiTasteScore          Int       @default(0)
+  bio                   String       @default("")
+  location              String       @default("")
+  aiTasteScore          Int          @default(0)
   onboardingCompletedAt DateTime?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
 
   accounts              Account[]
   tasteProfile          TasteProfile?

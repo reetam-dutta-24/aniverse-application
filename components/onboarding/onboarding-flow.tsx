@@ -26,7 +26,12 @@ import {
   type OnboardingRecommendations,
   type OnboardingSelection,
 } from "@/lib/data/onboarding";
-import { getOnboardingProfile, saveOnboardingProfile } from "@/lib/onboarding-store";
+import {
+  clearLegacyOnboardingProfile,
+  getOnboardingProfileWithLegacyMigration,
+  saveOnboardingProfile,
+  type SavedOnboardingProfile,
+} from "@/lib/onboarding-store";
 import { sectionTintSeed } from "@/lib/card-theme";
 import { cn } from "@/lib/utils";
 
@@ -58,7 +63,15 @@ function CardRow({
 }
 
 /** Post-signup taste test — picks preferences, then previews the matched universe. */
-export function OnboardingFlow({ userName }: { userName: string }) {
+export function OnboardingFlow({
+  userId,
+  userName,
+  isRetake: retakeMode = false,
+}: {
+  userId: string;
+  userName: string;
+  isRetake?: boolean;
+}) {
   const router = useRouter();
   const { update } = useSession();
   const [stepIndex, setStepIndex] = useState(0);
@@ -66,7 +79,7 @@ export function OnboardingFlow({ userName }: { userName: string }) {
     emptyOnboardingSelection,
   );
   const [phase, setPhase] = useState<Phase>("intro");
-  const [isRetake, setIsRetake] = useState(false);
+  const [isRetake, setIsRetake] = useState(retakeMode);
   const [buildingStep, setBuildingStep] = useState(0);
   const [recommendations, setRecommendations] =
     useState<OnboardingRecommendations | null>(null);
@@ -78,16 +91,28 @@ export function OnboardingFlow({ userName }: { userName: string }) {
   const isLastStep = stepIndex === onboardingSteps.length - 1;
   const tintSeed = sectionTintSeed("onboarding-recommendations");
 
-  async function markOnboardingComplete(tasteScore?: number) {
+  async function markOnboardingComplete(
+    recommendations?: OnboardingRecommendations,
+  ) {
+    const body = recommendations
+      ? {
+          tasteScore: recommendations.tasteScore,
+          selection,
+          summaryChips: recommendations.summaryChips,
+          tasteBreakdown: recommendations.tasteBreakdown,
+          goalLinks: recommendations.goalLinks,
+        }
+      : {};
+
     await fetch("/api/onboarding/complete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tasteScore }),
+      body: JSON.stringify(body),
     });
   }
 
-  async function goToDashboard(tasteScore?: number) {
-    await markOnboardingComplete(tasteScore);
+  async function goToDashboard(recommendations?: OnboardingRecommendations) {
+    await markOnboardingComplete(recommendations);
     await update({ onboardingCompleted: true });
     router.push("/dashboard");
     router.refresh();
@@ -126,12 +151,48 @@ export function OnboardingFlow({ userName }: { userName: string }) {
   }
 
   useEffect(() => {
-    const saved = getOnboardingProfile();
-    if (!saved) return;
-    setIsRetake(true);
-    setSelection(saved.selection);
-    setPhase("quiz");
-  }, []);
+    clearLegacyOnboardingProfile();
+
+    if (!retakeMode) {
+      setSelection(emptyOnboardingSelection);
+      setPhase("intro");
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadRetakeProfile() {
+      try {
+        const response = await fetch("/api/onboarding/profile");
+        if (response.ok) {
+          const data = (await response.json()) as {
+            profile: SavedOnboardingProfile | null;
+          };
+          if (!cancelled && data.profile?.selection) {
+            setIsRetake(true);
+            setSelection(data.profile.selection);
+            setPhase("intro");
+            return;
+          }
+        }
+      } catch {
+        // Fall back to per-user local cache below.
+      }
+
+      const saved = getOnboardingProfileWithLegacyMigration(userId);
+      if (!cancelled && saved?.selection) {
+        setIsRetake(true);
+        setSelection(saved.selection);
+        setPhase("intro");
+      }
+    }
+
+    void loadRetakeProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [retakeMode, userId]);
 
   useEffect(() => {
     if (phase !== "building") return;
@@ -147,7 +208,7 @@ export function OnboardingFlow({ userName }: { userName: string }) {
       window.setTimeout(() => {
         if (cancelled) return;
         setRecommendations(result);
-        saveOnboardingProfile(selection, result);
+        saveOnboardingProfile(userId, selection, result);
         setPhase("results");
       }, remaining);
     });
@@ -340,7 +401,7 @@ export function OnboardingFlow({ userName }: { userName: string }) {
         <GradientButton
           size="md"
           className="mt-2 w-full max-w-[320px] rounded-full"
-          onClick={() => goToDashboard(recommendations.tasteScore)}
+          onClick={() => goToDashboard(recommendations)}
         >
           Enter Your Universe
           <ArrowRight className="ms-1.5 size-4" />

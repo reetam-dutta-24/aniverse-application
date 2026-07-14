@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import {
   DETAIL_HERO_BTN_PAIR_ROW,
+  DETAIL_HERO_BTN_ACCENT_SOLID,
   detailHeroBtnBase,
 } from "@/lib/detail-route-ui";
 
@@ -35,9 +36,7 @@ export function CommunityHeroActions() {
       </button>
       <button
         type="button"
-        className={detailHeroBtnBase(
-          "border-transparent bg-gradient-to-r from-amber-500 to-yellow-500 font-bold text-black",
-        )}
+        className={detailHeroBtnBase(DETAIL_HERO_BTN_ACCENT_SOLID)}
       >
         <CircleDot className="size-3.5 shrink-0" />
         <span className="truncate">New Online</span>

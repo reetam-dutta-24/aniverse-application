@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import {
   AtSign,
   Globe,
@@ -29,6 +29,7 @@ import {
   type SettingsProfile,
 } from "@/lib/data/settings";
 import { getOnboardingProfile } from "@/lib/onboarding-store";
+import { ONBOARDING_RETAKE_PATH } from "@/lib/onboarding-routes";
 import { cn } from "@/lib/utils";
 
 const avatarColors = [
@@ -59,6 +60,8 @@ export interface SettingsViewProps {
 /** Full settings page — profile, notifications, privacy, preferences, account. */
 export function SettingsView({ data }: SettingsViewProps) {
   const router = useRouter();
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
   const [profile, setProfile] = useState<SettingsProfile>(data.profile);
   const [notifications, setNotifications] = useState<NotificationPreferences>(
     data.notifications,
@@ -71,11 +74,11 @@ export function SettingsView({ data }: SettingsViewProps) {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    const savedProfile = getOnboardingProfile();
+    const savedProfile = getOnboardingProfile(userId);
     if (savedProfile?.recommendations.tasteScore) {
       setTasteScore(savedProfile.recommendations.tasteScore);
     }
-  }, []);
+  }, [userId]);
 
   function handleSave() {
     setSaved(true);
@@ -245,7 +248,7 @@ export function SettingsView({ data }: SettingsViewProps) {
           </div>
           <button
             type="button"
-            onClick={() => router.push("/onboarding")}
+            onClick={() => router.push(ONBOARDING_RETAKE_PATH)}
             className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-brand-magenta px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-magenta/15 sm:w-auto"
           >
             <RefreshCw className="size-4" />

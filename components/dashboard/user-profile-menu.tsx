@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   LogOut,
   Settings,
+  Shield,
   User,
 } from "lucide-react";
 import { getProfilePath } from "@/lib/profile-routes";
@@ -20,6 +21,7 @@ export interface DashboardUser {
   email: string;
   avatarColor: string;
   avatarUrl?: string;
+  isAdmin?: boolean;
 }
 
 export interface UserProfileMenuProps {
@@ -110,6 +112,15 @@ export function UserProfileMenu({
       href: "/dashboard",
       icon: LayoutDashboard,
     },
+    ...(user.isAdmin
+      ? [
+          {
+            label: "Admin CMS",
+            href: "/admin",
+            icon: Shield,
+          },
+        ]
+      : []),
     {
       label: "Settings",
       href: "/dashboard/settings",

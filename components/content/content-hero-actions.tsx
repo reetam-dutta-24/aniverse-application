@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   DETAIL_HERO_BTN_PAIR_ROW,
+  DETAIL_HERO_BTN_ACCENT_PLAY,
   detailHeroBtnBase,
 } from "@/lib/detail-route-ui";
 import type { AccentColor, ContentDetail, Episode, MediaType } from "@/types";
@@ -48,8 +49,7 @@ const CTA_PAIR: Record<
     shareIcon: "text-sky-300",
   },
   yellow: {
-    watch:
-      "border-transparent bg-gradient-to-r from-amber-500 to-orange-600 hover:border-amber-400 hover:from-transparent hover:to-transparent",
+    watch: DETAIL_HERO_BTN_ACCENT_PLAY,
     share: "border-indigo-400/60 bg-indigo-500/10 hover:bg-indigo-500/20",
     shareIcon: "text-indigo-300",
   },

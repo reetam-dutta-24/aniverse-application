@@ -8,8 +8,14 @@ import type {
   MusicTrack,
   Review,
   UserSummary,
+  AccentColor,
 } from "@/types";
 import { normalizeContentSlug } from "@/lib/content-routes";
+import {
+  getContentItemBySlug,
+  getContentRecordBySlug,
+  listAllContentSlugs,
+} from "@/lib/services/content.service";
 import {
   getContinueWatching,
   getNewReleases,
@@ -715,11 +721,31 @@ function buildDetailFromItem(
   };
 }
 
-/** Resolve full content detail by ID — returns null when not found. */
+/** Resolve full content detail by ID — DB first, mock fallback. */
 export async function getContentDetail(
   contentId: string,
 ): Promise<ContentDetail | null> {
   const slug = normalizeContentSlug(contentId);
+
+  const dbItem = await getContentItemBySlug(slug);
+  if (dbItem) {
+    const related = await getTrendingThisWeek();
+    const detail = buildDetailFromItem(dbItem, related);
+    const record = await getContentRecordBySlug(slug);
+
+    if (record?.synopsis) {
+      detail.synopsis = formatDetailSynopsis(record.synopsis);
+    } else if (record?.description) {
+      detail.synopsis = formatDetailSynopsis(record.description);
+    }
+
+    if (record?.accent) {
+      detail.accent = record.accent as AccentColor;
+    }
+
+    return detail;
+  }
+
   if (slug === "jujutsu-kaisen") {
     const related = await getTrendingThisWeek();
     return {
@@ -741,13 +767,14 @@ export async function getContentDetail(
 
 /** List of known content IDs for static generation / sitemap. */
 export async function getAllContentIds(): Promise<string[]> {
+  const dbSlugs = await listAllContentSlugs().catch(() => [] as string[]);
   const pools = await Promise.all([
     getTrendingThisWeek(),
     getRecommendedForYou(),
     getNewReleases(),
     getContinueWatching(),
   ]);
-  const ids = new Set<string>();
+  const ids = new Set<string>(dbSlugs);
   for (const pool of pools) {
     for (const item of pool) ids.add(normalizeContentSlug(item.id));
   }

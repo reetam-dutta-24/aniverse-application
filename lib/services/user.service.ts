@@ -99,6 +99,7 @@ export async function findUserForLogin(identifier: string) {
       avatarColor: true,
       avatarUrl: true,
       onboardingCompletedAt: true,
+      role: true,
     },
   });
 }
@@ -125,6 +126,7 @@ export async function getUserById(id: string) {
       avatarUrl: true,
       aiTasteScore: true,
       onboardingCompletedAt: true,
+      role: true,
       createdAt: true,
     },
   });

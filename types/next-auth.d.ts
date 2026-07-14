@@ -1,4 +1,5 @@
 import type { DefaultSession } from "next-auth";
+import type { PlatformRole } from "@prisma/client";
 
 declare module "next-auth" {
   interface Session {
@@ -6,12 +7,14 @@ declare module "next-auth" {
       id: string;
       handle: string;
       onboardingCompleted: boolean;
+      role: PlatformRole;
     } & DefaultSession["user"];
   }
 
   interface User {
     handle: string;
     onboardingCompleted?: boolean;
+    role: PlatformRole;
   }
 }
 
@@ -20,5 +23,6 @@ declare module "next-auth/jwt" {
     id?: string;
     handle?: string;
     onboardingCompleted?: boolean;
+    role?: PlatformRole;
   }
 }

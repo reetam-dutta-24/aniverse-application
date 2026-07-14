@@ -82,6 +82,7 @@
   --gradient-blue-violet: linear-gradient(90deg, #2563eb 0%, #7c3aed 98%);
   --gradient-indigo: linear-gradient(91deg, #1e1b4b 0%, #4c1d95 98%);
   --gradient-teal: linear-gradient(91deg, #10b981 0%, #2dd4bf 98%);
+  --gradient-teal-blue: linear-gradient(90deg, #0d9488 0%, #7dd3fc 100%);
 
   /* Chip gradients — Figma genre/type palette */
   --gradient-chip-action: linear-gradient(90deg, #2563eb 0%, #4338ca 100%);
@@ -129,6 +130,10 @@
 
 @utility bg-gradient-teal {
   background-image: var(--gradient-teal);
+}
+
+@utility bg-gradient-teal-blue {
+  background-image: var(--gradient-teal-blue);
 }
 
 @utility bg-gradient-chip-action { background-image: var(--gradient-chip-action); }
