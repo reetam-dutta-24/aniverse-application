@@ -9,6 +9,11 @@ import type {
   UserSummary,
 } from "@/types";
 import { normalizeArtistSlug } from "@/lib/artist-routes";
+import { mapArtistRecordToDetail } from "@/lib/mappers/artist-detail.mapper";
+import {
+  getArtistRecordBySlug,
+  listAllArtistSlugs,
+} from "@/lib/services/artist.service";
 
 const g = (id: string, label: string) => ({ id, label });
 const poster = (slug: string) => `/images/posters/${slug}.jpg`;
@@ -333,12 +338,17 @@ const curatedById: Record<string, ArtistDetail> = {
 };
 
 export async function getAllArtistIds(): Promise<string[]> {
-  return Object.keys(curatedById);
+  const dbSlugs = await listAllArtistSlugs().catch(() => [] as string[]);
+  const ids = new Set<string>(dbSlugs);
+  for (const key of Object.keys(curatedById)) ids.add(key);
+  return [...ids];
 }
 
 export async function getArtistDetail(
   artistid: string,
 ): Promise<ArtistDetail | null> {
   const slug = normalizeArtistSlug(artistid);
+  const record = await getArtistRecordBySlug(slug);
+  if (record) return mapArtistRecordToDetail(record);
   return curatedById[slug] ?? null;
 }

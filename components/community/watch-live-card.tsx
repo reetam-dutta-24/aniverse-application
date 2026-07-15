@@ -1,6 +1,6 @@
 import { Radio, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { accentStyles } from "@/lib/accents";
+import { getAccentStyle } from "@/lib/accents";
 import type { WatchParty } from "@/types";
 import { AvatarStack } from "@/components/ui/avatar-stack";
 import { Chip } from "@/components/ui/chip";
@@ -19,7 +19,7 @@ export function WatchLiveCard({
   className,
   ...props
 }: WatchLiveCardProps) {
-  const accent = accentStyles[party.accent ?? "purple"];
+  const accent = getAccentStyle(party.accent ?? "purple");
 
   return (
     <div

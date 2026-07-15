@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { isPlatformAdmin } from "@/lib/platform-roles";
+import { isContentAdmin, isMusicAdmin, isArtistAdmin, isPlatformAdmin } from "@/lib/platform-roles";
 import { getPostAuthPath } from "@/lib/services/onboarding.service";
 import { getUserById } from "@/lib/services/user.service";
 
@@ -43,7 +43,7 @@ export async function requireCompletedOnboarding() {
   return userId;
 }
 
-/** Admin CMS — must be logged in with ADMIN or SUPER_ADMIN role. */
+/** Admin CMS — must be logged in with any platform admin role. */
 export async function requireAdmin() {
   const session = await auth();
   if (!session?.user?.id) {
@@ -63,4 +63,45 @@ export async function requireAdmin() {
   }
 
   redirect("/dashboard");
+}
+
+/** Resolve admin session for layout/nav — redirects if not a platform admin. */
+export async function getAdminSession() {
+  return requireAdmin();
+}
+
+async function requireSpecialistAdmin(
+  check: (role: string | undefined) => boolean,
+  callbackPath: string,
+) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect(`/login?callbackUrl=${callbackPath}`);
+  }
+
+  if (check(session.user.role)) {
+    return { userId: session.user.id, role: session.user.role };
+  }
+
+  const user = await getUserById(session.user.id);
+  if (user && check(user.role)) {
+    return { userId: user.id, role: user.role };
+  }
+
+  redirect("/dashboard");
+}
+
+/** Content CMS — CONTENT_ADMIN or SUPER_ADMIN. */
+export async function requireContentAdmin() {
+  return requireSpecialistAdmin(isContentAdmin, "/admin/content");
+}
+
+/** Music CMS — MUSIC_ADMIN or SUPER_ADMIN. */
+export async function requireMusicAdmin() {
+  return requireSpecialistAdmin(isMusicAdmin, "/admin/music");
+}
+
+/** Artist CMS — ARTIST_ADMIN or SUPER_ADMIN. */
+export async function requireArtistAdmin() {
+  return requireSpecialistAdmin(isArtistAdmin, "/admin/artists");
 }

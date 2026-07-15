@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdminApi } from "@/lib/admin-auth";
+import { requireContentAdminApi } from "@/lib/admin-auth";
 import { mapContentToItem } from "@/lib/mappers/content.mapper";
 import {
   ContentConflictError,
@@ -14,7 +14,7 @@ import {
 
 /** GET /api/admin/content — paginated catalog list for admin UI. */
 export async function GET(request: Request) {
-  const denied = await requireAdminApi();
+  const denied = await requireContentAdminApi();
   if (denied) return denied;
 
   const { searchParams } = new URL(request.url);
@@ -44,7 +44,7 @@ export async function GET(request: Request) {
 
 /** POST /api/admin/content — create a catalog item. */
 export async function POST(request: Request) {
-  const denied = await requireAdminApi();
+  const denied = await requireContentAdminApi();
   if (denied) return denied;
 
   try {

@@ -9,7 +9,7 @@ import {
   getMusicCollectionDetailPath,
   isMusicCollectionId,
 } from "@/lib/music-collection-routes";
-import { accentStyles } from "@/lib/accents";
+import { getAccentStyle } from "@/lib/accents";
 import type { Collection } from "@/types";
 import { Chip } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
@@ -55,7 +55,7 @@ export function CollectionCard({
 }: CollectionCardProps) {
   const router = useRouter();
   const [hovered, setHovered] = useState(false);
-  const accent = accentStyles[collection.accent ?? "blue"];
+  const accent = getAccentStyle(collection.accent ?? "blue");
 
   function handleView() {
     if (onView) {

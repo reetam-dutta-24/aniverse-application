@@ -14,9 +14,8 @@ export interface ArtistHeroActionsProps {
   accent?: AccentColor;
 }
 
-const CTA_PAIR: Record<
-  AccentColor,
-  { play: string; like: string }
+const CTA_PAIR: Partial<
+  Record<AccentColor, { play: string; like: string }>
 > = {
   blue: {
     play: "border-transparent bg-gradient-blue-violet hover:border-blue-400 hover:bg-transparent hover:[background-image:none]",
@@ -44,9 +43,16 @@ const CTA_PAIR: Record<
   },
 };
 
+const CTA_FALLBACK = CTA_PAIR.blue!;
+
+function getArtistCta(accent?: AccentColor) {
+  if (accent && CTA_PAIR[accent]) return CTA_PAIR[accent]!;
+  return CTA_FALLBACK;
+}
+
 /** Play all + liked songs CTAs under artist KPI stats. */
 export function ArtistHeroActions({ accent = "pink" }: ArtistHeroActionsProps) {
-  const cta = CTA_PAIR[accent];
+  const cta = getArtistCta(accent);
 
   return (
     <div className={DETAIL_HERO_BTN_PAIR_ROW}>

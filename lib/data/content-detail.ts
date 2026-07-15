@@ -12,16 +12,13 @@ import type {
 } from "@/types";
 import { normalizeContentSlug } from "@/lib/content-routes";
 import {
+  getContentEngagementStats,
   getContentItemBySlug,
   getContentRecordBySlug,
   listAllContentSlugs,
 } from "@/lib/services/content.service";
-import {
-  getContinueWatching,
-  getNewReleases,
-  getRecommendedForYou,
-  getTrendingThisWeek,
-} from "@/lib/data/discover";
+import { mapContentRecordToDetail } from "@/lib/mappers/content-detail.mapper";
+import { getRecommendedContent } from "@/lib/services/feed.service";
 
 /**
  * Mock data layer — individual content detail (`/content/[contentid]`).
@@ -51,14 +48,9 @@ const jjkEpisodeThumbs = [
 const epThumb = (index: number) =>
   jjkEpisodeThumbs[index % jjkEpisodeThumbs.length];
 
-/** Fixed word count keeps the detail hero layout consistent across all content. */
-export const DETAIL_SYNOPSIS_WORDS = 52;
+import { DETAIL_SYNOPSIS_WORDS, formatDetailSynopsis } from "@/lib/format-detail-synopsis";
 
-export function formatDetailSynopsis(raw: string): string {
-  const words = raw.trim().split(/\s+/).filter(Boolean);
-  if (words.length <= DETAIL_SYNOPSIS_WORDS) return words.join(" ");
-  return `${words.slice(0, DETAIL_SYNOPSIS_WORDS).join(" ")}…`;
-}
+export { DETAIL_SYNOPSIS_WORDS, formatDetailSynopsis };
 
 const reviewers: UserSummary[] = [
   { id: "r1", name: "Reetam Dutta", avatarColor: "#ff00cc" },
@@ -571,22 +563,7 @@ const jjkDetail: ContentDetail = {
 
 async function findContentItem(contentId: string): Promise<ContentItem | null> {
   const slug = normalizeContentSlug(contentId);
-  const pools = await Promise.all([
-    getTrendingThisWeek(),
-    getRecommendedForYou(),
-    getNewReleases(),
-    getContinueWatching(),
-  ]);
-  for (const pool of pools) {
-    const hit = pool.find(
-      (item) =>
-        item.id === contentId ||
-        item.id === slug ||
-        normalizeContentSlug(item.id) === slug,
-    );
-    if (hit) return hit;
-  }
-  return null;
+  return getContentItemBySlug(slug);
 }
 
 function makeCollectionsForContent(contentId: string): Collection[] {
@@ -726,28 +703,20 @@ export async function getContentDetail(
   contentId: string,
 ): Promise<ContentDetail | null> {
   const slug = normalizeContentSlug(contentId);
+  const record = await getContentRecordBySlug(slug);
 
-  const dbItem = await getContentItemBySlug(slug);
-  if (dbItem) {
-    const related = await getTrendingThisWeek();
-    const detail = buildDetailFromItem(dbItem, related);
-    const record = await getContentRecordBySlug(slug);
-
-    if (record?.synopsis) {
-      detail.synopsis = formatDetailSynopsis(record.synopsis);
-    } else if (record?.description) {
-      detail.synopsis = formatDetailSynopsis(record.description);
-    }
-
-    if (record?.accent) {
-      detail.accent = record.accent as AccentColor;
-    }
-
-    return detail;
+  if (record) {
+    const related = (await getRecommendedContent(12)).filter(
+      (item) => item.id !== slug,
+    );
+    const engagement = await getContentEngagementStats(record.id);
+    return mapContentRecordToDetail(record, engagement, related);
   }
 
   if (slug === "jujutsu-kaisen") {
-    const related = await getTrendingThisWeek();
+    const related = (await getRecommendedContent(12)).filter(
+      (item) => item.id !== "jujutsu-kaisen",
+    );
     return {
       ...jjkDetail,
       relatedContent: related
@@ -761,22 +730,13 @@ export async function getContentDetail(
   const item = await findContentItem(slug);
   if (!item) return null;
 
-  const related = await getTrendingThisWeek();
+  const related = (await getRecommendedContent(12)).filter(
+    (item) => item.id !== slug,
+  );
   return buildDetailFromItem(item, related);
 }
 
 /** List of known content IDs for static generation / sitemap. */
 export async function getAllContentIds(): Promise<string[]> {
-  const dbSlugs = await listAllContentSlugs().catch(() => [] as string[]);
-  const pools = await Promise.all([
-    getTrendingThisWeek(),
-    getRecommendedForYou(),
-    getNewReleases(),
-    getContinueWatching(),
-  ]);
-  const ids = new Set<string>(dbSlugs);
-  for (const pool of pools) {
-    for (const item of pool) ids.add(normalizeContentSlug(item.id));
-  }
-  return [...ids];
+  return listAllContentSlugs();
 }

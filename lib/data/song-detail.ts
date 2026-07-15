@@ -9,11 +9,15 @@ import type {
 } from "@/types";
 import { formatDetailSynopsis } from "@/lib/data/content-detail";
 import { normalizeSongSlug } from "@/lib/song-routes";
+import { mapTrackRecordToSongDetail } from "@/lib/mappers/song-detail.mapper";
+import { mapTrackToMusicTrack } from "@/lib/mappers/music.mapper";
 import {
-  getContinueListening,
-  getMusicForYourTaste,
-  getTrendingMusic,
-} from "@/lib/data/discover";
+  getTrackEngagementStats,
+  getTrackRecordBySlug,
+  listAllTrackSlugs,
+} from "@/lib/services/music.service";
+import { prisma } from "@/lib/prisma";
+import { listAllCatalogMusicTracks } from "@/lib/services/feed.service";
 
 const g = (id: string, label: string) => ({ id, label });
 const poster = (slug: string) => `/images/posters/${slug}.jpg`;
@@ -211,21 +215,7 @@ function makeCommunitiesForSong(title: string): Community[] {
 }
 
 async function allMusicTracks(): Promise<MusicTrack[]> {
-  const pools = await Promise.all([
-    getMusicForYourTaste(),
-    getTrendingMusic(),
-    getContinueListening(),
-  ]);
-  const seen = new Set<string>();
-  const tracks: MusicTrack[] = [];
-  for (const pool of pools) {
-    for (const track of pool) {
-      if (seen.has(track.id)) continue;
-      seen.add(track.id);
-      tracks.push(track);
-    }
-  }
-  return tracks;
+  return listAllCatalogMusicTracks(100);
 }
 
 function buildDetailFromTrack(
@@ -304,6 +294,18 @@ export async function getSongDetail(
   songId: string,
 ): Promise<ContentDetail | null> {
   const slug = normalizeSongSlug(songId);
+  const record = await getTrackRecordBySlug(slug);
+
+  if (record) {
+    const engagement = await getTrackEngagementStats(record.id);
+    const similarRows = await prisma.musicTrack.findMany({
+      where: { slug: { not: slug } },
+      take: 12,
+      orderBy: { updatedAt: "desc" },
+    });
+    const similar = similarRows.map((t) => mapTrackToMusicTrack(t));
+    return mapTrackRecordToSongDetail(record, engagement, similar);
+  }
 
   if (slug === "gurenge") {
     const similar = await allMusicTracks();
@@ -330,8 +332,9 @@ export async function getSongDetail(
 }
 
 export async function getAllSongIds(): Promise<string[]> {
+  const dbSlugs = await listAllTrackSlugs().catch(() => [] as string[]);
   const tracks = await allMusicTracks();
-  const slugs = new Set<string>();
+  const slugs = new Set<string>(dbSlugs);
   for (const track of tracks) {
     slugs.add(normalizeSongSlug(track.id));
   }

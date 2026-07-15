@@ -73,6 +73,39 @@ const genreMap: Record<string, ChipKey> = {
   thriller: "thriller",
   sports: "sports",
   love: "love",
+  supernatural: "mystery",
+  "slice-of-life": "drama",
+  psychological: "mystery",
+};
+
+const songGenreMap: Record<string, ChipKey> = {
+  jpop: "jpop",
+  kpop: "kpop",
+  pop: "song",
+  rock: "action",
+  "hip-hop": "crime",
+  rnb: "romance",
+  electronic: "scific",
+  ost: "ost",
+  indie: "drama",
+  ballad: "romance",
+  metal: "horror",
+  jazz: "mystery",
+};
+
+const artistGenreMap: Record<string, ChipKey> = {
+  jpop: "jpop",
+  kpop: "kpop",
+  pop: "song",
+  rock: "action",
+  "hip-hop": "crime",
+  rnb: "romance",
+  electronic: "scific",
+  indie: "drama",
+  ballad: "romance",
+  metal: "horror",
+  jazz: "mystery",
+  classical: "documentary",
 };
 
 const typeMap: Record<MediaType, ChipKey> = {
@@ -93,6 +126,14 @@ const languageMap: Record<string, ChipKey> = {
   english: "song",
   "english pop": "song",
   japanese: "jpop",
+  korean: "kpop",
+  chinese: "drama",
+  hindi: "action",
+  spanish: "comedy",
+  french: "romance",
+  german: "mystery",
+  portuguese: "fantasy",
+  italian: "drama",
 };
 
 export function resolveGenreChip(genreId: string, label?: string): ChipKey {
@@ -105,6 +146,14 @@ export function resolveGenreChip(genreId: string, label?: string): ChipKey {
 
 export function resolveTypeChip(type: MediaType): ChipKey {
   return typeMap[type] ?? "default";
+}
+
+export function resolveSongGenreChip(genreId: string): ChipKey {
+  return songGenreMap[genreId.toLowerCase()] ?? "song";
+}
+
+export function resolveArtistGenreChip(genreId: string): ChipKey {
+  return artistGenreMap[genreId.toLowerCase()] ?? "music";
 }
 
 export function resolveLanguageChip(language: string): ChipKey {

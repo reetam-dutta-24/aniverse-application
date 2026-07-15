@@ -1,0 +1,549 @@
+"use client";
+
+import React from "react";
+import type {
+  CatalogReviewInput,
+  ContentCharacterInput,
+  ContentEpisodeInput,
+  ContentSeasonInput,
+} from "@/lib/validators/admin/catalog-shared";
+
+export const inputClass =
+  "h-11 rounded-xl border border-white/15 bg-white/5 px-3 text-sm text-white placeholder:text-white/35 focus:border-brand-magenta focus:outline-none";
+
+export function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="text-xs font-semibold uppercase tracking-wide text-white/55">
+        {label}
+      </span>
+      {hint ? <span className="text-xs text-white/40">{hint}</span> : null}
+      {children}
+    </label>
+  );
+}
+
+export function Section({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+      <div>
+        <h2 className="text-sm font-semibold text-white">{title}</h2>
+        {description ? (
+          <p className="mt-1 text-xs text-white/45">{description}</p>
+        ) : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+export function SlugListEditor({
+  label,
+  hint,
+  items,
+  placeholder,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  items: string[];
+  placeholder: string;
+  onChange: (items: string[]) => void;
+}) {
+  return (
+    <TagListEditor
+      label={label}
+      hint={hint}
+      items={items}
+      placeholder={placeholder}
+      onChange={onChange}
+    />
+  );
+}
+
+export function TagListEditor({
+  label,
+  hint,
+  items,
+  placeholder,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  items: string[];
+  placeholder: string;
+  onChange: (items: string[]) => void;
+}) {
+  const [input, setInput] = React.useState("");
+
+  function add() {
+    const value = input.trim();
+    if (!value || items.includes(value)) return;
+    onChange([...items, value]);
+    setInput("");
+  }
+
+  return (
+    <Field label={label} hint={hint}>
+      <div className="flex gap-2">
+        <input
+          className={`${inputClass} flex-1`}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              add();
+            }
+          }}
+          placeholder={placeholder}
+        />
+        <button
+          type="button"
+          onClick={add}
+          className="cursor-pointer rounded-xl border border-white/20 px-4 text-sm font-medium text-white hover:bg-white/10"
+        >
+          Add
+        </button>
+      </div>
+      {items.length > 0 ? (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {items.map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => onChange(items.filter((g) => g !== item))}
+              className="cursor-pointer rounded-full bg-white/10 px-3 py-1 text-xs text-white hover:bg-red-500/20"
+            >
+              {item} ×
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </Field>
+  );
+}
+
+import { ACCENT_OPTIONS } from "@/lib/catalog-enums";
+
+export function SeasonsEditor({
+  seasons,
+  onChange,
+}: {
+  seasons: ContentSeasonInput[];
+  onChange: (seasons: ContentSeasonInput[]) => void;
+}) {
+  function update(index: number, patch: Partial<ContentSeasonInput>) {
+    onChange(seasons.map((s, i) => (i === index ? { ...s, ...patch } : s)));
+  }
+
+  return (
+    <Section title="Seasons" description="Season tabs on the detail page.">
+      {seasons.map((season, index) => (
+        <div key={index} className="grid gap-3 rounded-xl border border-white/10 p-4 sm:grid-cols-3">
+          <Field label="Label">
+            <input
+              className={inputClass}
+              value={season.label}
+              onChange={(e) => update(index, { label: e.target.value })}
+            />
+          </Field>
+          <Field label="Episode count">
+            <input
+              className={inputClass}
+              type="number"
+              min={0}
+              value={season.episodeCount ?? ""}
+              onChange={(e) =>
+                update(index, {
+                  episodeCount: e.target.value ? Number(e.target.value) : undefined,
+                })
+              }
+            />
+          </Field>
+          <div className="flex items-end">
+            <button
+              type="button"
+              onClick={() => onChange(seasons.filter((_, i) => i !== index))}
+              className="cursor-pointer rounded-lg px-3 py-2 text-xs text-red-400 hover:bg-red-500/10"
+            >
+              Remove season
+            </button>
+          </div>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() =>
+          onChange([...seasons, { label: `Season ${seasons.length + 1}`, episodeCount: 0 }])
+        }
+        className="cursor-pointer self-start rounded-xl border border-white/20 px-4 py-2 text-sm text-white hover:bg-white/10"
+      >
+        + Add season
+      </button>
+    </Section>
+  );
+}
+
+export function EpisodesEditor({
+  episodes,
+  onChange,
+}: {
+  episodes: ContentEpisodeInput[];
+  onChange: (episodes: ContentEpisodeInput[]) => void;
+}) {
+  function update(index: number, patch: Partial<ContentEpisodeInput>) {
+    onChange(episodes.map((e, i) => (i === index ? { ...e, ...patch } : e)));
+  }
+
+  return (
+    <Section title="Episodes" description="Episode list on the detail page.">
+      {episodes.map((episode, index) => (
+        <div key={index} className="flex flex-col gap-3 rounded-xl border border-white/10 p-4">
+          <div className="grid gap-3 sm:grid-cols-4">
+            <Field label="Season #">
+              <input
+                className={inputClass}
+                type="number"
+                min={1}
+                value={episode.seasonNumber}
+                onChange={(e) => update(index, { seasonNumber: Number(e.target.value) })}
+              />
+            </Field>
+            <Field label="Episode #">
+              <input
+                className={inputClass}
+                type="number"
+                min={1}
+                value={episode.number}
+                onChange={(e) => update(index, { number: Number(e.target.value) })}
+              />
+            </Field>
+            <Field label="Title">
+              <input
+                className={inputClass}
+                value={episode.title}
+                onChange={(e) => update(index, { title: e.target.value })}
+              />
+            </Field>
+            <Field label="Duration">
+              <input
+                className={inputClass}
+                value={episode.duration ?? ""}
+                onChange={(e) => update(index, { duration: e.target.value })}
+                placeholder="24m"
+              />
+            </Field>
+          </div>
+          <Field label="Description">
+            <textarea
+              className={`${inputClass} min-h-20 py-2`}
+              value={episode.description ?? ""}
+              onChange={(e) => update(index, { description: e.target.value })}
+            />
+          </Field>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Field label="Thumbnail URL">
+              <input
+                className={inputClass}
+                value={episode.thumbnailUrl ?? ""}
+                onChange={(e) => update(index, { thumbnailUrl: e.target.value })}
+              />
+            </Field>
+            <Field label="Language">
+              <input
+                className={inputClass}
+                value={episode.language ?? ""}
+                onChange={(e) => update(index, { language: e.target.value })}
+              />
+            </Field>
+            <Field label="Rating">
+              <input
+                className={inputClass}
+                type="number"
+                min={0}
+                max={10}
+                step={0.1}
+                value={episode.rating ?? ""}
+                onChange={(e) =>
+                  update(index, {
+                    rating: e.target.value ? Number(e.target.value) : undefined,
+                  })
+                }
+              />
+            </Field>
+          </div>
+          <button
+            type="button"
+            onClick={() => onChange(episodes.filter((_, i) => i !== index))}
+            className="cursor-pointer self-start text-xs text-red-400 hover:underline"
+          >
+            Remove episode
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() =>
+          onChange([
+            ...episodes,
+            {
+              seasonNumber: 1,
+              number: episodes.length + 1,
+              title: `Episode ${episodes.length + 1}`,
+              duration: "",
+              description: "",
+              thumbnailUrl: "",
+              language: "",
+            },
+          ])
+        }
+        className="cursor-pointer self-start rounded-xl border border-white/20 px-4 py-2 text-sm text-white hover:bg-white/10"
+      >
+        + Add episode
+      </button>
+    </Section>
+  );
+}
+
+export function CharactersEditor({
+  characters,
+  onChange,
+}: {
+  characters: ContentCharacterInput[];
+  onChange: (characters: ContentCharacterInput[]) => void;
+}) {
+  function update(index: number, patch: Partial<ContentCharacterInput>) {
+    onChange(characters.map((c, i) => (i === index ? { ...c, ...patch } : c)));
+  }
+
+  return (
+    <Section title="Characters" description="Cast & characters section.">
+      {characters.map((character, index) => (
+        <div key={index} className="grid gap-3 rounded-xl border border-white/10 p-4 sm:grid-cols-2">
+          <Field label="Name">
+            <input
+              className={inputClass}
+              value={character.name}
+              onChange={(e) => update(index, { name: e.target.value })}
+            />
+          </Field>
+          <Field label="Role">
+            <input
+              className={inputClass}
+              value={character.role ?? ""}
+              onChange={(e) => update(index, { role: e.target.value })}
+            />
+          </Field>
+          <Field label="Voice actor">
+            <input
+              className={inputClass}
+              value={character.voiceActor ?? ""}
+              onChange={(e) => update(index, { voiceActor: e.target.value })}
+            />
+          </Field>
+          <Field label="Image URL">
+            <input
+              className={inputClass}
+              value={character.imageUrl ?? ""}
+              onChange={(e) => update(index, { imageUrl: e.target.value })}
+            />
+          </Field>
+          <Field label="Accent">
+            <select
+              className={inputClass}
+              value={character.accent ?? ""}
+              onChange={(e) =>
+                update(index, {
+                  accent: (e.target.value || undefined) as ContentCharacterInput["accent"],
+                })
+              }
+            >
+              <option value="" className="bg-[#1a0d2e]">None</option>
+              {ACCENT_OPTIONS.map((a) => (
+                <option key={a.value} value={a.value} className="bg-[#1a0d2e]">{a.label}</option>
+              ))}
+            </select>
+          </Field>
+          <div className="flex items-end">
+            <button
+              type="button"
+              onClick={() => onChange(characters.filter((_, i) => i !== index))}
+              className="cursor-pointer text-xs text-red-400 hover:underline"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() =>
+          onChange([...characters, { name: "", role: "", voiceActor: "", imageUrl: "" }])
+        }
+        className="cursor-pointer self-start rounded-xl border border-white/20 px-4 py-2 text-sm text-white hover:bg-white/10"
+      >
+        + Add character
+      </button>
+    </Section>
+  );
+}
+
+export function CatalogReviewsEditor({
+  reviews,
+  onChange,
+}: {
+  reviews: CatalogReviewInput[];
+  onChange: (reviews: CatalogReviewInput[]) => void;
+}) {
+  function update(index: number, patch: Partial<CatalogReviewInput>) {
+    onChange(reviews.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+  }
+
+  return (
+    <Section title="Curated reviews" description="Featured reviews on the detail page.">
+      {reviews.map((review, index) => (
+        <div key={index} className="flex flex-col gap-3 rounded-xl border border-white/10 p-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Field label="Author name">
+              <input
+                className={inputClass}
+                value={review.authorName}
+                onChange={(e) => update(index, { authorName: e.target.value })}
+              />
+            </Field>
+            <Field label="Rating">
+              <input
+                className={inputClass}
+                type="number"
+                min={0}
+                max={10}
+                step={0.1}
+                value={review.rating}
+                onChange={(e) => update(index, { rating: Number(e.target.value) })}
+              />
+            </Field>
+            <Field label="Like count">
+              <input
+                className={inputClass}
+                type="number"
+                min={0}
+                value={review.likeCount ?? ""}
+                onChange={(e) =>
+                  update(index, {
+                    likeCount: e.target.value ? Number(e.target.value) : undefined,
+                  })
+                }
+              />
+            </Field>
+          </div>
+          <Field label="Headline">
+            <input
+              className={inputClass}
+              value={review.headline ?? ""}
+              onChange={(e) => update(index, { headline: e.target.value })}
+            />
+          </Field>
+          <Field label="Review body">
+            <textarea
+              className={`${inputClass} min-h-24 py-2`}
+              value={review.body}
+              onChange={(e) => update(index, { body: e.target.value })}
+            />
+          </Field>
+          <button
+            type="button"
+            onClick={() => onChange(reviews.filter((_, i) => i !== index))}
+            className="cursor-pointer self-start text-xs text-red-400 hover:underline"
+          >
+            Remove review
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() =>
+          onChange([
+            ...reviews,
+            {
+              authorName: "",
+              authorAvatarColor: "#ff00cc",
+              rating: 9,
+              headline: "",
+              body: "",
+            },
+          ])
+        }
+        className="cursor-pointer self-start rounded-xl border border-white/20 px-4 py-2 text-sm text-white hover:bg-white/10"
+      >
+        + Add review
+      </button>
+    </Section>
+  );
+}
+
+export function BandMembersEditor({
+  members,
+  onChange,
+}: {
+  members: { name: string; role?: string }[];
+  onChange: (members: { name: string; role?: string }[]) => void;
+}) {
+  function update(index: number, patch: Partial<{ name: string; role?: string }>) {
+    onChange(members.map((m, i) => (i === index ? { ...m, ...patch } : m)));
+  }
+
+  return (
+    <Section title="Band members" description="For groups with multiple members (e.g. TWICE).">
+      {members.map((member, index) => (
+        <div key={index} className="grid gap-3 rounded-xl border border-white/10 p-4 sm:grid-cols-2">
+          <Field label="Member name">
+            <input
+              className={inputClass}
+              value={member.name}
+              onChange={(e) => update(index, { name: e.target.value })}
+            />
+          </Field>
+          <Field label="Role">
+            <input
+              className={inputClass}
+              value={member.role ?? ""}
+              onChange={(e) => update(index, { role: e.target.value })}
+              placeholder="Vocalist, Rapper…"
+            />
+          </Field>
+          <button
+            type="button"
+            onClick={() => onChange(members.filter((_, i) => i !== index))}
+            className="cursor-pointer text-xs text-red-400 hover:underline sm:col-span-2"
+          >
+            Remove member
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() => onChange([...members, { name: "", role: "" }])}
+        className="cursor-pointer self-start rounded-xl border border-white/20 px-4 py-2 text-sm text-white hover:bg-white/10"
+      >
+        + Add member
+      </button>
+    </Section>
+  );
+}

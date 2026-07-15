@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { getCommunityDetailPath } from "@/lib/community-routes";
-import { accentStyles } from "@/lib/accents";
+import { getAccentStyle } from "@/lib/accents";
 import type { Community, UserSummary } from "@/types";
 import { Chip } from "@/components/ui/chip";
 import { AvatarStack } from "@/components/ui/avatar-stack";
@@ -46,7 +46,7 @@ export function CommunityCard({
 }: CommunityCardProps) {
   const router = useRouter();
   const [hovered, setHovered] = useState(false);
-  const accent = accentStyles[community.accent ?? "cyan"];
+  const accent = getAccentStyle(community.accent ?? "cyan");
   const ctaLabel =
     hovered || ctaMode === "view" ? "View Community" : "Join Community";
 

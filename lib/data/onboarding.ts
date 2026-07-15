@@ -7,6 +7,7 @@ import {
   getGlobalPublicCollections,
   getRecentlyUsedCollections,
 } from "@/lib/data/collections";
+import { listArtistSearchItems } from "@/lib/services/feed.service";
 import {
   getMusicForYourTaste,
   getNewReleases,
@@ -506,7 +507,7 @@ export async function buildOnboardingRecommendations(
     tracks: rank(trackPool, (t) => scoreTrack(t, selection), 8),
     communities: rank(communityPool, (c) => scoreCommunity(c, selection), 4),
     collections: rank(collectionPool, (c) => scoreCollection(c, selection), 4),
-    artists: rank(artistCatalog, (a) => scoreArtist(a, selection), 6),
+    artists: rank(await listArtistSearchItems(20), (a) => scoreArtist(a, selection), 6),
     starterWatchlist: content.slice(0, 3),
     goalLinks,
   };

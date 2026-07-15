@@ -15,14 +15,9 @@ export type CommunityVisibility = "public" | "private";
 
 export type ActivityLevel = "very-active" | "active" | "moderate" | "quiet";
 
-/** Accent palette used for card glows and header gradients. */
-export type AccentColor =
-  | "pink"
-  | "purple"
-  | "cyan"
-  | "blue"
-  | "green"
-  | "yellow";
+import type { AccentColor } from "@/lib/catalog-enums";
+
+export type { AccentColor };
 
 export interface Genre {
   id: string;

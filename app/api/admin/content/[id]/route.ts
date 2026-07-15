@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { requireAdminApi } from "@/lib/admin-auth";
+import { requireContentAdminApi } from "@/lib/admin-auth";
 import { mapContentToItem } from "@/lib/mappers/content.mapper";
 import {
   ContentConflictError,
   deleteCatalogContent,
+  contentRecordToFormInput,
   getContentRecordById,
   isUniqueSlugError,
   updateCatalogContent,
@@ -14,7 +15,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 /** GET /api/admin/content/[id] */
 export async function GET(_request: Request, context: RouteContext) {
-  const denied = await requireAdminApi();
+  const denied = await requireContentAdminApi();
   if (denied) return denied;
 
   const { id } = await context.params;
@@ -25,26 +26,13 @@ export async function GET(_request: Request, context: RouteContext) {
 
   return NextResponse.json({
     item: mapContentToItem(row),
-    record: {
-      id: row.id,
-      title: row.title,
-      slug: row.slug,
-      type: row.type,
-      description: row.description ?? "",
-      synopsis: row.synopsis ?? "",
-      imageUrl: row.imageUrl ?? "",
-      rating: row.rating ?? undefined,
-      year: row.year ?? undefined,
-      meta: row.meta ?? "",
-      accent: row.accent ?? undefined,
-      genreLabels: row.genres.map((g) => g.genre.label),
-    },
+    record: contentRecordToFormInput(row),
   });
 }
 
 /** PATCH /api/admin/content/[id] */
 export async function PATCH(request: Request, context: RouteContext) {
-  const denied = await requireAdminApi();
+  const denied = await requireContentAdminApi();
   if (denied) return denied;
 
   const { id } = await context.params;
@@ -79,7 +67,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 /** DELETE /api/admin/content/[id] */
 export async function DELETE(_request: Request, context: RouteContext) {
-  const denied = await requireAdminApi();
+  const denied = await requireContentAdminApi();
   if (denied) return denied;
 
   const { id } = await context.params;

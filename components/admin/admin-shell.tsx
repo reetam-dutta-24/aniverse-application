@@ -2,22 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Clapperboard,
-  LayoutDashboard,
-  LogOut,
-  Shield,
-} from "lucide-react";
+import { LogOut, Shield } from "lucide-react";
+import type { PlatformRole } from "@prisma/client";
 import { signOut } from "next-auth/react";
+import { getVisibleAdminNavItems } from "@/lib/admin-nav";
 import { cn } from "@/lib/utils";
 
-const navItems = [
-  { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
-  { href: "/admin/content", label: "Content", icon: Clapperboard },
-];
-
-export function AdminShell({ children }: { children: React.ReactNode }) {
+export function AdminShell({
+  role,
+  children,
+}: {
+  role: PlatformRole;
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
+  const navItems = getVisibleAdminNavItems(role);
 
   return (
     <div className="flex min-h-dvh bg-[#0a0416] text-white">

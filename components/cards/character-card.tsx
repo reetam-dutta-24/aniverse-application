@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { accentStyles } from "@/lib/accents";
+import { getAccentStyle } from "@/lib/accents";
 import type { Character } from "@/types";
 import { Chip } from "@/components/ui/chip";
 
@@ -14,7 +14,7 @@ export function CharacterCard({
   className,
   ...props
 }: CharacterCardProps) {
-  const accent = accentStyles[character.accent ?? "purple"];
+  const accent = getAccentStyle(character.accent ?? "purple");
 
   return (
     <div

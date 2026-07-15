@@ -11,10 +11,10 @@ import {
   getRecentlyUsedCollections,
 } from "@/lib/data/collections";
 import { getCommunityStats, getRecommendedCommunities } from "@/lib/data/community";
+import { countCatalogContent } from "@/lib/services/feed.service";
 
 /**
- * Mock data layer — Dashboard home.
- * Aggregates highlights from feature pages for the overview hub.
+ * Dashboard home — catalog carousels from PostgreSQL; user stats still mock until watchlist/collections ship.
  */
 
 export interface HomeStats {
@@ -28,14 +28,14 @@ export interface HomeStats {
   trendingCount: number;
 }
 
-export async function getHomeStats(): Promise<HomeStats> {
-  const [tasteScore, watchlist, collections, community, trending] =
+export async function getHomeStats(userId?: string): Promise<HomeStats> {
+  const [tasteScore, watchlist, collections, community, catalogCount] =
     await Promise.all([
-      getAiTasteProfileScore(),
+      getAiTasteProfileScore(userId),
       getWatchlistStats(),
       getCollectionStats(),
       getCommunityStats(),
-      getTrendingThisWeek(),
+      countCatalogContent(),
     ]);
 
   return {
@@ -45,13 +45,13 @@ export async function getHomeStats(): Promise<HomeStats> {
     collections: collections.collections,
     communitiesJoined: community.joined,
     postsViewed: community.postsViewed,
-    newMatches: 12,
-    trendingCount: trending.length,
+    newMatches: Math.min(catalogCount, 24),
+    trendingCount: catalogCount,
   };
 }
 
-export async function getHomeContinueWatching() {
-  return getContinueWatching();
+export async function getHomeContinueWatching(userId?: string) {
+  return getContinueWatching(userId);
 }
 
 export async function getHomeRecommended() {
@@ -62,8 +62,8 @@ export async function getHomeTrending() {
   return getTrendingThisWeek();
 }
 
-export async function getHomeContinueListening() {
-  return getContinueListening();
+export async function getHomeContinueListening(userId?: string) {
+  return getContinueListening(userId);
 }
 
 export async function getHomeCommunities() {

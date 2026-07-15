@@ -15,7 +15,9 @@ datasource db {
 
 enum PlatformRole {
   USER
-  ADMIN
+  CONTENT_ADMIN
+  MUSIC_ADMIN
+  ARTIST_ADMIN
   SUPER_ADMIN
 }
 
@@ -136,14 +138,42 @@ model Content {
   id          String    @id @default(cuid())
   slug        String    @unique
   title       String
+  nativeTitle String?
   type        MediaType
   description String?   @db.Text
   synopsis    String?   @db.Text
   imageUrl    String?
+  backdropUrl String?
   rating      Float?
   year        Int?
   accent      String?
   meta        String?
+  trendingLabel String?
+  creditLabel   String?
+  /// Display chips on the detail hero (e.g. "All Seasons", "12 Episodes"). AI Match % is computed per user — not stored here.
+  highlightTags Json    @default("[]")
+  studio          String?
+  director        String?
+  originalAuthor  String?
+  sourceMaterial  String?
+  producers       String?
+  network         String?
+  country         String?
+  composer        String?
+  status          String?
+  ageRating       String?
+  imdbRating      Float?
+  malScore        Float?
+  airedFrom       String?
+  airedTo         String?
+  broadcast       String?
+  episodeDuration String?
+  airingDay       String?
+  seasonLabel     String?
+  lastUpdate      String?
+  languages       Json    @default("[]")
+  seasonCount     Int?
+  episodeCount    Int?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -153,9 +183,116 @@ model Content {
   reviews          Review[]
   ratings          Rating[]
   watchEvents      WatchEvent[]
+  sourceTracks     MusicTrack[]
+  seasons          ContentSeason[]
+  episodes         ContentEpisode[]
+  characters       ContentCharacter[]
+  featuredTracks   ContentFeaturedTrack[]
+  relatedFrom      ContentRelated[]     @relation("ContentRelatedFrom")
+  relatedTo        ContentRelated[]     @relation("ContentRelatedTo")
+  catalogReviews   CatalogReview[]
 
   @@index([type])
   @@index([slug])
+}
+
+model ContentSeason {
+  id           String   @id @default(cuid())
+  contentId    String
+  label        String
+  episodeCount Int      @default(0)
+  position     Int      @default(0)
+
+  content  Content           @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  episodes ContentEpisode[]
+
+  @@index([contentId])
+}
+
+model ContentEpisode {
+  id            String  @id @default(cuid())
+  contentId     String
+  seasonId      String?
+  seasonNumber  Int     @default(1)
+  number        Int
+  title         String
+  duration      String?
+  description   String? @db.Text
+  thumbnailUrl  String?
+  releaseDate   String?
+  language      String?
+  rating        Float?
+  position      Int     @default(0)
+
+  content Content        @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  season  ContentSeason? @relation(fields: [seasonId], references: [id], onDelete: SetNull)
+
+  @@index([contentId])
+  @@index([seasonId])
+}
+
+model ContentCharacter {
+  id         String  @id @default(cuid())
+  contentId  String
+  name       String
+  role       String?
+  voiceActor String?
+  imageUrl   String?
+  accent     String?
+  position   Int     @default(0)
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@index([contentId])
+}
+
+model ContentFeaturedTrack {
+  contentId String
+  trackId   String
+  position  Int    @default(0)
+
+  content Content    @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  track   MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@id([contentId, trackId])
+  @@index([contentId])
+}
+
+model ContentRelated {
+  contentId String
+  relatedId String
+  position  Int    @default(0)
+
+  content Content @relation("ContentRelatedFrom", fields: [contentId], references: [id], onDelete: Cascade)
+  related Content @relation("ContentRelatedTo", fields: [relatedId], references: [id], onDelete: Cascade)
+
+  @@id([contentId, relatedId])
+  @@index([contentId])
+}
+
+/// Admin-curated reviews shown on catalog detail pages (not user-submitted).
+model CatalogReview {
+  id                String   @id @default(cuid())
+  contentId         String?
+  trackId           String?
+  artistId          String?
+  authorName        String
+  authorAvatarColor String?  @default("#ff00cc")
+  rating            Float
+  headline          String?
+  body              String   @db.Text
+  accent            String?
+  likeCount         Int      @default(0)
+  position          Int      @default(0)
+  createdAt         DateTime @default(now())
+
+  content Content?    @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  track   MusicTrack? @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  artist  Artist?     @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@index([contentId])
+  @@index([trackId])
+  @@index([artistId])
 }
 
 model Genre {
@@ -174,41 +311,84 @@ model ContentGenre {
 }
 
 model MusicTrack {
-  id        String   @id @default(cuid())
-  slug      String   @unique
-  title     String
-  artist    String
-  kind      String
-  source    String?
-  language  String?
-  rating    Float?
-  imageUrl  String?
-  artistId  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  title           String
+  nativeTitle     String?
+  artist          String
+  kind            String
+  description     String?  @db.Text
+  source          String?
+  album           String?
+  language        String?
+  genres          Json     @default("[]")
+  rating          Float?
+  year            Int?
+  durationLabel   String?
+  durationSeconds Int?
+  imageUrl        String?
+  backdropUrl     String?
+  accent          String?
+  trendingLabel   String?
+  creditLabel     String?
+  featuredRank    Int?
+  artistId        String?
+  contentId       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  artistRef       Artist?          @relation(fields: [artistId], references: [id], onDelete: SetNull)
+  artistRef       Artist?                @relation(fields: [artistId], references: [id], onDelete: SetNull)
+  sourceContent   Content?               @relation(fields: [contentId], references: [id], onDelete: SetNull)
+  featuredOn      ContentFeaturedTrack[]
   collectionItems CollectionItem[]
   listenEvents    ListenEvent[]
   reviews         Review[]
+  catalogReviews  CatalogReview[]
+
+  @@index([slug])
+  @@index([artistId])
+  @@index([contentId])
+}
+
+model Artist {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  nativeTitle String?
+  synopsis    String?  @db.Text
+  imageUrl    String?
+  accent      String?
+  rating      Float?
+  rankLeft    String?
+  rankRight   String?
+  primaryTags Json     @default("[]")
+  languages   Json     @default("[]")
+  genres      Json     @default("[]")
+  label       String?
+  debutYear   Int?
+  isGroup     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members        ArtistMember[]
+  tracks         MusicTrack[]
+  reviews        Review[]
+  catalogReviews CatalogReview[]
 
   @@index([slug])
 }
 
-model Artist {
-  id        String       @id @default(cuid())
-  slug      String       @unique
-  title     String
-  synopsis  String?      @db.Text
-  imageUrl  String?
-  accent    String?
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+/// Band / group members when `Artist.isGroup` is true (e.g. TWICE).
+model ArtistMember {
+  id       String @id @default(cuid())
+  artistId String
+  name     String
+  role     String?
+  position Int    @default(0)
 
-  tracks  MusicTrack[]
-  reviews Review[]
+  artist Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
 
-  @@index([slug])
+  @@index([artistId])
 }
 
 // ─── User libraries ──────────────────────────────────────────────────────────

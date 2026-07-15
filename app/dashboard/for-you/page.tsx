@@ -26,8 +26,8 @@ export const metadata: Metadata = {
 };
 
 export default async function ForYouPage() {
+  const user = await getCurrentUser();
   const [
-    user,
     tasteScore,
     recommended,
     music,
@@ -39,8 +39,7 @@ export default async function ForYouPage() {
     relaxingMusic,
     hiddenGems,
   ] = await Promise.all([
-    getCurrentUser(),
-    getAiTasteProfileScore(),
+    getAiTasteProfileScore(user.id),
     getForYouRecommended(),
     getForYouMusic(),
     getBecauseYouWatched(),

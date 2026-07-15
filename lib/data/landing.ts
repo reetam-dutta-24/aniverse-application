@@ -1,3 +1,7 @@
+import {
+  getFeaturedCatalogReviews,
+  getSpotlightFromCatalog,
+} from "@/lib/services/feed.service";
 import type {
   Collection,
   Community,
@@ -245,7 +249,33 @@ export async function getSpotlightContent(): Promise<{
   content: ContentItem;
   music: ContentItem;
 }> {
-  return { content: spotlightContent, music: spotlightMusic };
+  const spotlight = await getSpotlightFromCatalog();
+  const fallbackContent: ContentItem = {
+    id: "jujutsu-kaisen",
+    title: "Jujutsu Kaisen",
+    type: "anime",
+    imageUrl: "/images/posters/jujutsu-kaisen.jpg",
+    genres: [
+      { id: "action", label: "Action" },
+      { id: "thriller", label: "Thriller" },
+    ],
+    matchScore: 93,
+    meta: "2 Seasons",
+    year: 2020,
+  };
+  const fallbackMusic: ContentItem = {
+    id: "gurenge",
+    title: "Gurenge",
+    type: "song",
+    imageUrl: "/images/posters/gurenge.jpg",
+    genres: [{ id: "ost", label: "Anime OST" }],
+    meta: "OST",
+    year: 2019,
+  };
+  return {
+    content: spotlight.content ?? fallbackContent,
+    music: spotlight.music ?? fallbackMusic,
+  };
 }
 
 export async function getFeaturedCommunity(): Promise<{
@@ -264,7 +294,8 @@ export async function getTrendingCommunities(): Promise<Community[]> {
 }
 
 export async function getFeaturedReviews(): Promise<Review[]> {
-  return featuredReviews;
+  const reviews = await getFeaturedCatalogReviews(6);
+  return reviews.length > 0 ? reviews : featuredReviews;
 }
 
 export async function getTasteStats(): Promise<StatMetric[]> {

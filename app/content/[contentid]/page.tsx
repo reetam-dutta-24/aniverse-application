@@ -11,10 +11,12 @@ import {
   ContentCharacterCard,
   ContentDetailHero,
   ContentEpisodeSection,
+  ContentMovieSection,
   ContentPageSection,
   ContentReviewSection,
 } from "@/components/content";
 import { GradientButton } from "@/components/ui/gradient-button";
+import { isMovieContentType } from "@/lib/content-media";
 import {
   getAllContentIds,
   getContentDetail,
@@ -51,16 +53,27 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
 
   if (!content) notFound();
 
+  const isMovie = isMovieContentType(content.type);
+  const movieEpisode = content.episodes[0];
+
   return (
     <div className="flex w-full flex-col gap-10 sm:gap-12 lg:gap-14">
       <ContentDetailHero content={content} />
 
-      <ContentEpisodeSection
-        episodes={content.episodes}
-        seasons={content.seasons}
-        contentId={content.id}
-        contentAccent={content.accent}
-      />
+      {isMovie ? (
+        <ContentMovieSection
+          content={content}
+          episode={movieEpisode}
+          contentAccent={content.accent}
+        />
+      ) : (
+        <ContentEpisodeSection
+          episodes={content.episodes}
+          seasons={content.seasons}
+          contentId={content.id}
+          contentAccent={content.accent}
+        />
+      )}
 
       <ContentPageSection
         title="🎭 Characters"

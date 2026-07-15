@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminContentTable } from "@/components/admin/content-table";
-import { AdminShell } from "@/components/admin/admin-shell";
-import { requireAdmin } from "@/lib/auth-guards";
+import { requireContentAdmin } from "@/lib/auth-guards";
 import { listCatalogContent } from "@/lib/services/content.service";
 
 export const metadata: Metadata = {
@@ -11,12 +10,11 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminContentPage() {
-  await requireAdmin();
+  await requireContentAdmin();
   const { items: rows } = await listCatalogContent({ pageSize: 100 });
 
   return (
-    <AdminShell>
-      <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-white">Content catalog</h1>
@@ -33,7 +31,6 @@ export default async function AdminContentPage() {
         </div>
 
         <AdminContentTable rows={rows} />
-      </div>
-    </AdminShell>
+    </div>
   );
 }

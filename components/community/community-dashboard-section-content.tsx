@@ -2,7 +2,7 @@
 
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { accentStyles } from "@/lib/accents";
+import { getAccentStyle } from "@/lib/accents";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { AvatarStack } from "@/components/ui/avatar-stack";
 import { CommunityDashboardFeedPost } from "@/components/community/community-dashboard-feed-post";
@@ -59,7 +59,7 @@ function WatchChannelRow({
 }: {
   party: CommunityDetail["dashboardWatchParties"][number];
 }) {
-  const accent = accentStyles[party.accent ?? "purple"];
+  const accent = getAccentStyle(party.accent ?? "purple");
 
   return (
     <div className="flex flex-col gap-4 rounded-[20px] border border-white/[0.08] bg-black/35 p-4 shadow-card-inner sm:flex-row sm:items-center sm:p-5">
@@ -106,7 +106,7 @@ function VoiceChannelRow({
 }: {
   channel: CommunityDetail["dashboardVoiceChannels"][number];
 }) {
-  const accent = accentStyles[channel.accent ?? "purple"];
+  const accent = getAccentStyle(channel.accent ?? "purple");
 
   return (
     <div className="flex flex-col gap-4 rounded-[20px] border border-white/[0.08] bg-black/35 p-4 shadow-card-inner sm:flex-row sm:items-center sm:p-5">

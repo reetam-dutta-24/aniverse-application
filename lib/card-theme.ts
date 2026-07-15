@@ -1,4 +1,5 @@
-import type { AccentColor } from "@/types";
+import type { AccentColor } from "@/lib/catalog-enums";
+import { isAccentColor } from "@/lib/catalog-enums";
 
 export interface CardTint {
   glass: string;
@@ -33,7 +34,7 @@ const TINT_POOL: CardTint[] = [
   { glass: "rgba(34, 197, 94, 0.14)", header: "bg-header-green" },
 ];
 
-/** Accent-mapped tints — used for character cards and themed inner shadows. */
+/** Accent-mapped tints — drives hero inner glow, KPI cards, and themed cards. */
 const ACCENT_TINT: Record<AccentColor, CardTint> = {
   pink: { glass: "rgba(255, 0, 204, 0.22)", header: "bg-header-pink" },
   purple: { glass: "rgba(128, 0, 255, 0.2)", header: "bg-header-purple" },
@@ -41,19 +42,36 @@ const ACCENT_TINT: Record<AccentColor, CardTint> = {
   yellow: { glass: "rgba(255, 208, 0, 0.18)", header: "bg-header-yellow" },
   blue: { glass: "rgba(37, 99, 235, 0.2)", header: "bg-header-blue" },
   green: { glass: "rgba(16, 185, 129, 0.17)", header: "bg-header-green" },
+  red: { glass: "rgba(239, 68, 68, 0.2)", header: "bg-header-pink" },
+  orange: { glass: "rgba(249, 115, 22, 0.2)", header: "bg-header-yellow" },
+  teal: { glass: "rgba(20, 184, 166, 0.18)", header: "bg-header-cyan" },
+  indigo: { glass: "rgba(99, 102, 241, 0.2)", header: "bg-header-blue" },
+  rose: { glass: "rgba(244, 63, 94, 0.2)", header: "bg-header-pink" },
+  lime: { glass: "rgba(132, 204, 22, 0.18)", header: "bg-header-green" },
+  amber: { glass: "rgba(245, 158, 11, 0.2)", header: "bg-header-yellow" },
+  violet: { glass: "rgba(139, 92, 246, 0.2)", header: "bg-header-purple" },
+  fuchsia: { glass: "rgba(217, 70, 239, 0.2)", header: "bg-header-pink" },
+  sky: { glass: "rgba(14, 165, 233, 0.18)", header: "bg-header-cyan" },
+  emerald: { glass: "rgba(16, 185, 129, 0.2)", header: "bg-header-green" },
 };
 
-export function getAccentTint(accent: AccentColor = "purple"): CardTint {
-  return ACCENT_TINT[accent];
+export function getAccentTint(accent?: AccentColor | string): CardTint {
+  if (accent && isAccentColor(accent)) return ACCENT_TINT[accent];
+  return ACCENT_TINT.blue;
 }
 
-/** Outer neon glow derived from a card tint (episode/character hover). */
+/** KPI stat card background gradient from catalog accent. */
+export function getAccentStatBackground(accent?: AccentColor | string): string {
+  const { glass } = getAccentTint(accent);
+  const [r, g, b] = getTintRgb(glass);
+  return `linear-gradient(135deg, rgba(${r},${g},${b},0.92) 0%, rgba(${r},${g},${b},0.58) 55%, rgba(${r},${g},${b},0.38) 100%)`;
+}
+
 export function getTintOuterGlow(glass: string, spread = 12): string {
   const [r, g, b] = getTintRgb(glass);
   return `0 0 ${spread}px 4px rgba(${r},${g},${b},0.75), 0 0 ${spread * 2}px 8px rgba(${r},${g},${b},0.35)`;
 }
 
-/** Glow from a hex avatar/profile color (review cards). */
 export function getHexOuterGlow(hex: string, spread = 10): string {
   const normalized = hex.replace("#", "");
   if (normalized.length < 6) return getTintOuterGlow("rgba(128, 0, 255, 0.2)", spread);
@@ -69,28 +87,21 @@ function hashId(id: string): number {
   return h;
 }
 
-/**
- * Stable tint per card. `sectionSeed` offsets the palette per slider section
- * so the same title gets a different color in different rows.
- */
 export function getCardTint(id: string, sectionSeed = 0): CardTint {
   const idx = (hashId(id) + sectionSeed * 11) % TINT_POOL.length;
   return TINT_POOL[idx];
 }
 
-/** Hash a section title into a numeric seed for tint offsetting. */
 export function sectionTintSeed(title: string): number {
   return hashId(title) % TINT_POOL.length;
 }
 
-/** Parse RGB from a tint glass string e.g. `rgba(255, 0, 204, 0.22)`. */
 export function getTintRgb(glass: string): [number, number, number] {
   const match = glass.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
   if (!match) return [138, 56, 245];
   return [Number(match[1]), Number(match[2]), Number(match[3])];
 }
 
-/** Soft ambient wash derived from each card's theme tint (Spotify-style). */
 export function getTintGlowStyles(glass: string) {
   const [r, g, b] = getTintRgb(glass);
   return {
@@ -98,7 +109,6 @@ export function getTintGlowStyles(glass: string) {
   };
 }
 
-/** Spotify-style section ambience when a card in the row is hovered. */
 export function getSectionAmbienceStyles(glass: string) {
   const [r, g, b] = getTintRgb(glass);
   return {
@@ -107,7 +117,6 @@ export function getSectionAmbienceStyles(glass: string) {
   };
 }
 
-/** Glass tint from a hex color (review avatars, custom accents). */
 export function getHexGlass(hex: string, alpha = 0.2): string {
   const normalized = hex.replace("#", "");
   if (normalized.length < 6) return `rgba(138, 56, 245, ${alpha})`;
@@ -117,10 +126,6 @@ export function getHexGlass(hex: string, alpha = 0.2): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-/**
- * Lighter inner boundary glow for detail-route heroes — derived from the
- * exact card template bg tint (`getCardTint(itemId).glass`), not accent keys.
- */
 export function getDetailHeroBoundaryGlow(glass: string) {
   const [r, g, b] = getTintRgb(glass);
   return {
@@ -128,5 +133,3 @@ export function getDetailHeroBoundaryGlow(glass: string) {
     radialBackground: `radial-gradient(ellipse 100% 80% at 0% 0%, rgba(${r},${g},${b},0.07) 0%, transparent 55%), radial-gradient(ellipse 70% 90% at 100% 50%, rgba(${r},${g},${b},0.05) 0%, transparent 60%)`,
   };
 }
-
-/** Figma drop shadow — use getTintGlowStyles for themed cards. */

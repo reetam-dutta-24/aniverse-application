@@ -1,4 +1,5 @@
 import type { MediaType as PrismaMediaType, Content, Genre } from "@prisma/client";
+import { labelForContentGenre } from "@/lib/catalog-enums";
 import type { ContentItem, Genre as AppGenre, MediaType } from "@/types";
 
 type ContentWithGenres = Content & {
@@ -38,7 +39,11 @@ export function appMediaTypeToPrisma(type: MediaType): PrismaMediaType {
 }
 
 export function mapGenre(genre: Genre): AppGenre {
-  return { id: genre.id, label: genre.label };
+  const slug = genre.label.toLowerCase();
+  return {
+    id: slug,
+    label: labelForContentGenre(slug) !== slug ? labelForContentGenre(slug) : genre.label,
+  };
 }
 
 export function mapContentToItem(row: ContentWithGenres): ContentItem {
@@ -47,8 +52,8 @@ export function mapContentToItem(row: ContentWithGenres): ContentItem {
     title: row.title,
     type: prismaMediaTypeToApp(row.type),
     description: row.description ?? undefined,
-    imageUrl: row.imageUrl ?? undefined,
-    genres: row.genres.map((g) => mapGenre(g.genre)),
+    imageUrl: row.imageUrl ?? `/images/posters/${row.slug}.jpg`,
+    genres: (row.genres ?? []).map((g) => mapGenre(g.genre)),
     rating: row.rating ?? undefined,
     meta: row.meta ?? undefined,
     year: row.year ?? undefined,

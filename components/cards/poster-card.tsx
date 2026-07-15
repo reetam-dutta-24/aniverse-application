@@ -151,7 +151,7 @@ export function PosterCard({
                 {item.title}
               </p>
               <div className="flex flex-wrap items-center justify-center gap-1">
-                {item.genres.map((genre) => (
+                {(item.genres ?? []).map((genre) => (
                   <Chip
                     key={genre.id}
                     genreId={genre.id}
@@ -195,7 +195,7 @@ export function PosterCard({
               </p>
 
               <div className="flex flex-wrap items-center justify-center gap-1">
-                {item.genres.map((genre) => (
+                {(item.genres ?? []).map((genre) => (
                   <Chip
                     key={genre.id}
                     genreId={genre.id}

@@ -24,8 +24,8 @@ export const metadata: Metadata = {
 };
 
 export default async function DiscoverPage() {
+  const user = await getCurrentUser();
   const [
-    user,
     filters,
     trending,
     recommended,
@@ -35,15 +35,14 @@ export default async function DiscoverPage() {
     trendingMusic,
     continueListening,
   ] = await Promise.all([
-    getCurrentUser(),
     getActiveFilters(),
     getTrendingThisWeek(),
     getRecommendedForYou(),
     getNewReleases(),
-    getContinueWatching(),
+    getContinueWatching(user.id),
     getMusicForYourTaste(),
     getTrendingMusic(),
-    getContinueListening(),
+    getContinueListening(user.id),
   ]);
 
   return (

@@ -10,18 +10,22 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { labelForLanguage } from "@/lib/catalog-enums";
+import { isMovieContentType } from "@/lib/content-media";
 import {
   detailHeroBtnBase,
   DETAIL_HERO_BTN_GROUP,
   DETAIL_HERO_BTN_PAIR,
 } from "@/lib/detail-route-ui";
 import {
-  getCardTint,
+  getAccentStatBackground,
+  getAccentTint,
   getDetailHeroBoundaryGlow,
 } from "@/lib/card-theme";
 import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { Chip, MatchChip } from "@/components/ui/chip";
+import { DetailImage } from "@/components/ui/detail-image";
 import { ContentHeroActions } from "@/components/content/content-hero-actions";
 import type { ContentDetail, ContentEngagementStat, ContentMetadata, Episode, MediaType } from "@/types";
 
@@ -66,11 +70,6 @@ function totalEpisodes(content: ContentDetail) {
 
 function seasonCount(content: ContentDetail) {
   return content.seasons.filter((season) => season.id !== "movie").length;
-}
-
-/** Hero inner glow matches the card template bg for this item (not accent keys). */
-function resolveHeroTint(content: ContentDetail) {
-  return getCardTint(content.id, 0);
 }
 
 function resolveContinueEpisode(content: ContentDetail): Episode | null {
@@ -157,19 +156,23 @@ function buildMetadataRows(
   ].filter(Boolean) as { label: string; value: string }[];
 }
 
-/** Figma hero — full-width, themed inner boundary, neutral poster vignette. */
+/** Figma hero — full-width, accent-themed inner boundary, neutral poster vignette. */
 export function ContentDetailHero({ content }: ContentDetailHeroProps) {
-  const tint = resolveHeroTint(content);
+  const tint = getAccentTint(content.accent);
   const heroGlow = getDetailHeroBoundaryGlow(tint.glass);
+  const statBackground = getAccentStatBackground(content.accent);
   const titleLine = content.nativeTitle
     ? `${content.title} | ${content.nativeTitle}`
     : content.title;
   const languages = content.metadata.languages ?? [];
-  const trailerSeason = content.seasons[0]?.label ?? "Season 1";
   const songMedia = isSongMedia(content.type);
+  const isMovie = isMovieContentType(content.type);
   const metadataChips = buildMetadataChips(content.metadata);
   const metadataRows = buildMetadataRows(content.metadata, content.type);
   const continueEpisode = resolveContinueEpisode(content);
+  const trailerLabel = isMovie
+    ? "Full Movie"
+    : (content.seasons[0]?.label ?? "Season 1");
 
   return (
     <section
@@ -183,7 +186,6 @@ export function ContentDetailHero({ content }: ContentDetailHeroProps) {
       />
 
       <div className="relative grid w-full grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(300px,36vw)] lg:min-h-[calc(100dvh-4.5rem)]">
-        {/* Left — metadata, actions, stats */}
         <div className="flex flex-col gap-3 px-5 py-5 sm:px-8 sm:py-6 lg:gap-3.5 lg:px-10 lg:py-7 xl:px-14">
           <div className="flex flex-wrap items-center gap-2.5">
             <span
@@ -253,6 +255,8 @@ export function ContentDetailHero({ content }: ContentDetailHeroProps) {
                   </Chip>
                 ) : null}
               </>
+            ) : isMovie ? (
+              metadataChips
             ) : (
               <>
                 <Chip chipKey="default" className={DETAIL_CHIP}>
@@ -266,12 +270,11 @@ export function ContentDetailHero({ content }: ContentDetailHeroProps) {
             )}
             {languages.map((lang) => (
               <Chip key={lang} language={lang} className={DETAIL_CHIP}>
-                {lang}
+                {labelForLanguage(lang)}
               </Chip>
             ))}
           </div>
 
-          {/* Metadata facts + collection/fav buttons */}
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             {metadataRows.length > 0 ? (
               <ul className="grid min-w-0 flex-1 grid-cols-1 gap-x-6 gap-y-0.5 text-xs text-white/85 sm:grid-cols-2 sm:text-sm">
@@ -316,7 +319,8 @@ export function ContentDetailHero({ content }: ContentDetailHeroProps) {
             {content.engagementStats.map((stat) => (
               <div
                 key={stat.id}
-                className="bg-gradient-brand flex flex-col items-center justify-center gap-1 rounded-xl px-2 py-3 text-center sm:py-3.5"
+                className="flex flex-col items-center justify-center gap-1 rounded-xl px-2 py-3 text-center sm:py-3.5"
+                style={{ background: statBackground }}
               >
                 <StatIcon stat={stat} />
                 <span className="text-xs font-medium leading-tight text-white/95 sm:text-sm">
@@ -335,14 +339,12 @@ export function ContentDetailHero({ content }: ContentDetailHeroProps) {
           />
         </div>
 
-        {/* Right — full-bleed poster, neutral vignette only */}
         <div className="relative min-h-[360px] lg:min-h-0">
           <div className="relative size-full overflow-hidden lg:absolute lg:inset-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <DetailImage
               src={content.imageUrl}
               alt={content.title}
-              className="size-full object-cover object-top"
+              priority
             />
             <div
               aria-hidden
@@ -374,12 +376,12 @@ export function ContentDetailHero({ content }: ContentDetailHeroProps) {
                 <PlayCircle className="size-4 shrink-0" />
                 <span className="flex min-w-0 flex-col items-start leading-tight">
                   <span className="truncate text-[10px] font-semibold sm:text-[11px]">
-                    {songMedia ? "Play Now" : "Watch Trailer"}
+                    {songMedia ? "Play Now" : isMovie ? "Watch Movie" : "Watch Trailer"}
                   </span>
                   <span className="truncate text-[9px] font-normal opacity-90">
                     {songMedia
                       ? (content.metadata.episodeDuration ?? "Full Track")
-                      : trailerSeason}
+                      : trailerLabel}
                   </span>
                 </span>
               </GradientButton>

@@ -2,12 +2,6 @@ import type { Collection, Community, ContentItem, MusicTrack } from "@/types";
 import { getArtistDetail } from "@/lib/data/artist-detail";
 import { getGlobalCommunities } from "@/lib/data/community";
 import { getGlobalPublicCollections } from "@/lib/data/collections";
-import {
-  getContinueWatching,
-  getNewReleases,
-  getRecommendedForYou,
-  getTrendingThisWeek,
-} from "@/lib/data/discover";
 import { getUserDetail } from "@/lib/data/user-detail";
 import { getArtistDetailPath } from "@/lib/artist-routes";
 import { getCollectionDetailPath } from "@/lib/collection-routes";
@@ -18,6 +12,14 @@ import {
 } from "@/lib/content-routes";
 import { getProfilePath } from "@/lib/profile-routes";
 import { getSongDetailPath } from "@/lib/song-routes";
+import {
+  listAllCatalogContentItems,
+  listAllCatalogMusicTracks,
+  listArtistSearchItems,
+  searchCatalogArtists,
+  searchCatalogContent,
+  searchCatalogMusic,
+} from "@/lib/services/feed.service";
 import {
   bestFieldScore,
   normalizeSearchQuery,
@@ -31,9 +33,6 @@ import type {
   SearchResultType,
 } from "@/lib/search/types";
 
-const g = (id: string, label: string) => ({ id, label });
-const poster = (slug: string) => `/images/posters/${slug}.jpg`;
-
 const profileCatalog: ProfileSearchItem[] = [
   {
     id: "reetam-dutta",
@@ -44,163 +43,26 @@ const profileCatalog: ProfileSearchItem[] = [
     followerCount: 125,
     bio: "Anime lover · K-pop enthusiast · Building AniVerse.",
   },
-  {
-    id: "emily-carter",
-    name: "Emily Carter",
-    handle: "Emily_C_89",
-    avatarColor: "#ff00cc",
-    portraitUrl: "/images/hero-2.png",
-    followerCount: 84,
-    bio: "Moderator · Global Anime Community.",
-  },
-  {
-    id: "lucas-silva",
-    name: "Lucas Silva",
-    handle: "Lucas_Anime",
-    avatarColor: "#00e5ff",
-    portraitUrl: "/images/hero-3.png",
-    followerCount: 62,
-    bio: "Watch party host · Shonen fan.",
-  },
-];
-
-const artistCatalog: ContentItem[] = [
-  {
-    id: "twice",
-    title: "TWICE",
-    type: "artist",
-    imageUrl: "/images/artists/twice.jpg",
-    genres: [g("kpop", "K-Pop")],
-    rating: 9.4,
-    matchScore: 96,
-    meta: "Girl Group",
-    year: 2015,
-  },
-];
-
-const contentSimilarPool: ContentItem[] = [
-  {
-    id: "death-note",
-    title: "Death Note",
-    type: "anime",
-    imageUrl: poster("death-note"),
-    genres: [g("crime", "Crime"), g("thriller", "Thriller")],
-    rating: 9.2,
-    matchScore: 90,
-    meta: "1 Season",
-    year: 2006,
-  },
-  {
-    id: "death-parade",
-    title: "Death Parade",
-    type: "anime",
-    imageUrl: poster("monster"),
-    genres: [g("thriller", "Thriller"), g("drama", "Drama")],
-    rating: 8.9,
-    matchScore: 88,
-    meta: "1 Season",
-    year: 2015,
-  },
-  {
-    id: "code-geass",
-    title: "Code Geass",
-    type: "anime",
-    imageUrl: poster("code-geass"),
-    genres: [g("thriller", "Thriller"), g("action", "Action")],
-    rating: 9.1,
-    matchScore: 90,
-    meta: "2 Seasons",
-    year: 2006,
-  },
-  {
-    id: "monster",
-    title: "Monster",
-    type: "anime",
-    imageUrl: poster("monster"),
-    genres: [g("thriller", "Thriller"), g("crime", "Crime")],
-    rating: 9.3,
-    matchScore: 92,
-    meta: "1 Season",
-    year: 2004,
-  },
-  {
-    id: "classroom-of-elite",
-    title: "Classroom Of Elite",
-    type: "anime",
-    imageUrl: poster("classroom-of-the-elite"),
-    genres: [g("thriller", "Thriller"), g("drama", "Drama")],
-    rating: 9.2,
-    matchScore: 89,
-    meta: "3 Seasons",
-    year: 2017,
-  },
-  {
-    id: "demon-slayer",
-    title: "Demon Slayer",
-    type: "anime",
-    imageUrl: poster("demon-slayer"),
-    genres: [g("action", "Action"), g("fantasy", "Fantasy")],
-    rating: 8.9,
-    matchScore: 87,
-    meta: "4 Seasons",
-    year: 2019,
-  },
-  {
-    id: "tokyo-ghoul",
-    title: "Tokyo Ghoul",
-    type: "anime",
-    imageUrl: poster("tokyo-ghoul"),
-    genres: [g("horror", "Horror"), g("action", "Action")],
-    rating: 8.7,
-    matchScore: 85,
-    meta: "4 Seasons",
-    year: 2014,
-  },
 ];
 
 async function allContentItems(): Promise<ContentItem[]> {
-  const pools = await Promise.all([
-    getTrendingThisWeek(),
-    getRecommendedForYou(),
-    getNewReleases(),
-    getContinueWatching(),
+  const [content, artists] = await Promise.all([
+    listAllCatalogContentItems(100),
+    listArtistSearchItems(50),
   ]);
   const seen = new Set<string>();
   const items: ContentItem[] = [];
-  for (const pool of pools) {
-    for (const item of pool) {
-      const slug = normalizeContentSlug(item.id);
-      if (seen.has(slug)) continue;
-      seen.add(slug);
-      items.push({ ...item, id: slug });
-    }
-  }
-  for (const extra of [...contentSimilarPool, ...artistCatalog]) {
-    if (!seen.has(extra.id)) {
-      seen.add(extra.id);
-      items.push(extra);
-    }
+  for (const item of [...content, ...artists]) {
+    const slug = normalizeContentSlug(item.id);
+    if (seen.has(slug)) continue;
+    seen.add(slug);
+    items.push({ ...item, id: slug });
   }
   return items;
 }
 
 async function allMusicTracks(): Promise<MusicTrack[]> {
-  const tracks = await import("@/lib/data/discover").then((m) =>
-    m.getTrendingMusic(),
-  );
-  const taste = await import("@/lib/data/discover").then((m) =>
-    m.getMusicForYourTaste(),
-  );
-  const seen = new Set<string>();
-  const merged: MusicTrack[] = [];
-  for (const pool of [tracks, await taste]) {
-    for (const track of pool) {
-      if (seen.has(track.id)) continue;
-      seen.add(track.id);
-      merged.push(track);
-    }
-  }
-  return merged;
+  return listAllCatalogMusicTracks(100);
 }
 
 function toSearchResult(
@@ -219,7 +81,6 @@ function detectPrimaryType(
   query: string,
   ranked: SearchResult[],
 ): SearchPrimaryType {
-  const q = normalizeSearchQuery(query);
   const top = ranked[0];
   if (!top) return "content";
 
@@ -230,16 +91,6 @@ function detectPrimaryType(
   const songHit = byType("song");
   const profileHit = byType("profile");
   const contentHit = byType("content");
-
-  if (/\btwice\b|katseye|newjeans|red velvet|aespa|le sserafim|\bive\b/.test(q)) {
-    return "artist";
-  }
-  if (/\bgurenge\b|sparkle|suzume|kaikai kitan|unravel/.test(q)) {
-    return "song";
-  }
-  if (/reetam|dutta|emily.carter|lucas.silva/.test(q)) {
-    return "profile";
-  }
 
   const candidates: { type: SearchPrimaryType; score: number }[] = [];
   if (artistHit) candidates.push({ type: "artist", score: artistHit.score });
@@ -263,9 +114,10 @@ export async function searchAutocomplete(
   const q = normalizeSearchQuery(query);
   if (q.length < 2) return [];
 
-  const [content, songs, collections, communities] = await Promise.all([
-    allContentItems(),
-    allMusicTracks(),
+  const [content, songs, artists, collections, communities] = await Promise.all([
+    searchCatalogContent(q, 16),
+    searchCatalogMusic(q, 16),
+    searchCatalogArtists(q, 8),
     getGlobalPublicCollections(),
     getGlobalCommunities(),
   ]);
@@ -278,18 +130,30 @@ export async function searchAutocomplete(
       q,
     );
     if (score < 50) continue;
-    const href =
-      item.type === "artist"
-        ? getArtistDetailPath(item.id)
-        : getContentDetailPath(item.id);
     results.push(
       toSearchResult(
-        item.type === "artist" ? "artist" : "content",
+        "content",
         item.id,
         item.title,
-        item.type === "artist" ? "Artist" : item.type,
+        item.type,
         item.imageUrl,
-        href,
+        getContentDetailPath(item.id),
+        score,
+      ),
+    );
+  }
+
+  for (const artist of artists) {
+    const score = bestFieldScore([artist.title, artist.meta ?? "artist"], q);
+    if (score < 50) continue;
+    results.push(
+      toSearchResult(
+        "artist",
+        artist.id,
+        artist.title,
+        "Artist",
+        artist.imageUrl,
+        getArtistDetailPath(artist.id),
         score,
       ),
     );
@@ -340,19 +204,14 @@ export async function searchAutocomplete(
         collection.name,
         "Collection",
         collection.imageUrl,
-        getCollectionDetailPath(
-          collection.id === "global-1" ? "anime-masterpieces" : collection.id,
-        ),
+        getCollectionDetailPath(collection.id),
         score,
       ),
     );
   }
 
   for (const community of communities.slice(0, 6)) {
-    const score = bestFieldScore(
-      [community.name, community.category],
-      q,
-    );
+    const score = bestFieldScore([community.name, community.category], q);
     if (score < 55) continue;
     results.push(
       toSearchResult(
@@ -361,9 +220,7 @@ export async function searchAutocomplete(
         community.name,
         community.category,
         community.imageUrl,
-        getCommunityDetailPath(
-          community.id === "twice" ? "global-anime-community" : community.id,
-        ),
+        getCommunityDetailPath(community.id),
         score,
       ),
     );
@@ -379,21 +236,15 @@ export async function getSearchPageData(query: string): Promise<SearchPageData |
   const suggestions = await searchAutocomplete(q, 24);
   const primaryType = detectPrimaryType(q, suggestions);
 
-  const [contentPool, songPool, collections, communities, twiceArtist] =
+  const [contentPool, songPool, artistPool, collections, communities] =
     await Promise.all([
       allContentItems(),
       allMusicTracks(),
+      listArtistSearchItems(50),
       getGlobalPublicCollections(),
       getGlobalCommunities(),
-      getArtistDetail("twice"),
     ]);
 
-  const similarArtists =
-    twiceArtist?.similarArtists ??
-    artistCatalog.filter((a) => a.id !== "twice");
-
-  // Rank every pool entry against the query so ALL matching titles surface
-  // in top results (e.g. "death" → Death Note AND Death Parade), best first.
   const rankMatches = <T,>(
     pool: T[],
     score: (item: T) => number,
@@ -411,26 +262,17 @@ export async function getSearchPageData(query: string): Promise<SearchPageData |
   );
   const topContentMatches = contentMatches.length
     ? contentMatches.slice(0, 6)
-    : contentPool.slice(0, 1);
+    : contentPool.filter((i) => i.type !== "artist").slice(0, 1);
   const topContent = topContentMatches[0];
 
   const songMatches = rankMatches(songPool, (track) =>
     bestFieldScore([track.title, track.artist], q),
   );
-  const fallbackSong = songPool.find((t) => t.id === "gurenge") ?? songPool[0];
   const topSongMatches = songMatches.length
     ? songMatches.slice(0, 6)
-    : fallbackSong
-      ? [fallbackSong]
-      : [];
+    : songPool.slice(0, 1);
   const topSong = topSongMatches[0];
 
-  const artistPool = [
-    ...artistCatalog,
-    ...similarArtists.filter(
-      (artist) => !artistCatalog.some((a) => a.id === artist.id),
-    ),
-  ];
   const artistMatches = rankMatches(
     artistPool,
     (artist) => scoreSearchMatch(artist.title, q),
@@ -438,7 +280,7 @@ export async function getSearchPageData(query: string): Promise<SearchPageData |
   );
   const topArtistMatches = artistMatches.length
     ? artistMatches.slice(0, 6)
-    : artistCatalog.slice(0, 1);
+    : artistPool.slice(0, 1);
   const topArtist = topArtistMatches[0];
 
   const topProfile =
@@ -451,31 +293,23 @@ export async function getSearchPageData(query: string): Promise<SearchPageData |
   const topContentIds = new Set(topContentMatches.map((item) => item.id));
   const topSongIds = new Set(topSongMatches.map((track) => track.id));
 
-  const similarContent = contentSimilarPool
-    .filter((item) => !topContentIds.has(item.id))
+  const similarContent = contentPool
+    .filter((item) => item.type !== "artist" && !topContentIds.has(item.id))
     .slice(0, 8);
 
   const similarSongs = songPool
     .filter((t) => !topSongIds.has(t.id))
     .slice(0, 8);
 
-  const artistSongs = twiceArtist?.allSongs.slice(0, 18) ?? [];
+  const artistDetail = topArtist ? await getArtistDetail(topArtist.id) : null;
+  const similarArtists = artistPool
+    .filter((a) => a.id !== topArtist?.id)
+    .slice(0, 8);
+  const artistSongs = artistDetail?.allSongs.slice(0, 18) ?? [];
 
   const similarProfiles = profileCatalog
     .filter((p) => p.id !== topProfile?.id)
     .slice(0, 4);
-
-  const displayCollections = collections.slice(0, 8).map((c, i) => ({
-    ...c,
-    id: i === 0 ? "anime-masterpieces" : c.id,
-    name: i === 0 ? "Anime Masterpieces" : c.name,
-  }));
-
-  const displayCommunities = communities.slice(0, 8).map((c, i) => ({
-    ...c,
-    id: i === 0 ? "global-anime-community" : c.id,
-    name: i === 0 ? "Global Anime Community" : c.name,
-  }));
 
   return {
     query: query.trim(),
@@ -492,12 +326,11 @@ export async function getSearchPageData(query: string): Promise<SearchPageData |
     similarArtists,
     similarProfiles,
     artistSongs,
-    collections: displayCollections,
-    communities: displayCommunities,
+    collections: collections.slice(0, 8),
+    communities: communities.slice(0, 8),
   };
 }
 
-/** Hydrate profile top result with full detail when available. */
 export async function enrichProfileSearch(
   profile: ProfileSearchItem,
 ): Promise<ProfileSearchItem> {

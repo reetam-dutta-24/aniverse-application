@@ -3,26 +3,44 @@ import { prisma } from "@/lib/prisma";
 import {
   appMediaTypeToPrisma,
   mapContentToItem,
+  prismaMediaTypeToApp,
 } from "@/lib/mappers/content.mapper";
 import type { ContentFormInput } from "@/lib/validators/admin/content";
 import type { ContentItem, MediaType } from "@/types";
 
 const contentInclude = {
   genres: { include: { genre: true } },
+  seasons: { orderBy: { position: "asc" as const } },
+  episodes: { orderBy: { position: "asc" as const } },
+  characters: { orderBy: { position: "asc" as const } },
+  featuredTracks: {
+    orderBy: { position: "asc" as const },
+    include: { track: true },
+  },
+  relatedFrom: {
+    orderBy: { position: "asc" as const },
+    include: { related: { include: { genres: { include: { genre: true } } } } },
+  },
+  catalogReviews: { orderBy: { position: "asc" as const } },
 } satisfies Prisma.ContentInclude;
+
+export type ContentRecordFull = Prisma.ContentGetPayload<{
+  include: typeof contentInclude;
+}>;
 
 function emptyToNull(value: string | undefined) {
   if (value == null || value === "") return null;
   return value;
 }
 
-async function upsertGenreLabels(labels: string[]) {
-  const unique = [...new Set(labels.map((l) => l.trim()).filter(Boolean))];
+/** Genre enum slugs are stored as the canonical `label` for consistent chip styling. */
+async function upsertGenreLabels(enumSlugs: string[]) {
+  const unique = [...new Set(enumSlugs.map((l) => l.trim()).filter(Boolean))];
   const genres = await Promise.all(
-    unique.map((label) =>
+    unique.map((slug) =>
       prisma.genre.upsert({
-        where: { label },
-        create: { label },
+        where: { label: slug },
+        create: { label: slug },
         update: {},
       }),
     ),
@@ -34,15 +52,149 @@ function toContentData(input: ContentFormInput): Prisma.ContentCreateInput {
   return {
     title: input.title,
     slug: input.slug,
+    nativeTitle: emptyToNull(input.nativeTitle),
     type: appMediaTypeToPrisma(input.type),
     description: emptyToNull(input.description),
     synopsis: emptyToNull(input.synopsis),
     imageUrl: emptyToNull(input.imageUrl),
+    backdropUrl: emptyToNull(input.backdropUrl),
     rating: input.rating ?? null,
     year: input.year ?? null,
     meta: emptyToNull(input.meta),
     accent: input.accent ?? null,
+    trendingLabel: emptyToNull(input.trendingLabel),
+    creditLabel: emptyToNull(input.creditLabel),
+    highlightTags: input.highlightTags,
+    studio: emptyToNull(input.studio),
+    director: emptyToNull(input.director),
+    originalAuthor: emptyToNull(input.originalAuthor),
+    sourceMaterial: emptyToNull(input.sourceMaterial),
+    producers: emptyToNull(input.producers),
+    network: emptyToNull(input.network),
+    country: emptyToNull(input.country),
+    composer: emptyToNull(input.composer),
+    status: emptyToNull(input.status),
+    ageRating: emptyToNull(input.ageRating),
+    imdbRating: input.imdbRating ?? null,
+    malScore: input.malScore ?? null,
+    airedFrom: emptyToNull(input.airedFrom),
+    airedTo: emptyToNull(input.airedTo),
+    broadcast: emptyToNull(input.broadcast),
+    episodeDuration: emptyToNull(input.episodeDuration),
+    airingDay: emptyToNull(input.airingDay),
+    seasonLabel: emptyToNull(input.seasonLabel),
+    lastUpdate: emptyToNull(input.lastUpdate),
+    languages: input.languages,
+    seasonCount: input.seasonCount ?? null,
+    episodeCount: input.episodeCount ?? null,
   };
+}
+
+async function syncNestedContentRelations(
+  contentId: string,
+  input: ContentFormInput,
+) {
+  await prisma.$transaction([
+    prisma.contentEpisode.deleteMany({ where: { contentId } }),
+    prisma.contentSeason.deleteMany({ where: { contentId } }),
+    prisma.contentCharacter.deleteMany({ where: { contentId } }),
+    prisma.contentFeaturedTrack.deleteMany({ where: { contentId } }),
+    prisma.contentRelated.deleteMany({ where: { contentId } }),
+    prisma.catalogReview.deleteMany({ where: { contentId } }),
+  ]);
+
+  const seasonIdByNumber = new Map<number, string>();
+
+  for (const [index, season] of input.seasons.entries()) {
+    const row = await prisma.contentSeason.create({
+      data: {
+        contentId,
+        label: season.label,
+        episodeCount: season.episodeCount ?? 0,
+        position: index,
+      },
+    });
+    seasonIdByNumber.set(index + 1, row.id);
+  }
+
+  for (const [index, episode] of input.episodes.entries()) {
+    await prisma.contentEpisode.create({
+      data: {
+        contentId,
+        seasonId: seasonIdByNumber.get(episode.seasonNumber) ?? null,
+        seasonNumber: episode.seasonNumber,
+        number: episode.number,
+        title: episode.title,
+        duration: emptyToNull(episode.duration),
+        description: emptyToNull(episode.description),
+        thumbnailUrl: emptyToNull(episode.thumbnailUrl),
+        releaseDate: emptyToNull(episode.releaseDate),
+        language: emptyToNull(episode.language),
+        rating: episode.rating ?? null,
+        position: index,
+      },
+    });
+  }
+
+  for (const [index, character] of input.characters.entries()) {
+    await prisma.contentCharacter.create({
+      data: {
+        contentId,
+        name: character.name,
+        role: emptyToNull(character.role),
+        voiceActor: emptyToNull(character.voiceActor),
+        imageUrl: emptyToNull(character.imageUrl),
+        accent: character.accent ?? null,
+        position: index,
+      },
+    });
+  }
+
+  if (input.featuredTrackSlugs.length > 0) {
+    const tracks = await prisma.musicTrack.findMany({
+      where: { slug: { in: input.featuredTrackSlugs } },
+      select: { id: true, slug: true },
+    });
+    const trackBySlug = new Map(tracks.map((t) => [t.slug, t.id]));
+    for (const [index, slug] of input.featuredTrackSlugs.entries()) {
+      const trackId = trackBySlug.get(slug);
+      if (!trackId) continue;
+      await prisma.contentFeaturedTrack.create({
+        data: { contentId, trackId, position: index },
+      });
+    }
+  }
+
+  if (input.relatedContentSlugs.length > 0) {
+    const related = await prisma.content.findMany({
+      where: { slug: { in: input.relatedContentSlugs } },
+      select: { id: true, slug: true },
+    });
+    const relatedBySlug = new Map(related.map((r) => [r.slug, r.id]));
+    for (const [index, slug] of input.relatedContentSlugs.entries()) {
+      const relatedId = relatedBySlug.get(slug);
+      if (!relatedId || relatedId === contentId) continue;
+      await prisma.contentRelated.create({
+        data: { contentId, relatedId, position: index },
+      });
+    }
+  }
+
+  for (const [index, review] of input.catalogReviews.entries()) {
+    await prisma.catalogReview.create({
+      data: {
+        contentId,
+        authorName: review.authorName,
+        authorAvatarColor: emptyToNull(review.authorAvatarColor) ?? "#ff00cc",
+        rating: review.rating,
+        headline: emptyToNull(review.headline),
+        body: review.body,
+        accent: review.accent ?? null,
+        likeCount: review.likeCount ?? 0,
+        position: index,
+      },
+    });
+  }
 }
 
 export async function listCatalogContent(options: {
@@ -63,6 +215,7 @@ export async function listCatalogContent(options: {
     where.OR = [
       { title: { contains: options.search, mode: "insensitive" } },
       { slug: { contains: options.search, mode: "insensitive" } },
+      { nativeTitle: { contains: options.search, mode: "insensitive" } },
     ];
   }
 
@@ -119,13 +272,20 @@ export async function getContentItemBySlug(slug: string): Promise<ContentItem | 
 export async function createCatalogContent(input: ContentFormInput) {
   const genres = await upsertGenreLabels(input.genreLabels);
 
-  return prisma.content.create({
+  const row = await prisma.content.create({
     data: {
       ...toContentData(input),
       genres: {
         create: genres.map((genre) => ({ genreId: genre.id })),
       },
     },
+    include: contentInclude,
+  });
+
+  await syncNestedContentRelations(row.id, input);
+
+  return prisma.content.findUniqueOrThrow({
+    where: { id: row.id },
     include: contentInclude,
   });
 }
@@ -135,7 +295,7 @@ export async function updateCatalogContent(id: string, input: ContentFormInput) 
 
   await prisma.contentGenre.deleteMany({ where: { contentId: id } });
 
-  return prisma.content.update({
+  await prisma.content.update({
     where: { id },
     data: {
       ...toContentData(input),
@@ -143,6 +303,12 @@ export async function updateCatalogContent(id: string, input: ContentFormInput) 
         create: genres.map((genre) => ({ genreId: genre.id })),
       },
     },
+  });
+
+  await syncNestedContentRelations(id, input);
+
+  return prisma.content.findUniqueOrThrow({
+    where: { id },
     include: contentInclude,
   });
 }
@@ -153,6 +319,31 @@ export async function deleteCatalogContent(id: string) {
 
 export async function countCatalogContent() {
   return prisma.content.count();
+}
+
+/** Engagement KPIs — derived from user activity, never from admin POST. */
+export async function getContentEngagementStats(contentId: string) {
+  const [ratings, watching, watchEvents, collections] = await Promise.all([
+    prisma.rating.count({ where: { contentId } }),
+    prisma.watchlistItem.count({
+      where: { contentId, status: "WATCHING" },
+    }),
+    prisma.watchEvent.count({ where: { contentId } }),
+    prisma.collectionItem.count({ where: { contentId } }),
+  ]);
+
+  return {
+    ratings,
+    watching,
+    watchEvents,
+    collections,
+  };
+}
+
+export function formatEngagementCount(value: number): string {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}k`;
+  return String(value);
 }
 
 export class ContentConflictError extends Error {
@@ -169,4 +360,89 @@ export function isUniqueSlugError(error: unknown) {
     "code" in error &&
     (error as { code: string }).code === "P2002"
   );
+}
+
+export function contentRecordToFormInput(row: ContentRecordFull): ContentFormInput {
+  const languages = Array.isArray(row.languages)
+    ? (row.languages as string[])
+    : [];
+  const highlightTags = Array.isArray(row.highlightTags)
+    ? (row.highlightTags as string[])
+    : [];
+
+  return {
+    title: row.title,
+    nativeTitle: row.nativeTitle ?? "",
+    slug: row.slug,
+    type: prismaMediaTypeToApp(row.type) as ContentFormInput["type"],
+    description: row.description ?? "",
+    synopsis: row.synopsis ?? "",
+    imageUrl: row.imageUrl ?? "",
+    backdropUrl: row.backdropUrl ?? "",
+    rating: row.rating ?? undefined,
+    year: row.year ?? undefined,
+    meta: row.meta ?? "",
+    accent: (row.accent as ContentFormInput["accent"]) ?? undefined,
+    trendingLabel: row.trendingLabel ?? "",
+    creditLabel: row.creditLabel ?? "",
+    highlightTags,
+    studio: row.studio ?? "",
+    director: row.director ?? "",
+    originalAuthor: row.originalAuthor ?? "",
+    sourceMaterial: row.sourceMaterial ?? "",
+    producers: row.producers ?? "",
+    network: row.network ?? "",
+    country: row.country ?? "",
+    composer: row.composer ?? "",
+    status: row.status ?? "",
+    ageRating: row.ageRating ?? "",
+    imdbRating: row.imdbRating ?? undefined,
+    malScore: row.malScore ?? undefined,
+    airedFrom: row.airedFrom ?? "",
+    airedTo: row.airedTo ?? "",
+    broadcast: row.broadcast ?? "",
+    episodeDuration: row.episodeDuration ?? "",
+    airingDay: row.airingDay ?? "",
+    seasonLabel: row.seasonLabel ?? "",
+    lastUpdate: row.lastUpdate ?? "",
+    languages,
+    seasonCount: row.seasonCount ?? undefined,
+    episodeCount: row.episodeCount ?? undefined,
+    genreLabels: row.genres.map(
+      (g) => g.genre.label as ContentFormInput["genreLabels"][number],
+    ),
+    seasons: row.seasons.map((s) => ({
+      label: s.label,
+      episodeCount: s.episodeCount,
+    })),
+    episodes: row.episodes.map((e) => ({
+      seasonNumber: e.seasonNumber,
+      number: e.number,
+      title: e.title,
+      duration: e.duration ?? "",
+      description: e.description ?? "",
+      thumbnailUrl: e.thumbnailUrl ?? "",
+      releaseDate: e.releaseDate ?? "",
+      language: e.language ?? "",
+      rating: e.rating ?? undefined,
+    })),
+    characters: row.characters.map((c) => ({
+      name: c.name,
+      role: c.role ?? "",
+      voiceActor: c.voiceActor ?? "",
+      imageUrl: c.imageUrl ?? "",
+      accent: (c.accent as ContentFormInput["accent"]) ?? undefined,
+    })),
+    featuredTrackSlugs: row.featuredTracks.map((f) => f.track.slug),
+    relatedContentSlugs: row.relatedFrom.map((r) => r.related.slug),
+    catalogReviews: row.catalogReviews.map((r) => ({
+      authorName: r.authorName,
+      authorAvatarColor: r.authorAvatarColor ?? "",
+      rating: r.rating,
+      headline: r.headline ?? "",
+      body: r.body,
+      accent: (r.accent as ContentFormInput["catalogReviews"][number]["accent"]) ?? undefined,
+      likeCount: r.likeCount,
+    })),
+  };
 }

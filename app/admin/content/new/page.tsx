@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { ContentForm } from "@/components/admin/content-form";
-import { AdminShell } from "@/components/admin/admin-shell";
-import { requireAdmin } from "@/lib/auth-guards";
+import { requireContentAdmin } from "@/lib/auth-guards";
 import type { ContentFormInput } from "@/lib/validators/admin/content";
 
 export const metadata: Metadata = {
@@ -11,30 +10,57 @@ export const metadata: Metadata = {
 
 const emptyForm: ContentFormInput = {
   title: "",
+  nativeTitle: "",
   slug: "",
   type: "anime",
   description: "",
   synopsis: "",
   imageUrl: "",
+  backdropUrl: "",
   meta: "",
+  trendingLabel: "",
+  creditLabel: "",
+  highlightTags: [],
+  studio: "",
+  director: "",
+  originalAuthor: "",
+  sourceMaterial: "",
+  producers: "",
+  network: "",
+  country: "",
+  composer: "",
+  status: "",
+  ageRating: "",
+  airedFrom: "",
+  airedTo: "",
+  broadcast: "",
+  episodeDuration: "",
+  airingDay: "",
+  seasonLabel: "",
+  lastUpdate: "",
+  languages: [],
   genreLabels: [],
+  seasons: [],
+  episodes: [],
+  characters: [],
+  featuredTrackSlugs: [],
+  relatedContentSlugs: [],
+  catalogReviews: [],
 };
 
 export default async function AdminNewContentPage() {
-  await requireAdmin();
+  await requireContentAdmin();
 
   return (
-    <AdminShell>
-      <div className="flex max-w-3xl flex-col gap-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white">New content</h1>
-          <p className="mt-1 text-sm text-white/60">
-            Add a title to the catalog. It will appear on public detail pages
-            once saved.
-          </p>
-        </div>
-        <ContentForm mode="create" initial={emptyForm} />
+    <div className="flex max-w-3xl flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-bold text-white">New content</h1>
+        <p className="mt-1 text-sm text-white/60">
+          Add a title to the catalog. It will appear on public detail pages
+          once saved.
+        </p>
       </div>
-    </AdminShell>
+      <ContentForm mode="create" initial={emptyForm} />
+    </div>
   );
 }

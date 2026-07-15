@@ -42,8 +42,8 @@ const statTiles = (stats: HomeStats) => [
 ];
 
 export default async function DashboardHomePage() {
+  const user = await getCurrentUser();
   const [
-    user,
     stats,
     continueWatching,
     recommended,
@@ -52,12 +52,11 @@ export default async function DashboardHomePage() {
     communities,
     collections,
   ] = await Promise.all([
-    getCurrentUser(),
-    getHomeStats(),
-    getHomeContinueWatching(),
+    getHomeStats(user.id),
+    getHomeContinueWatching(user.id),
     getHomeRecommended(),
     getHomeTrending(),
-    getHomeContinueListening(),
+    getHomeContinueListening(user.id),
     getHomeCommunities(),
     getHomeCollections(),
   ]);

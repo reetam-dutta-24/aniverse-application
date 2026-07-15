@@ -1,0 +1,88 @@
+-- PlatformRole: replace ADMIN with specialist roles (single transaction via text cast)
+ALTER TABLE "User" ALTER COLUMN "role" DROP DEFAULT;
+ALTER TABLE "User" ALTER COLUMN "role" TYPE TEXT USING ("role"::text);
+UPDATE "User" SET "role" = 'CONTENT_ADMIN' WHERE "role" = 'ADMIN';
+DROP TYPE "PlatformRole";
+CREATE TYPE "PlatformRole" AS ENUM ('USER', 'CONTENT_ADMIN', 'MUSIC_ADMIN', 'ARTIST_ADMIN', 'SUPER_ADMIN');
+ALTER TABLE "User" ALTER COLUMN "role" TYPE "PlatformRole" USING ("role"::"PlatformRole");
+ALTER TABLE "User" ALTER COLUMN "role" SET DEFAULT 'USER'::"PlatformRole";
+
+-- Content catalog metadata
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "nativeTitle" TEXT;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "backdropUrl" TEXT;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "trendingLabel" TEXT;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "creditLabel" TEXT;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "highlightTags" JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "studio" TEXT;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "director" TEXT;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "originalAuthor" TEXT;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "sourceMaterial" TEXT;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "producers" TEXT;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "network" TEXT;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "country" TEXT;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "composer" TEXT;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "status" TEXT;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "ageRating" TEXT;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "imdbRating" DOUBLE PRECISION;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "malScore" DOUBLE PRECISION;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "airedFrom" TEXT;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "airedTo" TEXT;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "broadcast" TEXT;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "episodeDuration" TEXT;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "airingDay" TEXT;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "seasonLabel" TEXT;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "lastUpdate" TEXT;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "languages" JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "seasonCount" INTEGER;
+ALTER TABLE "Content" ADD COLUMN IF NOT EXISTS "episodeCount" INTEGER;
+
+-- MusicTrack extensions
+ALTER TABLE "MusicTrack" ADD COLUMN IF NOT EXISTS "nativeTitle" TEXT;
+ALTER TABLE "MusicTrack" ADD COLUMN IF NOT EXISTS "description" TEXT;
+ALTER TABLE "MusicTrack" ADD COLUMN IF NOT EXISTS "album" TEXT;
+ALTER TABLE "MusicTrack" ADD COLUMN IF NOT EXISTS "year" INTEGER;
+ALTER TABLE "MusicTrack" ADD COLUMN IF NOT EXISTS "durationLabel" TEXT;
+ALTER TABLE "MusicTrack" ADD COLUMN IF NOT EXISTS "durationSeconds" INTEGER;
+ALTER TABLE "MusicTrack" ADD COLUMN IF NOT EXISTS "backdropUrl" TEXT;
+ALTER TABLE "MusicTrack" ADD COLUMN IF NOT EXISTS "accent" TEXT;
+ALTER TABLE "MusicTrack" ADD COLUMN IF NOT EXISTS "trendingLabel" TEXT;
+ALTER TABLE "MusicTrack" ADD COLUMN IF NOT EXISTS "creditLabel" TEXT;
+ALTER TABLE "MusicTrack" ADD COLUMN IF NOT EXISTS "contentId" TEXT;
+
+DO $$ BEGIN
+  ALTER TABLE "MusicTrack" ADD CONSTRAINT "MusicTrack_contentId_fkey"
+    FOREIGN KEY ("contentId") REFERENCES "Content"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+CREATE INDEX IF NOT EXISTS "MusicTrack_artistId_idx" ON "MusicTrack"("artistId");
+CREATE INDEX IF NOT EXISTS "MusicTrack_contentId_idx" ON "MusicTrack"("contentId");
+
+-- Artist extensions
+ALTER TABLE "Artist" ADD COLUMN IF NOT EXISTS "nativeTitle" TEXT;
+ALTER TABLE "Artist" ADD COLUMN IF NOT EXISTS "rating" DOUBLE PRECISION;
+ALTER TABLE "Artist" ADD COLUMN IF NOT EXISTS "rankLeft" TEXT;
+ALTER TABLE "Artist" ADD COLUMN IF NOT EXISTS "rankRight" TEXT;
+ALTER TABLE "Artist" ADD COLUMN IF NOT EXISTS "primaryTags" JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE "Artist" ADD COLUMN IF NOT EXISTS "languages" JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE "Artist" ADD COLUMN IF NOT EXISTS "label" TEXT;
+ALTER TABLE "Artist" ADD COLUMN IF NOT EXISTS "debutYear" INTEGER;
+ALTER TABLE "Artist" ADD COLUMN IF NOT EXISTS "isGroup" BOOLEAN NOT NULL DEFAULT false;
+
+-- Band members
+CREATE TABLE IF NOT EXISTS "ArtistMember" (
+    "id" TEXT NOT NULL,
+    "artistId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "role" TEXT,
+    "position" INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT "ArtistMember_pkey" PRIMARY KEY ("id")
+);
+
+CREATE INDEX IF NOT EXISTS "ArtistMember_artistId_idx" ON "ArtistMember"("artistId");
+
+DO $$ BEGIN
+  ALTER TABLE "ArtistMember" ADD CONSTRAINT "ArtistMember_artistId_fkey"
+    FOREIGN KEY ("artistId") REFERENCES "Artist"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;

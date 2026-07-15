@@ -1,3 +1,6 @@
+export {
+  ContentMovieSection,
+} from "./content-movie-section";
 export { ContentHeroActions, type ContentHeroActionsProps } from "./content-hero-actions";
 export { ContentDetailHero, type ContentDetailHeroProps } from "./content-detail-hero";
 export {

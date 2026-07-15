@@ -9,6 +9,7 @@ import {
   detailHeroBtnBase,
 } from "@/lib/detail-route-ui";
 import type { AccentColor, ContentDetail, Episode, MediaType } from "@/types";
+import { isMovieContentType } from "@/lib/content-media";
 
 function isSongMedia(type: MediaType) {
   return type === "song" || type === "album" || type === "playlist";
@@ -59,7 +60,80 @@ const CTA_PAIR: Record<
     share: "border-teal-400/60 bg-teal-500/10 hover:bg-teal-500/20",
     shareIcon: "text-teal-300",
   },
+  red: {
+    watch:
+      "border-transparent bg-gradient-to-r from-red-600 to-rose-600 hover:border-red-400 hover:from-transparent hover:to-transparent",
+    share: "border-cyan-400/60 bg-cyan-500/10 hover:bg-cyan-500/20",
+    shareIcon: "text-cyan-300",
+  },
+  orange: {
+    watch:
+      "border-transparent bg-gradient-to-r from-orange-500 to-amber-600 hover:border-orange-400 hover:from-transparent hover:to-transparent",
+    share: "border-indigo-400/60 bg-indigo-500/10 hover:bg-indigo-500/20",
+    shareIcon: "text-indigo-300",
+  },
+  teal: {
+    watch:
+      "border-transparent bg-gradient-to-r from-teal-500 to-cyan-600 hover:border-teal-400 hover:from-transparent hover:to-transparent",
+    share: "border-fuchsia-400/60 bg-fuchsia-500/10 hover:bg-fuchsia-500/20",
+    shareIcon: "text-fuchsia-300",
+  },
+  indigo: {
+    watch:
+      "border-transparent bg-gradient-to-r from-indigo-600 to-blue-600 hover:border-indigo-400 hover:from-transparent hover:to-transparent",
+    share: "border-amber-400/60 bg-amber-500/10 hover:bg-amber-500/20",
+    shareIcon: "text-amber-300",
+  },
+  rose: {
+    watch:
+      "border-transparent bg-gradient-to-r from-rose-600 to-pink-600 hover:border-rose-400 hover:from-transparent hover:to-transparent",
+    share: "border-sky-400/60 bg-sky-500/10 hover:bg-sky-500/20",
+    shareIcon: "text-sky-300",
+  },
+  lime: {
+    watch:
+      "border-transparent bg-gradient-to-r from-lime-500 to-green-600 hover:border-lime-400 hover:from-transparent hover:to-transparent",
+    share: "border-violet-400/60 bg-violet-500/10 hover:bg-violet-500/20",
+    shareIcon: "text-violet-300",
+  },
+  amber: {
+    watch:
+      "border-transparent bg-gradient-to-r from-amber-500 to-orange-600 hover:border-amber-400 hover:from-transparent hover:to-transparent",
+    share: "border-blue-400/60 bg-blue-500/10 hover:bg-blue-500/20",
+    shareIcon: "text-blue-300",
+  },
+  violet: {
+    watch:
+      "border-transparent bg-gradient-to-r from-violet-600 to-purple-600 hover:border-violet-400 hover:from-transparent hover:to-transparent",
+    share: "border-emerald-400/60 bg-emerald-500/10 hover:bg-emerald-500/20",
+    shareIcon: "text-emerald-300",
+  },
+  fuchsia: {
+    watch:
+      "border-transparent bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:border-fuchsia-400 hover:from-transparent hover:to-transparent",
+    share: "border-teal-400/60 bg-teal-500/10 hover:bg-teal-500/20",
+    shareIcon: "text-teal-300",
+  },
+  sky: {
+    watch:
+      "border-transparent bg-gradient-to-r from-sky-500 to-blue-600 hover:border-sky-400 hover:from-transparent hover:to-transparent",
+    share: "border-rose-400/60 bg-rose-500/10 hover:bg-rose-500/20",
+    shareIcon: "text-rose-300",
+  },
+  emerald: {
+    watch:
+      "border-transparent bg-gradient-to-r from-emerald-600 to-teal-600 hover:border-emerald-400 hover:from-transparent hover:to-transparent",
+    share: "border-fuchsia-400/60 bg-fuchsia-500/10 hover:bg-fuchsia-500/20",
+    shareIcon: "text-fuchsia-300",
+  },
 };
+
+const CTA_FALLBACK = CTA_PAIR.blue;
+
+function getCtaPair(accent?: AccentColor) {
+  if (accent && accent in CTA_PAIR) return CTA_PAIR[accent];
+  return CTA_FALLBACK;
+}
 
 export function ContentHeroActions({
   content,
@@ -69,8 +143,9 @@ export function ContentHeroActions({
   const season = continueEpisode?.seasonNumber ?? 1;
   const episodeNum = continueEpisode?.number ?? 1;
   const accent = content.accent ?? "blue";
-  const cta = CTA_PAIR[accent];
+  const cta = getCtaPair(accent);
   const songMedia = isSongMedia(content.type);
+  const isMovie = isMovieContentType(content.type);
   const hasResume = songMedia
     ? Boolean(content.resumeLabel)
     : isWatching;
@@ -79,9 +154,11 @@ export function ContentHeroActions({
     ? hasResume
       ? `Continue Listening from ${content.resumeLabel}`
       : "Play Now"
-    : isWatching
-      ? `Continue Watching from S${season} E${episodeNum}`
-      : "Watch Now";
+    : isMovie
+      ? "Watch Movie"
+      : isWatching
+        ? `Continue Watching from S${season} E${episodeNum}`
+        : "Watch Now";
 
   async function handleShare() {
     const url = window.location.href;

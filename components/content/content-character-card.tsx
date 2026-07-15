@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { accentStyles } from "@/lib/accents";
+import { getAccentStyle } from "@/lib/accents";
 import { getAccentTint, getTintOuterGlow } from "@/lib/card-theme";
 import type { AccentColor, Character } from "@/types";
 
@@ -21,7 +21,7 @@ export function ContentCharacterCard({
   interactive = true,
 }: ContentCharacterCardProps) {
   const [hovered, setHovered] = useState(false);
-  const accent = accentStyles[character.accent ?? "purple"];
+  const accent = getAccentStyle(character.accent ?? "purple");
   const tint = getAccentTint(contentAccent);
   const shortName = character.name.split(" ")[0];
   const subtitle = character.voiceActor
