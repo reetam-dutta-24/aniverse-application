@@ -1,23 +1,26 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { GradientButton } from "@/components/ui/gradient-button";
+import {
+  CatalogMultiSearchPicker,
+  type CatalogPickerSelection,
+} from "@/components/forms/catalog-search-picker";
 import {
   FormActions,
   FormError,
   FormField,
   FormShell,
   SelectInput,
-  TextInput,
 } from "@/components/forms/form-shell";
-import { slugify } from "@/lib/slugify";
 
 export function AddWatchlistButton() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [contentSlug, setContentSlug] = useState("");
+  const [slugs, setSlugs] = useState<string[]>([]);
+  const [selections, setSelections] = useState<CatalogPickerSelection[]>([]);
   const [priority, setPriority] = useState<"NORMAL" | "HIGH">("NORMAL");
   const [status, setStatus] = useState<
     "PENDING" | "WATCHING" | "COMPLETED" | "DROPPED"
@@ -25,38 +28,68 @@ export function AddWatchlistButton() {
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
 
-  const slugPreview = useMemo(
-    () => slugify(contentSlug || "content-slug"),
-    [contentSlug],
-  );
+  function resetForm() {
+    setSlugs([]);
+    setSelections([]);
+    setPriority("NORMAL");
+    setStatus("PENDING");
+    setError(undefined);
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setLoading(true);
-    setError(undefined);
-
-    const response = await fetch("/api/watchlist", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contentSlug: slugPreview,
-        priority,
-        status,
-      }),
-    });
-
-    const data = await response.json().catch(() => ({}));
-    setLoading(false);
-
-    if (!response.ok) {
-      setError(data.error ?? "Could not add to watchlist.");
+    const contentItems = selections.filter((item) => item.type === "content");
+    if (contentItems.length === 0) {
+      setError("Search and select at least one show, movie, or anime to add.");
       return;
     }
 
+    setLoading(true);
+    setError(undefined);
+
+    const failures: string[] = [];
+
+    for (const selection of contentItems) {
+      const response = await fetch("/api/watchlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contentSlug: selection.id,
+          priority,
+          status,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        failures.push(
+          typeof data.error === "string"
+            ? `${selection.title}: ${data.error}`
+            : selection.title,
+        );
+      }
+    }
+
+    setLoading(false);
+
+    if (failures.length === contentItems.length) {
+      setError(failures[0] ?? "Could not add to watchlist.");
+      return;
+    }
+
+    if (failures.length > 0) {
+      setError(`Some items could not be added: ${failures.join("; ")}`);
+    }
+
     setOpen(false);
-    setContentSlug("");
+    resetForm();
     router.refresh();
   }
+
+  const submitLabel =
+    selections.length > 1
+      ? `Add ${selections.length} to Watchlist`
+      : "Add to Watchlist";
 
   return (
     <>
@@ -72,19 +105,20 @@ export function AddWatchlistButton() {
       <FormShell
         open={open}
         title="Add to Watchlist"
-        description="Save catalog content by slug — e.g. jujutsu-kaisen, demon-slayer."
-        onClose={() => setOpen(false)}
+        description="Search and pick multiple titles — keep searching to add more before submitting."
+        onClose={() => {
+          setOpen(false);
+          resetForm();
+        }}
       >
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <FormField
-            label="Content slug"
-            hint={`Will save as ${slugPreview || "…"}`}
-          >
-            <TextInput
-              value={contentSlug}
-              onChange={(event) => setContentSlug(event.target.value)}
-              placeholder="jujutsu-kaisen"
-              required
+          <FormField label="Search & add items">
+            <CatalogMultiSearchPicker
+              allowedTypes={["content"]}
+              values={slugs}
+              onChange={setSlugs}
+              onSelectionsChange={setSelections}
+              placeholder="Search anime, movies, shows…"
             />
           </FormField>
 
@@ -123,8 +157,11 @@ export function AddWatchlistButton() {
 
           <FormError message={error} />
           <FormActions
-            onCancel={() => setOpen(false)}
-            submitLabel="Add to Watchlist"
+            onCancel={() => {
+              setOpen(false);
+              resetForm();
+            }}
+            submitLabel={submitLabel}
             loading={loading}
           />
         </form>

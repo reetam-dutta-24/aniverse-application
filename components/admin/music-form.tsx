@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GradientButton } from "@/components/ui/gradient-button";
 import {
@@ -16,6 +16,10 @@ import {
 } from "@/components/admin/catalog-nested-fields";
 import { EnumMultiSelect, EnumSelect } from "@/components/admin/enum-selectors";
 import { ImageUploadInput } from "@/components/ui/image-upload-input";
+import {
+  CatalogSearchPicker,
+  type CatalogPickerSelection,
+} from "@/components/forms/catalog-search-picker";
 import type { MusicFormInput } from "@/lib/validators/admin/music";
 
 export interface MusicFormProps {
@@ -40,6 +44,24 @@ export function MusicForm({ mode, recordId, initial }: MusicFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
+
+  const artistSelection = useMemo<CatalogPickerSelection | null>(() => {
+    if (!form.artistSlug) return null;
+    return {
+      id: form.artistSlug,
+      type: "artist",
+      title: form.artist || form.artistSlug,
+    };
+  }, [form.artist, form.artistSlug]);
+
+  const sourceSelection = useMemo<CatalogPickerSelection | null>(() => {
+    if (!form.contentSlug) return null;
+    return {
+      id: form.contentSlug,
+      type: "content",
+      title: form.source || form.contentSlug,
+    };
+  }, [form.contentSlug, form.source]);
 
   function update<K extends keyof MusicFormInput>(key: K, value: MusicFormInput[K]) {
     setForm((c) => ({ ...c, [key]: value }));
@@ -108,8 +130,16 @@ export function MusicForm({ mode, recordId, initial }: MusicFormProps) {
           <Field label="Artist credit">
             <input className={inputClass} value={form.artist} onChange={(e) => update("artist", e.target.value)} required />
           </Field>
-          <Field label="Artist slug" hint="Link to artist profile in Artist CMS">
-            <input className={inputClass} value={form.artistSlug ?? ""} onChange={(e) => update("artistSlug", e.target.value)} placeholder="twice" />
+          <Field label="Artist" hint="Search and link to an artist profile in Artist CMS">
+            <CatalogSearchPicker
+              allowedTypes={["artist"]}
+              value={artistSelection}
+              onChange={(selection) => {
+                update("artistSlug", selection?.id ?? "");
+                if (selection?.title) update("artist", selection.title);
+              }}
+              placeholder="Search artists…"
+            />
           </Field>
           <Field label="Rating">
             <input className={inputClass} type="number" min={0} max={10} step={0.1} value={form.rating ?? ""} onChange={(e) => update("rating", e.target.value ? Number(e.target.value) : undefined)} />
@@ -143,8 +173,16 @@ export function MusicForm({ mode, recordId, initial }: MusicFormProps) {
           <Field label="Source show">
             <input className={inputClass} value={form.source ?? ""} onChange={(e) => update("source", e.target.value)} placeholder="Demon Slayer" />
           </Field>
-          <Field label="Source content slug">
-            <input className={inputClass} value={form.contentSlug ?? ""} onChange={(e) => update("contentSlug", e.target.value)} placeholder="demon-slayer" />
+          <Field label="Source content" hint="Search and link to the anime or movie this track is from">
+            <CatalogSearchPicker
+              allowedTypes={["content"]}
+              value={sourceSelection}
+              onChange={(selection) => {
+                update("contentSlug", selection?.id ?? "");
+                if (selection?.title) update("source", selection.title);
+              }}
+              placeholder="Search anime, movies, shows…"
+            />
           </Field>
           <Field label="Trending label">
             <input className={inputClass} value={form.trendingLabel ?? ""} onChange={(e) => update("trendingLabel", e.target.value)} />

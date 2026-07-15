@@ -6,10 +6,12 @@ import { ContentPageSection } from "@/components/content";
 import {
   ContentCarouselSection,
   MusicCarouselSection,
+  MusicGridSection,
   WatchlistGridSection,
 } from "@/components/dashboard";
 import { AddCollectionItemButton } from "@/components/forms/add-collection-item-button";
 import { CollectionDetailOwnerActions } from "@/components/forms/collection-detail-owner-actions";
+import { COLLECTION_MEDIA_COPY } from "@/lib/collection-media-copy";
 import { getCommunityMemberPreview } from "@/lib/data/community";
 import { getOptionalUser } from "@/lib/data/user";
 import {
@@ -50,21 +52,26 @@ export default async function CollectionDetailPage({
 
   if (!collection) notFound();
 
+  const isMusic = collection.collectionKind === "music";
+  const copy = COLLECTION_MEDIA_COPY[isMusic ? "music" : "content"];
+  const tracks = collection.musicTracks;
+
   const canManageCollection =
     !!viewer?.id && collection.ownerId === viewer.id;
 
   const addItemAction = (
-    <AddCollectionItemButton collectionSlug={collection.id} />
+    <AddCollectionItemButton
+      collectionSlug={collection.id}
+      collectionKind={collection.collectionKind ?? "content"}
+    />
   );
 
   return (
     <div className="flex w-full flex-col gap-10 sm:gap-12 lg:gap-14">
       <CollectionDetailHero
         collection={collection}
-        variant={collection.collectionKind === "music" ? "music" : "content"}
-        favoriteTracks={
-          collection.collectionKind === "music" ? collection.musicTracks : undefined
-        }
+        variant={isMusic ? "music" : "content"}
+        favoriteTracks={isMusic ? tracks : undefined}
         ownerActions={
           canManageCollection ? (
             <CollectionDetailOwnerActions collection={collection} />
@@ -73,29 +80,54 @@ export default async function CollectionDetailPage({
       />
 
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-10 px-4 sm:gap-12 sm:px-8 lg:gap-14 lg:px-12">
-        <WatchlistGridSection
-          title="📂 View All Items"
-          searchPlaceholder="Search items…"
-          items={collection.allItems}
-          action={addItemAction}
-        />
+        {isMusic ? (
+          <>
+            <MusicGridSection
+              title={copy.viewAllTitle}
+              searchPlaceholder="Search tracks…"
+              tracks={tracks}
+              action={addItemAction}
+            />
 
-        <ContentCarouselSection
-          title="⏳ Continue Watching"
-          searchPlaceholder="Search all items…"
-          items={collection.continueWatching}
-        />
+            <MusicCarouselSection
+              title={copy.continueTitle}
+              searchPlaceholder="Search tracks…"
+              tracks={tracks.slice(0, 6)}
+            />
 
-        <ContentCarouselSection
-          title="🏆 Content You Watched The Most"
-          searchPlaceholder="Search all items…"
-          items={collection.watchedMost}
-        />
+            <MusicCarouselSection
+              title={copy.mostPlayedTitle}
+              searchPlaceholder="Search tracks…"
+              tracks={[...tracks].reverse().slice(0, 6)}
+            />
+          </>
+        ) : (
+          <>
+            <WatchlistGridSection
+              title={copy.viewAllTitle}
+              searchPlaceholder="Search items…"
+              items={collection.allItems}
+              action={addItemAction}
+            />
+
+            <ContentCarouselSection
+              title={copy.continueTitle}
+              searchPlaceholder="Search all items…"
+              items={collection.continueWatching}
+            />
+
+            <ContentCarouselSection
+              title={copy.mostPlayedTitle}
+              searchPlaceholder="Search all items…"
+              items={collection.watchedMost}
+            />
+          </>
+        )}
 
         <MusicCarouselSection
           title="🎧 Most Listened Music In This Community"
           searchPlaceholder="Search tracks…"
-          tracks={collection.musicTracks}
+          tracks={isMusic ? tracks.slice(0, 6) : collection.musicTracks}
         />
 
         <ContentPageSection

@@ -165,24 +165,26 @@ export function mapCollectionToDetail(
     },
   ];
 
-  const favoriteItems = allItems.slice(0, 4);
+  const favoriteItems = collectionKind === "music" ? [] : allItems.slice(0, 4);
   const currentActivity =
     options.currentActivity ??
-    (allItems[0]
-      ? {
-          title: allItems[0].title,
-          statusLabel: `Currently featured in ${row.name}`,
-          imageUrl: allItems[0].imageUrl ?? `/images/posters/${allItems[0].id}.jpg`,
-          contentId: allItems[0].id,
-        }
-      : row.imageUrl
+    (collectionKind === "music"
+      ? undefined
+      : allItems[0]
         ? {
-            title: row.name,
+            title: allItems[0].title,
             statusLabel: `Currently featured in ${row.name}`,
-            imageUrl: row.imageUrl,
-            contentId: row.slug,
+            imageUrl: allItems[0].imageUrl ?? `/images/posters/${allItems[0].id}.jpg`,
+            contentId: allItems[0].id,
           }
-        : undefined);
+        : row.imageUrl
+          ? {
+              title: row.name,
+              statusLabel: `Currently featured in ${row.name}`,
+              imageUrl: row.imageUrl,
+              contentId: row.slug,
+            }
+          : undefined);
 
   return {
     id: row.slug,

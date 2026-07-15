@@ -5,10 +5,6 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { COLLECTION_CARD_H } from "@/lib/card-dimensions";
 import { getCollectionDetailPath } from "@/lib/collection-routes";
-import {
-  getMusicCollectionDetailPath,
-  isMusicCollectionId,
-} from "@/lib/music-collection-routes";
 import { getAccentStyle } from "@/lib/accents";
 import type { Collection } from "@/types";
 import { Chip } from "@/components/ui/chip";
@@ -63,10 +59,6 @@ export function CollectionCard({
   function handleView() {
     if (onView) {
       onView();
-      return;
-    }
-    if (isMusicCollectionId(collection.id)) {
-      router.push(getMusicCollectionDetailPath(collection.id));
       return;
     }
     router.push(getCollectionDetailPath(collection.id));

@@ -1,0 +1,412 @@
+"use client";
+
+import { useEffect, useId, useRef, useState } from "react";
+import { Search, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { SearchResult, SearchResultType } from "@/lib/search/types";
+
+const TYPE_LABELS: Record<SearchResultType, string> = {
+  content: "Show / Movie",
+  song: "Music",
+  artist: "Artist",
+  profile: "Profile",
+  collection: "Collection",
+  community: "Community",
+};
+
+export interface CatalogPickerSelection {
+  id: string;
+  type: SearchResultType;
+  title: string;
+  subtitle?: string;
+  imageUrl?: string;
+}
+
+function toSelection(result: SearchResult): CatalogPickerSelection {
+  return {
+    id: result.id,
+    type: result.type,
+    title: result.title,
+    subtitle: result.subtitle,
+    imageUrl: result.imageUrl,
+  };
+}
+
+interface CatalogSearchInputProps {
+  allowedTypes?: SearchResultType[];
+  excludeIds?: string[];
+  placeholder?: string;
+  onSelect: (selection: CatalogPickerSelection) => void;
+  autoFocus?: boolean;
+}
+
+function CatalogSearchInput({
+  allowedTypes = ["content", "song"],
+  excludeIds = [],
+  placeholder = "Search titles, artists, anime…",
+  onSelect,
+  autoFocus = false,
+}: CatalogSearchInputProps) {
+  const listId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [activeIndex, setActiveIndex] = useState(-1);
+
+  useEffect(() => {
+    if (autoFocus) inputRef.current?.focus();
+  }, [autoFocus]);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setResults([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `/api/search?q=${encodeURIComponent(q)}&limit=12`,
+        );
+        if (!response.ok) return;
+        const data = (await response.json()) as { results: SearchResult[] };
+        const exclude = new Set(excludeIds);
+        setResults(
+          data.results.filter(
+            (result) =>
+              allowedTypes.includes(result.type) && !exclude.has(result.id),
+          ),
+        );
+        setActiveIndex(-1);
+      } finally {
+        setLoading(false);
+      }
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [query, allowedTypes, excludeIds]);
+
+  useEffect(() => {
+    function onPointerDown(event: MouseEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, []);
+
+  function pickResult(result: SearchResult) {
+    onSelect(toSelection(result));
+    setQuery("");
+    setOpen(true);
+    setResults([]);
+    setActiveIndex(-1);
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }
+
+  const showPanel = open && query.trim().length >= 2;
+
+  return (
+    <div ref={rootRef} className="relative">
+      <label className="flex items-center gap-2 rounded-xl border border-white/15 bg-[#1a0f2e] px-3 py-2.5 transition focus-within:border-brand-magenta/60 focus-within:ring-1 focus-within:ring-brand-magenta/30">
+        <Search className="size-4 shrink-0 text-white/45" />
+        <input
+          ref={inputRef}
+          type="search"
+          value={query}
+          placeholder={placeholder}
+          aria-expanded={showPanel}
+          aria-controls={listId}
+          onFocus={() => setOpen(true)}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setOpen(true);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              setOpen(false);
+              return;
+            }
+            if (event.key === "ArrowDown") {
+              event.preventDefault();
+              setActiveIndex((index) => Math.min(index + 1, results.length - 1));
+            }
+            if (event.key === "ArrowUp") {
+              event.preventDefault();
+              setActiveIndex((index) => Math.max(index - 1, -1));
+            }
+            if (event.key === "Enter" && activeIndex >= 0 && results[activeIndex]) {
+              event.preventDefault();
+              pickResult(results[activeIndex]);
+            }
+          }}
+          className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/40 outline-none"
+        />
+      </label>
+
+      {showPanel ? (
+        <div
+          id={listId}
+          role="listbox"
+          className="absolute top-[calc(100%+8px)] z-[70] max-h-64 w-full overflow-y-auto rounded-xl border border-white/10 bg-[#12091f] p-1.5 shadow-2xl"
+        >
+          {loading ? (
+            <p className="px-3 py-4 text-sm text-white/55">Searching…</p>
+          ) : results.length === 0 ? (
+            <p className="px-3 py-4 text-sm text-white/55">
+              {excludeIds.length > 0
+                ? "No more matches — try a different search."
+                : "No matches found."}
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-0.5">
+              {results.map((result, index) => (
+                <li key={`${result.type}-${result.id}`}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={index === activeIndex}
+                    onClick={() => pickResult(result)}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
+                      index === activeIndex
+                        ? "bg-white/10"
+                        : "hover:bg-white/[0.06]",
+                    )}
+                  >
+                    <span className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-black/40">
+                      {result.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={result.imageUrl}
+                          alt=""
+                          className="size-full object-cover"
+                        />
+                      ) : (
+                        <span className="flex size-full items-center justify-center text-xs font-bold text-white/70">
+                          {result.title.charAt(0)}
+                        </span>
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-white">
+                        {result.title}
+                      </span>
+                      <span className="block truncate text-xs text-white/55">
+                        {TYPE_LABELS[result.type]}
+                        {result.subtitle ? ` · ${result.subtitle}` : ""}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+interface CatalogSearchPickerProps {
+  allowedTypes?: SearchResultType[];
+  value: CatalogPickerSelection | null;
+  onChange: (selection: CatalogPickerSelection | null) => void;
+  placeholder?: string;
+  hint?: string;
+  showHint?: boolean;
+}
+
+interface CatalogMultiSearchPickerProps {
+  allowedTypes?: SearchResultType[];
+  values: string[];
+  onChange: (slugs: string[]) => void;
+  onSelectionsChange?: (selections: CatalogPickerSelection[]) => void;
+  placeholder?: string;
+  hint?: string;
+  maxItems?: number;
+}
+
+function SelectionCard({
+  selection,
+  onClear,
+}: {
+  selection: CatalogPickerSelection;
+  onClear: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-white/15 bg-[#1a0f2e] p-3">
+      <span className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-black/40">
+        {selection.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={selection.imageUrl}
+            alt=""
+            className="size-full object-cover"
+          />
+        ) : (
+          <span className="flex size-full items-center justify-center text-sm font-bold text-white/70">
+            {selection.title.charAt(0)}
+          </span>
+        )}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-white">{selection.title}</p>
+        <p className="truncate text-xs text-white/55">
+          {TYPE_LABELS[selection.type]}
+          {selection.subtitle ? ` · ${selection.subtitle}` : ""}
+        </p>
+      </div>
+      <button
+        type="button"
+        aria-label="Clear selection"
+        onClick={onClear}
+        className="rounded-full p-1.5 text-white/60 transition hover:bg-white/10 hover:text-white"
+      >
+        <X className="size-4" />
+      </button>
+    </div>
+  );
+}
+
+export function CatalogSearchPicker({
+  allowedTypes = ["content", "song"],
+  value,
+  onChange,
+  placeholder = "Search titles, artists, anime…",
+  hint = "Type at least 2 characters to search the catalog.",
+  showHint = true,
+}: CatalogSearchPickerProps) {
+  return (
+    <div className="flex flex-col gap-2">
+      {value ? (
+        <SelectionCard selection={value} onClear={() => onChange(null)} />
+      ) : (
+        <CatalogSearchInput
+          allowedTypes={allowedTypes}
+          placeholder={placeholder}
+          onSelect={onChange}
+          autoFocus
+        />
+      )}
+
+      {showHint && !value ? (
+        <p className="text-xs text-white/40">{hint}</p>
+      ) : null}
+    </div>
+  );
+}
+
+export function CatalogMultiSearchPicker({
+  allowedTypes = ["content"],
+  values,
+  onChange,
+  onSelectionsChange,
+  placeholder = "Search and add more…",
+  hint = "Search, pick an item, then keep searching to add more — all in one go.",
+  maxItems = 24,
+}: CatalogMultiSearchPickerProps) {
+  const [labels, setLabels] = useState<Record<string, CatalogPickerSelection>>({});
+
+  function syncSelections(nextValues: string[], nextLabels: Record<string, CatalogPickerSelection>) {
+    onChange(nextValues);
+    onSelectionsChange?.(
+      nextValues.map((id) => nextLabels[id] ?? { id, type: allowedTypes[0]!, title: id }),
+    );
+  }
+
+  function addSelection(selection: CatalogPickerSelection) {
+    if (values.includes(selection.id) || values.length >= maxItems) return;
+    const nextLabels = { ...labels, [selection.id]: selection };
+    setLabels(nextLabels);
+    syncSelections([...values, selection.id], nextLabels);
+  }
+
+  function remove(slug: string) {
+    const nextValues = values.filter((value) => value !== slug);
+    const nextLabels = { ...labels };
+    delete nextLabels[slug];
+    setLabels(nextLabels);
+    syncSelections(nextValues, nextLabels);
+  }
+
+  const atLimit = values.length >= maxItems;
+
+  return (
+    <div className="flex flex-col gap-2">
+      {values.length > 0 ? (
+        <ul className="flex flex-col gap-2">
+          {values.map((slug) => {
+            const meta = labels[slug];
+            return (
+              <li key={slug}>
+                <div className="flex items-center gap-3 rounded-xl border border-white/15 bg-[#1a0f2e] p-2.5">
+                  <span className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-black/40">
+                    {meta?.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={meta.imageUrl}
+                        alt=""
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      <span className="flex size-full items-center justify-center text-xs font-bold text-white/70">
+                        {(meta?.title ?? slug).charAt(0)}
+                      </span>
+                    )}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-white">
+                      {meta?.title ?? slug}
+                    </p>
+                    {meta ? (
+                      <p className="truncate text-xs text-white/55">
+                        {TYPE_LABELS[meta.type]}
+                        {meta.subtitle ? ` · ${meta.subtitle}` : ""}
+                      </p>
+                    ) : null}
+                  </div>
+                  <button
+                    type="button"
+                    aria-label={`Remove ${meta?.title ?? slug}`}
+                    onClick={() => remove(slug)}
+                    className="rounded-full p-1.5 text-white/55 transition hover:bg-white/10 hover:text-white"
+                  >
+                    <X className="size-4" />
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+
+      {atLimit ? (
+        <p className="text-xs text-white/45">Maximum of {maxItems} items reached.</p>
+      ) : (
+        <CatalogSearchInput
+          allowedTypes={allowedTypes}
+          excludeIds={values}
+          placeholder={placeholder}
+          onSelect={addSelection}
+          autoFocus={values.length === 0}
+        />
+      )}
+
+      {!atLimit ? (
+        <p className="text-xs text-white/40">
+          {values.length > 0
+            ? `${values.length} selected — search again to add more.`
+            : hint}
+        </p>
+      ) : null}
+    </div>
+  );
+}

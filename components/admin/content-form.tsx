@@ -675,19 +675,21 @@ export function ContentForm({ mode, contentId, initial }: ContentFormProps) {
 
       <Section
         title="Featured OSTs & related"
-        description="Link tracks and related titles by slug (must exist in catalog)."
+        description="Search the catalog to link tracks and related titles."
       >
         <SlugListEditor
-          label="Featured track slugs"
-          hint="e.g. gurenge — create tracks in Music CMS first"
+          label="Featured tracks"
+          hint="Create tracks in Music CMS first, then search and add them here."
           items={form.featuredTrackSlugs}
-          placeholder="gurenge"
+          placeholder="Search songs, OSTs, albums…"
+          allowedTypes={["song"]}
           onChange={(featuredTrackSlugs) => update("featuredTrackSlugs", featuredTrackSlugs)}
         />
         <SlugListEditor
-          label="Related content slugs"
+          label="Related content"
           items={form.relatedContentSlugs}
-          placeholder="demon-slayer"
+          placeholder="Search anime, movies, shows…"
+          allowedTypes={["content"]}
           onChange={(relatedContentSlugs) => update("relatedContentSlugs", relatedContentSlugs)}
         />
       </Section>

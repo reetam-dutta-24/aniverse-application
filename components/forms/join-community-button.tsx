@@ -5,28 +5,39 @@ import { useRouter } from "next/navigation";
 import { KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  CatalogSearchPicker,
+  type CatalogPickerSelection,
+} from "@/components/forms/catalog-search-picker";
+import {
   FormActions,
   FormError,
   FormField,
   FormShell,
-  TextInput,
 } from "@/components/forms/form-shell";
-import { slugify } from "@/lib/slugify";
 
 export function JoinCommunityButton() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [slug, setSlug] = useState("");
+  const [selection, setSelection] = useState<CatalogPickerSelection | null>(null);
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
 
+  function resetForm() {
+    setSelection(null);
+    setError(undefined);
+  }
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (!selection || selection.type !== "community") {
+      setError("Search and select a community to join.");
+      return;
+    }
+
     setLoading(true);
     setError(undefined);
 
-    const communitySlug = slugify(slug);
-    const response = await fetch(`/api/communities/${communitySlug}/join`, {
+    const response = await fetch(`/api/communities/${selection.id}/join`, {
       method: "POST",
     });
 
@@ -39,7 +50,7 @@ export function JoinCommunityButton() {
     }
 
     setOpen(false);
-    setSlug("");
+    resetForm();
     router.refresh();
   }
 
@@ -52,28 +63,34 @@ export function JoinCommunityButton() {
         onClick={() => setOpen(true)}
       >
         <KeyRound className="me-1.5 size-4 text-brand-magenta" />
-        Join Community with Code
+        Join Community
       </Button>
 
       <FormShell
         open={open}
         title="Join Community"
-        description="Enter the community slug — e.g. global-anime-community."
-        onClose={() => setOpen(false)}
+        description="Search for a community and join with one click."
+        onClose={() => {
+          setOpen(false);
+          resetForm();
+        }}
       >
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <FormField label="Community slug">
-            <TextInput
-              value={slug}
-              onChange={(event) => setSlug(event.target.value)}
-              placeholder="global-anime-community"
-              required
+          <FormField label="Search & select">
+            <CatalogSearchPicker
+              allowedTypes={["community"]}
+              value={selection}
+              onChange={setSelection}
+              placeholder="Search communities…"
             />
           </FormField>
 
           <FormError message={error} />
           <FormActions
-            onCancel={() => setOpen(false)}
+            onCancel={() => {
+              setOpen(false);
+              resetForm();
+            }}
             submitLabel="Join Community"
             loading={loading}
           />

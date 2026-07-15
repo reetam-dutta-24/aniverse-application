@@ -2,6 +2,8 @@
 
 import React from "react";
 import { ImageUploadInput } from "@/components/ui/image-upload-input";
+import { CatalogMultiSearchPicker } from "@/components/forms/catalog-search-picker";
+import type { SearchResultType } from "@/lib/search/types";
 import type {
   CatalogReviewInput,
   ContentCharacterInput,
@@ -60,21 +62,24 @@ export function SlugListEditor({
   items,
   placeholder,
   onChange,
+  allowedTypes = ["content"],
 }: {
   label: string;
   hint?: string;
   items: string[];
   placeholder: string;
   onChange: (items: string[]) => void;
+  allowedTypes?: SearchResultType[];
 }) {
   return (
-    <TagListEditor
-      label={label}
-      hint={hint}
-      items={items}
-      placeholder={placeholder}
-      onChange={onChange}
-    />
+    <Field label={label} hint={hint}>
+      <CatalogMultiSearchPicker
+        allowedTypes={allowedTypes}
+        values={items}
+        onChange={onChange}
+        placeholder={placeholder}
+      />
+    </Field>
   );
 }
 

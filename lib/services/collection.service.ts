@@ -335,10 +335,12 @@ export async function getCollectionDetailBySlug(
     }),
   ]);
 
-  const musicTracks = row.items
+  const allTracks = row.items
     .filter((item) => item.track)
-    .map((item) => mapTrackToMusicTrack(item.track!))
-    .slice(0, 6);
+    .map((item) => mapTrackToMusicTrack(item.track!));
+
+  const isMusic = row.kind === "music";
+  const featuredTrack = allTracks[0];
 
   return mapCollectionToDetail(row, {
     similarCollections: similarRows.map(mapCollectionToCard),
@@ -359,25 +361,36 @@ export async function getCollectionDetailBySlug(
       imageUrl: community.imageUrl ?? undefined,
       lastActiveAt: undefined,
     })),
-    continueWatching,
-    watchedMost: allItems.slice(0, 6),
-    musicTracks,
-    currentActivity: allItems[0]
-      ? {
-          title: allItems[0].title,
-          statusLabel: `Currently featured in ${row.name}`,
-          imageUrl:
-            allItems[0].imageUrl ?? `/images/posters/${allItems[0].id}.jpg`,
-          contentId: allItems[0].id,
-        }
-      : row.imageUrl
+    continueWatching: isMusic ? [] : continueWatching,
+    watchedMost: isMusic ? [] : allItems.slice(0, 6),
+    musicTracks: allTracks,
+    currentActivity:
+      isMusic && featuredTrack
         ? {
-            title: row.name,
-            statusLabel: `Currently featured in ${row.name}`,
-            imageUrl: row.imageUrl,
-            contentId: row.slug,
+            title: featuredTrack.title,
+            statusLabel: `Featured in ${row.name}`,
+            progressLabel: featuredTrack.artist,
+            imageUrl:
+              featuredTrack.imageUrl ??
+              `/images/posters/${featuredTrack.id}.jpg`,
+            contentId: featuredTrack.id,
           }
-        : undefined,
+        : allItems[0]
+          ? {
+              title: allItems[0].title,
+              statusLabel: `Currently featured in ${row.name}`,
+              imageUrl:
+                allItems[0].imageUrl ?? `/images/posters/${allItems[0].id}.jpg`,
+              contentId: allItems[0].id,
+            }
+          : row.imageUrl
+            ? {
+                title: row.name,
+                statusLabel: `Currently featured in ${row.name}`,
+                imageUrl: row.imageUrl,
+                contentId: row.slug,
+              }
+            : undefined,
   });
 }
 

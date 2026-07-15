@@ -15,23 +15,13 @@ import {
   TextArea,
   TextInput,
 } from "@/components/forms/form-shell";
+import { CatalogMultiSearchPicker } from "@/components/forms/catalog-search-picker";
 import { ACCENT_OPTIONS, CONTENT_GENRE_OPTIONS } from "@/lib/catalog-enums";
 import {
   collectionCategories,
   collectionKinds,
 } from "@/lib/validators/collection";
 import { slugify } from "@/lib/slugify";
-
-function parseSlugLines(value: string): string[] {
-  return Array.from(
-    new Set(
-      value
-        .split(/[\n,]+/)
-        .map((line) => slugify(line.trim()))
-        .filter(Boolean),
-    ),
-  );
-}
 
 export function CreateCollectionButton() {
   const router = useRouter();
@@ -46,8 +36,8 @@ export function CreateCollectionButton() {
   const [visibility, setVisibility] = useState<"PUBLIC" | "PRIVATE">("PRIVATE");
   const [accent, setAccent] = useState("blue");
   const [imageUrl, setImageUrl] = useState("");
-  const [contentSlugs, setContentSlugs] = useState("");
-  const [trackSlugs, setTrackSlugs] = useState("");
+  const [contentSlugs, setContentSlugs] = useState<string[]>([]);
+  const [trackSlugs, setTrackSlugs] = useState<string[]>([]);
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
 
@@ -66,8 +56,8 @@ export function CreateCollectionButton() {
     setVisibility("PRIVATE");
     setAccent("blue");
     setImageUrl("");
-    setContentSlugs("");
-    setTrackSlugs("");
+    setContentSlugs([]);
+    setTrackSlugs([]);
     setError(undefined);
   }
 
@@ -89,8 +79,8 @@ export function CreateCollectionButton() {
         visibility,
         accent,
         imageUrl: imageUrl || undefined,
-        initialContentSlugs: parseSlugLines(contentSlugs),
-        initialTrackSlugs: parseSlugLines(trackSlugs),
+        initialContentSlugs: contentSlugs,
+        initialTrackSlugs: trackSlugs,
       }),
     });
 
@@ -229,25 +219,25 @@ export function CreateCollectionButton() {
           {kind === "content" ? (
             <FormField
               label="Initial items"
-              hint="Add catalog titles by slug — one per line (e.g. death-note)."
+              hint="Search and add catalog titles to seed the collection."
             >
-              <TextArea
-                value={contentSlugs}
-                onChange={(event) => setContentSlugs(event.target.value)}
-                placeholder={"death-note\njujutsu-kaisen\ndemon-slayer"}
-                className="min-h-28 font-mono text-xs"
+              <CatalogMultiSearchPicker
+                allowedTypes={["content", "song"]}
+                values={contentSlugs}
+                onChange={setContentSlugs}
+                placeholder="Search anime, movies, shows, music…"
               />
             </FormField>
           ) : (
             <FormField
               label="Initial tracks"
-              hint="Add music tracks by slug — one per line (e.g. gurenge)."
+              hint="Search and add music tracks to seed the playlist."
             >
-              <TextArea
-                value={trackSlugs}
-                onChange={(event) => setTrackSlugs(event.target.value)}
-                placeholder={"gurenge\nidol\nkick-back"}
-                className="min-h-28 font-mono text-xs"
+              <CatalogMultiSearchPicker
+                allowedTypes={["song"]}
+                values={trackSlugs}
+                onChange={setTrackSlugs}
+                placeholder="Search songs, OSTs, albums…"
               />
             </FormField>
           )}
