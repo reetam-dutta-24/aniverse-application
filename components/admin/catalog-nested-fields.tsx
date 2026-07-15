@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { ImageUploadInput } from "@/components/ui/image-upload-input";
 import type {
   CatalogReviewInput,
   ContentCharacterInput,
@@ -259,11 +260,11 @@ export function EpisodesEditor({
             />
           </Field>
           <div className="grid gap-3 sm:grid-cols-3">
-            <Field label="Thumbnail URL">
-              <input
-                className={inputClass}
+            <Field label="Thumbnail">
+              <ImageUploadInput
                 value={episode.thumbnailUrl ?? ""}
-                onChange={(e) => update(index, { thumbnailUrl: e.target.value })}
+                onChange={(value) => update(index, { thumbnailUrl: value })}
+                inputClassName={inputClass}
               />
             </Field>
             <Field label="Language">
@@ -358,11 +359,11 @@ export function CharactersEditor({
               onChange={(e) => update(index, { voiceActor: e.target.value })}
             />
           </Field>
-          <Field label="Image URL">
-            <input
-              className={inputClass}
+          <Field label="Image">
+            <ImageUploadInput
               value={character.imageUrl ?? ""}
-              onChange={(e) => update(index, { imageUrl: e.target.value })}
+              onChange={(value) => update(index, { imageUrl: value })}
+              inputClassName={inputClass}
             />
           </Field>
           <Field label="Accent">

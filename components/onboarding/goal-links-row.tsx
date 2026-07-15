@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { OnboardingGoalLink } from "@/lib/data/onboarding";
+import type { OnboardingGoalLink } from "@/lib/data/onboarding-config";
 
 export interface GoalLinksRowProps {
   links: OnboardingGoalLink[];

@@ -57,8 +57,8 @@ export default async function DashboardHomePage() {
     getHomeRecommended(),
     getHomeTrending(),
     getHomeContinueListening(user.id),
-    getHomeCommunities(),
-    getHomeCollections(),
+    getHomeCommunities(user.id),
+    getHomeCollections(user.id),
   ]);
 
   return (

@@ -8,6 +8,7 @@ import {
   mapTrackToContentItem,
   mapTrackToMusicTrack,
 } from "@/lib/mappers/music.mapper";
+import { mapArtistToContentItem } from "@/lib/mappers/artist.mapper";
 import type { ContentItem, MediaType, MusicTrack } from "@/types";
 
 const contentInclude = {
@@ -217,16 +218,7 @@ export async function listArtistSearchItems(limit = 50): Promise<ContentItem[]> 
     orderBy: [{ rating: "desc" }, { title: "asc" }],
     take: limit,
   });
-  return rows.map((row) => ({
-    id: row.slug,
-    title: row.title,
-    type: "artist" as const,
-    imageUrl: row.imageUrl ?? undefined,
-    rating: row.rating ?? undefined,
-    year: row.debutYear ?? undefined,
-    meta: row.isGroup ? "Group" : "Solo Artist",
-    matchScore: row.rating ? Math.round(row.rating * 10) : undefined,
-  }));
+  return rows.map(mapArtistToContentItem);
 }
 
 export async function searchCatalogContent(
@@ -280,15 +272,7 @@ export async function searchCatalogArtists(
     take: limit,
     orderBy: { rating: "desc" },
   });
-  return rows.map((row) => ({
-    id: row.slug,
-    title: row.title,
-    type: "artist" as const,
-    imageUrl: row.imageUrl ?? undefined,
-    rating: row.rating ?? undefined,
-    year: row.debutYear ?? undefined,
-    meta: row.isGroup ? "Group" : "Solo Artist",
-  }));
+  return rows.map(mapArtistToContentItem);
 }
 
 export async function getSpotlightFromCatalog(): Promise<{

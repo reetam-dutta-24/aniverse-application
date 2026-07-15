@@ -14,6 +14,8 @@ export interface CollectionDetailHeroProps {
   collection: CollectionDetail;
   variant?: CollectionMediaVariant;
   favoriteTracks?: MusicTrack[];
+  /** Owner edit/delete controls — rendered in the hero header. */
+  ownerActions?: React.ReactNode;
 }
 
 const DETAIL_CHIP =
@@ -30,6 +32,7 @@ export function CollectionDetailHero({
   collection,
   variant = "content",
   favoriteTracks,
+  ownerActions,
 }: CollectionDetailHeroProps) {
   const copy = COLLECTION_MEDIA_COPY[variant];
   const heroGlow = getDetailHeroBoundaryGlow(
@@ -49,14 +52,21 @@ export function CollectionDetailHero({
 
       <div className="relative grid w-full grid-cols-1 items-stretch overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(300px,36vw)] lg:h-[calc(100dvh-4.5rem)] lg:max-h-[calc(100dvh-4.5rem)]">
         <div className="flex flex-col gap-3 px-5 py-5 sm:px-8 sm:py-6 lg:gap-3.5 lg:px-10 lg:py-7 xl:px-14">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span
-              className={cn("inline-flex items-center gap-2", TITLE_CLASS)}
-            >
-              <Star className="size-6 shrink-0 fill-yellow-400 text-yellow-400 sm:size-7" />
-              {collection.rating}
-            </span>
-            <h1 className={TITLE_CLASS}>{collection.name}</h1>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2.5">
+              <span
+                className={cn("inline-flex items-center gap-2", TITLE_CLASS)}
+              >
+                <Star className="size-6 shrink-0 fill-yellow-400 text-yellow-400 sm:size-7" />
+                {collection.rating}
+              </span>
+              <h1 className={TITLE_CLASS}>{collection.name}</h1>
+            </div>
+            {ownerActions ? (
+              <div className="flex shrink-0 items-center gap-2 pt-0.5">
+                {ownerActions}
+              </div>
+            ) : null}
           </div>
 
           {collection.trendingLabel ? (

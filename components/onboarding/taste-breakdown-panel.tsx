@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import type { TasteBreakdownItem } from "@/lib/data/onboarding";
+import type { TasteBreakdownItem } from "@/lib/data/onboarding-config";
 
 export interface TasteBreakdownPanelProps {
   items: TasteBreakdownItem[];

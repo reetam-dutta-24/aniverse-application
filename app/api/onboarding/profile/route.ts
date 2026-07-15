@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import type { OnboardingSelection } from "@/lib/data/onboarding";
+import type { OnboardingSelection } from "@/lib/data/onboarding-config";
 import { getTasteProfileForUser } from "@/lib/services/onboarding.service";
 
 /** GET /api/onboarding/profile — saved taste-test answers for the current user. */

@@ -18,6 +18,7 @@ import {
   SlugListEditor,
 } from "@/components/admin/catalog-nested-fields";
 import { EnumMultiSelect, EnumSelect } from "@/components/admin/enum-selectors";
+import { ImageUploadInput } from "@/components/ui/image-upload-input";
 
 export interface ContentFormProps {
   mode: "create" | "edit";
@@ -356,21 +357,19 @@ export function ContentForm({ mode, contentId, initial }: ContentFormProps) {
 
       <Section title="Media" description="Poster and backdrop images.">
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Poster image URL" hint="Use high-resolution images (≥1200px wide) for sharp detail pages">
-            <input
-              className={inputClass}
+          <Field label="Poster image" hint="Use high-resolution images (≥1200px wide) for sharp detail pages">
+            <ImageUploadInput
               value={form.imageUrl ?? ""}
-              onChange={(e) => update("imageUrl", e.target.value)}
-              placeholder="https://… or /images/posters/slug.jpg"
+              onChange={(value) => update("imageUrl", value)}
+              inputClassName={inputClass}
             />
           </Field>
 
-          <Field label="Backdrop image URL">
-            <input
-              className={inputClass}
+          <Field label="Backdrop image">
+            <ImageUploadInput
               value={form.backdropUrl ?? ""}
-              onChange={(e) => update("backdropUrl", e.target.value)}
-              placeholder="Hero / banner still"
+              onChange={(value) => update("backdropUrl", value)}
+              inputClassName={inputClass}
             />
           </Field>
         </div>

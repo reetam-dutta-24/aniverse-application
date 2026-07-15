@@ -39,6 +39,10 @@ export interface ContentItem {
   meta?: string;
   year?: number;
   accent?: AccentColor;
+  /** Present on watchlist-backed cards. */
+  watchlistItemId?: string;
+  watchlistStatus?: "PENDING" | "WATCHING" | "COMPLETED" | "DROPPED";
+  watchlistPriority?: "NORMAL" | "HIGH";
 }
 
 /** A song/OST/track shown on music cards. */
@@ -61,6 +65,7 @@ export interface Community {
   id: string;
   name: string;
   category: string;
+  description?: string;
   memberCount: number;
   postCount: number;
   visibility: CommunityVisibility;
@@ -71,12 +76,19 @@ export interface Community {
   lastActiveAt?: string;
   accent?: AccentColor;
   imageUrl?: string;
+  wallpaperUrl?: string;
+  viewerRole?: MemberRole;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 export interface Collection {
   id: string;
   name: string;
   description?: string;
+  category?: string;
+  collectionKind?: "content" | "music";
+  genreLabelIds?: string[];
   itemCount: number;
   favoriteCount: number;
   visibility: CommunityVisibility;
@@ -109,6 +121,10 @@ export interface CollectionDetail {
   rating: number;
   trendingLabel?: string;
   genres: Genre[];
+  category?: string;
+  collectionKind?: "content" | "music";
+  genreLabelIds?: string[];
+  ownerId?: string;
   visibility: CommunityVisibility;
   createdAt: string;
   updatedAt?: string;
@@ -118,6 +134,7 @@ export interface CollectionDetail {
   matchScore?: number;
   highlightTags: string[];
   imageUrl?: string;
+  accent?: AccentColor;
   engagementStats: ContentEngagementStat[];
   contributors: UserSummary[];
   /** e.g. "Rahul_89, Lk45_89 and Karan_singh45 are 3 contributors". */
@@ -501,7 +518,14 @@ export interface CommunityDetail {
   description: string;
   primaryTags: string[];
   matchScore?: number;
+  category?: string;
+  visibility?: CommunityVisibility;
+  activityLevel?: ActivityLevel;
+  viewerRole?: MemberRole;
+  canEdit?: boolean;
+  canDelete?: boolean;
   wallpaperUrl: string;
+  imageUrl?: string;
   accent?: AccentColor;
   engagementStats: ContentEngagementStat[];
   members: UserSummary[];

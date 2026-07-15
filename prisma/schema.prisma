@@ -426,6 +426,9 @@ model Collection {
   userId        String
   name          String
   description   String?    @db.Text
+  category      String     @default("Mixed")
+  genreLabels   String[]   @default([])
+  kind          String     @default("content")
   visibility    Visibility @default(PUBLIC)
   accent        String?
   imageUrl      String?

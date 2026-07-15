@@ -13,11 +13,14 @@ import { getAccentStyle } from "@/lib/accents";
 import type { Collection } from "@/types";
 import { Chip } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
+import { DeleteCollectionButton } from "@/components/forms/delete-collection-button";
+import { EditCollectionButton } from "@/components/forms/edit-collection-button";
+import { cardDeleteActionClass, cardEditActionClass } from "@/lib/form-action-styles";
 
 export interface CollectionCardProps
   extends React.HTMLAttributes<HTMLDivElement> {
   collection: Collection;
-  /** Show the "✏️ Edit" footer action instead of visibility (Figma Variant2). */
+  /** Show edit/delete actions for collections the user owns. */
   editable?: boolean;
   onView?: () => void;
 }
@@ -69,6 +72,11 @@ export function CollectionCard({
     router.push(getCollectionDetailPath(collection.id));
   }
 
+  const itemLabel =
+    collection.collectionKind === "music"
+      ? `${collection.itemCount} Songs`
+      : `${collection.itemCount} Items`;
+
   return (
     <div
       className={cn(
@@ -82,7 +90,7 @@ export function CollectionCard({
     >
       <div
         className="flex flex-col items-center overflow-hidden rounded-[20px] bg-glass-purple"
-        style={{ height: COLLECTION_CARD_H }}
+        style={{ height: editable ? COLLECTION_CARD_H + 28 : COLLECTION_CARD_H }}
       >
         <CardHeaderImage
           imageUrl={collection.imageUrl}
@@ -95,7 +103,7 @@ export function CollectionCard({
             </h3>
             <div className="flex flex-wrap items-center justify-center gap-1.5 px-1">
               <Chip variant="blue" className="h-5 text-[10px]">
-                {collection.itemCount} Items
+                {itemLabel}
               </Chip>
               <Chip variant="indigo" className="h-5 text-[10px]">
                 {collection.favoriteCount} Favts
@@ -121,21 +129,62 @@ export function CollectionCard({
               </span>
               <span className="shrink-0">
                 {editable
-                  ? "✏️ Edit"
+                  ? "✏️ Manage"
                   : collection.visibility === "private"
                     ? "🔒 Private"
                     : "🌍 Public"}
               </span>
             </p>
           </div>
-          <Button
-            variant="gradient"
-            size="sm"
-            className="h-6 w-[100px] shrink-0 rounded-full px-2 text-[9px] font-normal"
-            onClick={handleView}
-          >
-            View Collection
-          </Button>
+          <div className="flex w-full flex-col items-center gap-1.5 px-2">
+            <Button
+              variant="gradient"
+              size="sm"
+              className="h-6 w-[100px] shrink-0 rounded-full px-2 text-[9px] font-normal"
+              onClick={handleView}
+            >
+              View Collection
+            </Button>
+            {editable ? (
+              <div className="flex w-full items-center justify-center gap-2">
+                <EditCollectionButton
+                  collection={{
+                    slug: collection.id,
+                    name: collection.name,
+                    description: collection.description,
+                    category: collection.category,
+                    genreLabelIds: collection.genreLabelIds,
+                    collectionKind: collection.collectionKind,
+                    visibility: collection.visibility,
+                    accent: collection.accent,
+                    imageUrl: collection.imageUrl,
+                  }}
+                  trigger={
+                    <button
+                      type="button"
+                      onClick={(event) => event.stopPropagation()}
+                      className={cardEditActionClass}
+                    >
+                      Edit
+                    </button>
+                  }
+                />
+                <DeleteCollectionButton
+                  collectionSlug={collection.id}
+                  collectionName={collection.name}
+                  trigger={
+                    <button
+                      type="button"
+                      onClick={(event) => event.stopPropagation()}
+                      className={cardDeleteActionClass}
+                    >
+                      Delete
+                    </button>
+                  }
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>

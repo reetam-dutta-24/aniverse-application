@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import { KeyRound, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   CommunityGridSection,
   WelcomeBanner,
 } from "@/components/dashboard";
-import { GradientButton } from "@/components/ui/gradient-button";
-import { Button } from "@/components/ui/button";
+import { CreateCommunityButton } from "@/components/forms/create-community-button";
+import { JoinCommunityButton } from "@/components/forms/join-community-button";
 import {
   getCommunityGenres,
   getCommunityMemberPreview,
@@ -58,27 +57,18 @@ function FilterChip({ label, active }: { label: string; active: boolean }) {
 }
 
 export default async function CommunityPage() {
-  const [
-    user,
-    stats,
-    genres,
-    sorts,
-    members,
-    favourites,
-    mostActive,
-    recommended,
-    global,
-  ] = await Promise.all([
-    getCurrentUser(),
-    getCommunityStats(),
-    getCommunityGenres(),
-    getCommunitySorts(),
-    getCommunityMemberPreview(),
-    getFavouriteCommunities(),
-    getMostActiveCommunities(),
-    getRecommendedCommunities(),
-    getGlobalCommunities(),
-  ]);
+  const user = await getCurrentUser();
+  const [stats, genres, sorts, members, favourites, mostActive, recommended, global] =
+    await Promise.all([
+      getCommunityStats(user.id),
+      getCommunityGenres(),
+      getCommunitySorts(),
+      getCommunityMemberPreview(user.id),
+      getFavouriteCommunities(user.id),
+      getMostActiveCommunities(user.id),
+      getRecommendedCommunities(user.id),
+      getGlobalCommunities(),
+    ]);
 
   const activeGenres = new Set(["All", "Anime"]);
   const activeSort = "Recently Updated";
@@ -91,18 +81,8 @@ export default async function CommunityPage() {
         <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between">
           <h2 className="text-lg font-bold text-white sm:text-heading">👥 Community Hub</h2>
           <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap lg:w-auto">
-            <GradientButton size="sm" className="w-full rounded-full px-4 sm:w-auto">
-              <Plus className="me-1.5 size-4" />
-              Create Community
-            </GradientButton>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full rounded-full border-brand-magenta px-4 sm:w-auto"
-            >
-              <KeyRound className="me-1.5 size-4 text-brand-magenta" />
-              Join Community with Code
-            </Button>
+            <CreateCommunityButton />
+            <JoinCommunityButton />
           </div>
         </div>
         <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">

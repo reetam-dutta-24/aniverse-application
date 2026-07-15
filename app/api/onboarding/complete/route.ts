@@ -4,7 +4,7 @@ import type {
   OnboardingGoalLink,
   OnboardingSelection,
   TasteBreakdownItem,
-} from "@/lib/data/onboarding";
+} from "@/lib/data/onboarding-config";
 import { completeOnboarding } from "@/lib/services/onboarding.service";
 
 /**

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Plus } from "lucide-react";
 import { CollectionCard, CommunityCard } from "@/components/cards";
 import { CollectionDetailHero } from "@/components/collection";
 import { ContentPageSection } from "@/components/content";
@@ -9,8 +8,10 @@ import {
   MusicCarouselSection,
   WatchlistGridSection,
 } from "@/components/dashboard";
-import { GradientButton } from "@/components/ui/gradient-button";
+import { AddCollectionItemButton } from "@/components/forms/add-collection-item-button";
+import { CollectionDetailOwnerActions } from "@/components/forms/collection-detail-owner-actions";
 import { getCommunityMemberPreview } from "@/lib/data/community";
+import { getOptionalUser } from "@/lib/data/user";
 import {
   getAllCollectionIds,
   getCollectionDetail,
@@ -41,23 +42,35 @@ export default async function CollectionDetailPage({
   params,
 }: CollectionPageProps) {
   const { collectionid } = await params;
+  const viewer = await getOptionalUser();
   const [collection, members] = await Promise.all([
-    getCollectionDetail(collectionid),
-    getCommunityMemberPreview(),
+    getCollectionDetail(collectionid, viewer?.id),
+    getCommunityMemberPreview(viewer?.id),
   ]);
 
   if (!collection) notFound();
 
+  const canManageCollection =
+    !!viewer?.id && collection.ownerId === viewer.id;
+
   const addItemAction = (
-    <GradientButton size="sm" className="gap-1.5 rounded-full px-5">
-      <Plus className="size-4" />
-      Add New Item
-    </GradientButton>
+    <AddCollectionItemButton collectionSlug={collection.id} />
   );
 
   return (
     <div className="flex w-full flex-col gap-10 sm:gap-12 lg:gap-14">
-      <CollectionDetailHero collection={collection} />
+      <CollectionDetailHero
+        collection={collection}
+        variant={collection.collectionKind === "music" ? "music" : "content"}
+        favoriteTracks={
+          collection.collectionKind === "music" ? collection.musicTracks : undefined
+        }
+        ownerActions={
+          canManageCollection ? (
+            <CollectionDetailOwnerActions collection={collection} />
+          ) : undefined
+        }
+      />
 
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-10 px-4 sm:gap-12 sm:px-8 lg:gap-14 lg:px-12">
         <WatchlistGridSection

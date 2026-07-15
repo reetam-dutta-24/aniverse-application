@@ -16,7 +16,7 @@ import {
   getTrendingMusic,
   getTrendingThisWeek,
 } from "@/lib/data/discover";
-import { getRecommendedCommunities } from "@/lib/data/community";
+import { getGlobalCommunities } from "@/lib/data/community";
 
 /**
  * Mock data layer — user profile detail (`/profile/[userid]`).
@@ -353,7 +353,7 @@ async function hydrateProfile(base: UserProfileDetail): Promise<UserProfileDetai
       getMusicForYourTaste(),
       getTrendingMusic(),
       getContinueListening(),
-      getRecommendedCommunities(),
+      getGlobalCommunities(),
     ]);
 
   const likedContent = recommended.slice(0, 8);

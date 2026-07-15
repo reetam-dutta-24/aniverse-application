@@ -1,4 +1,4 @@
-import type { OnboardingRecommendations, OnboardingSelection } from "@/lib/data/onboarding";
+import type { OnboardingRecommendations, OnboardingSelection } from "@/lib/data/onboarding-config";
 
 const LEGACY_STORAGE_KEY = "aniverse-onboarding";
 

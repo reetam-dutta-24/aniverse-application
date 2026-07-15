@@ -14,6 +14,12 @@ import {
   type ContentSeedBase,
 } from "../lib/seed/helpers";
 import { MUSIC_ITEMS } from "../lib/seed/music";
+import {
+  DEMO_COLLECTIONS,
+  DEMO_COMMUNITIES,
+  DEMO_USER,
+  DEMO_WATCHLIST,
+} from "../lib/seed/user-library";
 
 const prisma = new PrismaClient();
 const BCRYPT_ROUNDS = 12;
@@ -410,6 +416,189 @@ async function linkAllContentRelations(
   console.log("Content relations linked (related titles + featured OSTs).");
 }
 
+async function seedDemoUserLibrary(
+  contentSlugToId: Map<string, string>,
+  trackSlugToId: Map<string, string>,
+) {
+  const passwordHash = await bcrypt.hash(DEMO_USER.password, BCRYPT_ROUNDS);
+  const user = await prisma.user.upsert({
+    where: { email: DEMO_USER.email.toLowerCase() },
+    create: {
+      email: DEMO_USER.email.toLowerCase(),
+      handle: DEMO_USER.handle,
+      name: DEMO_USER.name,
+      passwordHash,
+      avatarColor: DEMO_USER.avatarColor,
+      aiTasteScore: DEMO_USER.aiTasteScore,
+      onboardingCompletedAt: new Date(),
+      preferences: { create: {} },
+    },
+    update: {
+      name: DEMO_USER.name,
+      handle: DEMO_USER.handle,
+      passwordHash,
+      avatarColor: DEMO_USER.avatarColor,
+      aiTasteScore: DEMO_USER.aiTasteScore,
+      onboardingCompletedAt: new Date(),
+    },
+  });
+
+  await prisma.watchlistItem.deleteMany({ where: { userId: user.id } });
+  for (const item of DEMO_WATCHLIST) {
+    const contentId = contentSlugToId.get(item.slug);
+    if (!contentId) continue;
+    await prisma.watchlistItem.create({
+      data: {
+        userId: user.id,
+        contentId,
+        priority: item.priority,
+        status: item.status,
+      },
+    });
+  }
+
+  for (const collectionSeed of DEMO_COLLECTIONS) {
+    const collection = await prisma.collection.upsert({
+      where: { slug: collectionSeed.slug },
+      create: {
+        slug: collectionSeed.slug,
+        userId: user.id,
+        name: collectionSeed.name,
+        description: collectionSeed.description,
+        category: collectionSeed.category,
+        genreLabels: collectionSeed.genreLabels,
+        kind: collectionSeed.kind,
+        visibility: collectionSeed.visibility,
+        accent: collectionSeed.accent,
+        imageUrl: collectionSeed.imageUrl,
+        favoriteCount: collectionSeed.favoriteCount,
+      },
+      update: {
+        userId: user.id,
+        name: collectionSeed.name,
+        description: collectionSeed.description,
+        category: collectionSeed.category,
+        genreLabels: collectionSeed.genreLabels,
+        kind: collectionSeed.kind,
+        visibility: collectionSeed.visibility,
+        accent: collectionSeed.accent,
+        imageUrl: collectionSeed.imageUrl,
+        favoriteCount: collectionSeed.favoriteCount,
+      },
+    });
+
+    await prisma.collectionItem.deleteMany({ where: { collectionId: collection.id } });
+    let position = 0;
+    for (const slug of "items" in collectionSeed ? collectionSeed.items : []) {
+      const contentId = contentSlugToId.get(slug);
+      if (!contentId) continue;
+      await prisma.collectionItem.create({
+        data: { collectionId: collection.id, contentId, position: position++ },
+      });
+    }
+    for (const slug of "tracks" in collectionSeed ? collectionSeed.tracks : []) {
+      const trackId = trackSlugToId.get(slug);
+      if (!trackId) continue;
+      await prisma.collectionItem.create({
+        data: { collectionId: collection.id, trackId, position: position++ },
+      });
+    }
+    const itemCount = await prisma.collectionItem.count({
+      where: { collectionId: collection.id },
+    });
+    await prisma.collection.update({
+      where: { id: collection.id },
+      data: { itemCount },
+    });
+  }
+
+  for (const communitySeed of DEMO_COMMUNITIES) {
+    const community = await prisma.community.upsert({
+      where: { slug: communitySeed.slug },
+      create: {
+        slug: communitySeed.slug,
+        name: communitySeed.name,
+        category: communitySeed.category,
+        description: communitySeed.description,
+        visibility: communitySeed.visibility,
+        activityLevel: communitySeed.activityLevel,
+        accent: communitySeed.accent,
+        imageUrl: communitySeed.imageUrl,
+        wallpaperUrl: communitySeed.wallpaperUrl,
+      },
+      update: {
+        name: communitySeed.name,
+        category: communitySeed.category,
+        description: communitySeed.description,
+        visibility: communitySeed.visibility,
+        activityLevel: communitySeed.activityLevel,
+        accent: communitySeed.accent,
+        imageUrl: communitySeed.imageUrl,
+        wallpaperUrl: communitySeed.wallpaperUrl,
+      },
+    });
+
+    await prisma.communityMember.upsert({
+      where: {
+        userId_communityId: { userId: user.id, communityId: community.id },
+      },
+      create: { userId: user.id, communityId: community.id, role: "ADMIN" },
+      update: { role: "ADMIN" },
+    });
+
+    for (const email of communitySeed.extraMembers) {
+      const member = await prisma.user.findUnique({
+        where: { email: email.toLowerCase() },
+      });
+      if (!member) continue;
+      await prisma.communityMember.upsert({
+        where: {
+          userId_communityId: { userId: member.id, communityId: community.id },
+        },
+        create: {
+          userId: member.id,
+          communityId: community.id,
+          role: "MEMBER",
+        },
+        update: {},
+      });
+    }
+
+    await prisma.communityPost.deleteMany({ where: { communityId: community.id } });
+    for (const postSeed of communitySeed.posts) {
+      const author = await prisma.user.findUnique({
+        where: { email: postSeed.authorEmail.toLowerCase() },
+      });
+      if (!author) continue;
+      await prisma.communityPost.create({
+        data: {
+          communityId: community.id,
+          authorId: author.id,
+          content: postSeed.content,
+          imageUrl: postSeed.imageUrl,
+          likeCount: postSeed.likeCount,
+          commentCount: postSeed.commentCount,
+          shareCount: postSeed.shareCount,
+        },
+      });
+    }
+
+    const [memberCount, postCount] = await Promise.all([
+      prisma.communityMember.count({ where: { communityId: community.id } }),
+      prisma.communityPost.count({ where: { communityId: community.id } }),
+    ]);
+    await prisma.community.update({
+      where: { id: community.id },
+      data: { memberCount, postCount },
+    });
+  }
+
+  console.log(`Demo user ready: ${DEMO_USER.email} / ${DEMO_USER.password}`);
+  console.log(
+    `  Watchlist: ${DEMO_WATCHLIST.length} | Collections: ${DEMO_COLLECTIONS.length} | Communities: ${DEMO_COMMUNITIES.length}`,
+  );
+}
+
 async function main() {
   console.log("Seeding AniVerse catalog…\n");
   await seedAdminUsers();
@@ -418,11 +607,13 @@ async function main() {
   const artistSlugToId = await seedArtists();
   const trackSlugToId = await seedMusic(artistSlugToId, contentSlugToId);
   await linkAllContentRelations(contentSlugToId, trackSlugToId);
+  await seedDemoUserLibrary(contentSlugToId, trackSlugToId);
   console.log("\nSeed complete.");
   console.log(`  ${CONTENT_ITEMS.length} content titles`);
   console.log(`  ${ARTIST_ITEMS.length} artists`);
   console.log(`  ${MUSIC_ITEMS.length} music tracks`);
   console.log(`  ${PLATFORM_ADMINS.length} admin accounts`);
+  console.log(`  1 demo user (${DEMO_USER.email})`);
 }
 
 main()

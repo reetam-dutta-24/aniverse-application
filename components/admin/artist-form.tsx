@@ -17,6 +17,7 @@ import {
   inputClass,
 } from "@/components/admin/catalog-nested-fields";
 import { EnumMultiSelect, EnumSelect } from "@/components/admin/enum-selectors";
+import { ImageUploadInput } from "@/components/ui/image-upload-input";
 import type { ArtistFormInput } from "@/lib/validators/admin/artist";
 
 export interface ArtistFormProps {
@@ -114,8 +115,12 @@ export function ArtistForm({ mode, recordId, initial }: ArtistFormProps) {
         <Field label="Bio / synopsis">
           <textarea className={`${inputClass} min-h-32 py-2`} value={form.synopsis ?? ""} onChange={(e) => update("synopsis", e.target.value)} />
         </Field>
-        <Field label="Hero image URL" hint="Use high-resolution images for sharp detail pages">
-          <input className={inputClass} value={form.imageUrl ?? ""} onChange={(e) => update("imageUrl", e.target.value)} />
+        <Field label="Hero image" hint="Use high-resolution images for sharp detail pages">
+          <ImageUploadInput
+            value={form.imageUrl ?? ""}
+            onChange={(value) => update("imageUrl", value)}
+            inputClassName={inputClass}
+          />
         </Field>
         <EnumMultiSelect
           label="Genres"

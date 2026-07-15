@@ -4,7 +4,7 @@ import type {
   OnboardingGoalLink,
   OnboardingSelection,
   TasteBreakdownItem,
-} from "@/lib/data/onboarding";
+} from "@/lib/data/onboarding-config";
 
 /** Where to send a user right after they authenticate. */
 export async function getPostAuthPath(userId: string): Promise<string> {

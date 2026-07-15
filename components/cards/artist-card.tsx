@@ -125,7 +125,7 @@ export function ArtistCard({
                 </p>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-1">
-                {item.genres.slice(0, 2).map((genre) => (
+                {(item.genres ?? []).slice(0, 2).map((genre) => (
                   <Chip
                     key={genre.id}
                     genreId={genre.id}
@@ -172,7 +172,7 @@ export function ArtistCard({
               </p>
 
               <div className="flex flex-wrap items-center justify-center gap-1">
-                {item.genres.slice(0, 2).map((genre) => (
+                {(item.genres ?? []).slice(0, 2).map((genre) => (
                   <Chip
                     key={genre.id}
                     genreId={genre.id}

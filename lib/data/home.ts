@@ -14,7 +14,7 @@ import { getCommunityStats, getRecommendedCommunities } from "@/lib/data/communi
 import { countCatalogContent } from "@/lib/services/feed.service";
 
 /**
- * Dashboard home — catalog carousels from PostgreSQL; user stats still mock until watchlist/collections ship.
+ * Dashboard home — catalog carousels and user library stats from PostgreSQL.
  */
 
 export interface HomeStats {
@@ -28,13 +28,34 @@ export interface HomeStats {
   trendingCount: number;
 }
 
+const emptyWatchlistStats = {
+  savedItems: 0,
+  pending: 0,
+  highPriority: 0,
+  avgAiMatch: 0,
+};
+
+const emptyCollectionStats = {
+  collections: 0,
+  totalItems: 0,
+  favourites: 0,
+  lastUpdated: "—",
+};
+
+const emptyCommunityStats = {
+  joined: 0,
+  totalMembers: "0",
+  postsViewed: 0,
+  avgCompatibility: 0,
+};
+
 export async function getHomeStats(userId?: string): Promise<HomeStats> {
   const [tasteScore, watchlist, collections, community, catalogCount] =
     await Promise.all([
       getAiTasteProfileScore(userId),
-      getWatchlistStats(),
-      getCollectionStats(),
-      getCommunityStats(),
+      userId ? getWatchlistStats(userId) : emptyWatchlistStats,
+      userId ? getCollectionStats(userId) : emptyCollectionStats,
+      userId ? getCommunityStats(userId) : emptyCommunityStats,
       countCatalogContent(),
     ]);
 
@@ -66,10 +87,10 @@ export async function getHomeContinueListening(userId?: string) {
   return getContinueListening(userId);
 }
 
-export async function getHomeCommunities() {
-  return getRecommendedCommunities();
+export async function getHomeCommunities(userId?: string) {
+  return userId ? getRecommendedCommunities(userId) : [];
 }
 
-export async function getHomeCollections() {
-  return getRecentlyUsedCollections();
+export async function getHomeCollections(userId?: string) {
+  return userId ? getRecentlyUsedCollections(userId) : [];
 }

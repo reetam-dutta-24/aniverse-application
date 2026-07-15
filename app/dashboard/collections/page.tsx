@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WelcomeBanner } from "@/components/dashboard";
 import { CollectionGridSection } from "@/components/dashboard/collection-grid-section";
-import { GradientButton } from "@/components/ui/gradient-button";
+import { CreateCollectionButton } from "@/components/forms/create-collection-button";
 import { getCurrentUser } from "@/lib/data/user";
 import {
   getAllCollections,
@@ -47,16 +46,16 @@ function FilterChip({ label, active }: { label: string; active: boolean }) {
 }
 
 export default async function CollectionsPage() {
-  const [user, stats, genres, sorts, mostLiked, recentlyAdded, recentlyUsed, all, globalPublic] =
+  const user = await getCurrentUser();
+  const [stats, genres, sorts, mostLiked, recentlyAdded, recentlyUsed, all, globalPublic] =
     await Promise.all([
-      getCurrentUser(),
-      getCollectionStats(),
+      getCollectionStats(user.id),
       getGenreFilters(),
       getSortOptions(),
-      getMostLikedCollections(),
-      getRecentlyAddedCollections(),
-      getRecentlyUsedCollections(),
-      getAllCollections(),
+      getMostLikedCollections(user.id),
+      getRecentlyAddedCollections(user.id),
+      getRecentlyUsedCollections(user.id),
+      getAllCollections(user.id),
       getGlobalPublicCollections(),
     ]);
 
@@ -72,10 +71,7 @@ export default async function CollectionsPage() {
       <section className="rounded-2xl bg-surface/40 px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <h2 className="text-lg font-bold text-white sm:text-heading">📒 Your Collection</h2>
-          <GradientButton size="sm" className="w-full rounded-full px-4 sm:w-auto">
-            <Plus className="me-1.5 size-4" />
-            Create New Collection
-          </GradientButton>
+          <CreateCollectionButton />
         </div>
         <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
           {statTiles(stats).map((tile) => (
@@ -120,25 +116,28 @@ export default async function CollectionsPage() {
         title={`⭐ Most Liked Collections  (${stats.collections > 20 ? 20 : stats.collections})`}
         searchPlaceholder="Search Liked Collections……. "
         collections={mostLiked}
-        highlightFirst
+        editable
       />
 
       <CollectionGridSection
         title="🆕 Recently Added  (18)"
         searchPlaceholder="Search Recent Added Collection…… "
         collections={recentlyAdded}
+        editable
       />
 
       <CollectionGridSection
         title="🕐 Recently Used"
         searchPlaceholder="Search Recent Collection……. "
         collections={recentlyUsed}
+        editable
       />
 
       <CollectionGridSection
         title={`📁 Your Collections  (${stats.collections})`}
         searchPlaceholder="Search All Collection…… "
         collections={all}
+        editable
       />
 
       <CollectionGridSection

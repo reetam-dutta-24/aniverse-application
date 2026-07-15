@@ -1,0 +1,265 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Plus } from "lucide-react";
+import { GradientButton } from "@/components/ui/gradient-button";
+import { ImageUploadInput } from "@/components/ui/image-upload-input";
+import {
+  FormActions,
+  FormError,
+  FormField,
+  FormShell,
+  FormTagMultiSelect,
+  SelectInput,
+  TextArea,
+  TextInput,
+} from "@/components/forms/form-shell";
+import { ACCENT_OPTIONS, CONTENT_GENRE_OPTIONS } from "@/lib/catalog-enums";
+import {
+  collectionCategories,
+  collectionKinds,
+} from "@/lib/validators/collection";
+import { slugify } from "@/lib/slugify";
+
+function parseSlugLines(value: string): string[] {
+  return Array.from(
+    new Set(
+      value
+        .split(/[\n,]+/)
+        .map((line) => slugify(line.trim()))
+        .filter(Boolean),
+    ),
+  );
+}
+
+export function CreateCollectionButton() {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] =
+    useState<(typeof collectionCategories)[number]>("Anime");
+  const [genreLabels, setGenreLabels] = useState<string[]>([]);
+  const [kind, setKind] = useState<(typeof collectionKinds)[number]>("content");
+  const [visibility, setVisibility] = useState<"PUBLIC" | "PRIVATE">("PRIVATE");
+  const [accent, setAccent] = useState("blue");
+  const [imageUrl, setImageUrl] = useState("");
+  const [contentSlugs, setContentSlugs] = useState("");
+  const [trackSlugs, setTrackSlugs] = useState("");
+  const [error, setError] = useState<string>();
+  const [loading, setLoading] = useState(false);
+
+  const slugPreview = useMemo(
+    () => slug.trim() || slugify(name || "my-collection"),
+    [name, slug],
+  );
+
+  function resetForm() {
+    setName("");
+    setSlug("");
+    setDescription("");
+    setCategory("Anime");
+    setGenreLabels([]);
+    setKind("content");
+    setVisibility("PRIVATE");
+    setAccent("blue");
+    setImageUrl("");
+    setContentSlugs("");
+    setTrackSlugs("");
+    setError(undefined);
+  }
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setLoading(true);
+    setError(undefined);
+
+    const response = await fetch("/api/collections", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        slug: slugPreview,
+        description,
+        category,
+        genreLabels,
+        kind,
+        visibility,
+        accent,
+        imageUrl: imageUrl || undefined,
+        initialContentSlugs: parseSlugLines(contentSlugs),
+        initialTrackSlugs: parseSlugLines(trackSlugs),
+      }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    setLoading(false);
+
+    if (!response.ok) {
+      setError(data.error ?? "Could not create collection.");
+      return;
+    }
+
+    const createdSlug = data.collection?.id ?? slugPreview;
+    setOpen(false);
+    resetForm();
+    router.push(`/collection/${createdSlug}`);
+    router.refresh();
+  }
+
+  return (
+    <>
+      <GradientButton
+        size="sm"
+        className="w-full rounded-full px-4 sm:w-auto"
+        onClick={() => setOpen(true)}
+      >
+        <Plus className="me-1.5 size-4" />
+        Create New Collection
+      </GradientButton>
+
+      <FormShell
+        open={open}
+        title="Create Collection"
+        description="Organize anime, movies, shows, and music into a personal list."
+        onClose={() => setOpen(false)}
+        className="max-w-xl"
+      >
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <FormField label="Name">
+            <TextInput
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Anime Masterpieces"
+              required
+            />
+          </FormField>
+
+          <FormField label="Slug" hint={`URL: /collection/${slugPreview}`}>
+            <TextInput
+              value={slug}
+              onChange={(event) => setSlug(event.target.value)}
+              placeholder={slugPreview}
+            />
+          </FormField>
+
+          <FormField label="Description">
+            <TextArea
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="A hand-picked vault of anime that defined your taste."
+            />
+          </FormField>
+
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Collection type">
+              <SelectInput
+                value={kind}
+                onChange={(event) =>
+                  setKind(event.target.value as (typeof collectionKinds)[number])
+                }
+              >
+                <option value="content">Shows &amp; movies</option>
+                <option value="music">Music playlist</option>
+              </SelectInput>
+            </FormField>
+
+            <FormField label="Category">
+              <SelectInput
+                value={category}
+                onChange={(event) =>
+                  setCategory(
+                    event.target.value as (typeof collectionCategories)[number],
+                  )
+                }
+              >
+                {collectionCategories.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </SelectInput>
+            </FormField>
+          </div>
+
+          <FormTagMultiSelect
+            label="Genre tags"
+            hint="Shown on the collection page when items are not added yet."
+            values={genreLabels}
+            options={CONTENT_GENRE_OPTIONS}
+            onChange={setGenreLabels}
+          />
+
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Visibility">
+              <SelectInput
+                value={visibility}
+                onChange={(event) =>
+                  setVisibility(event.target.value as "PUBLIC" | "PRIVATE")
+                }
+              >
+                <option value="PRIVATE">Private</option>
+                <option value="PUBLIC">Public</option>
+              </SelectInput>
+            </FormField>
+            <FormField label="Accent">
+              <SelectInput
+                value={accent}
+                onChange={(event) => setAccent(event.target.value)}
+              >
+                {ACCENT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </SelectInput>
+            </FormField>
+          </div>
+
+          <FormField label="Cover image">
+            <ImageUploadInput
+              value={imageUrl}
+              onChange={setImageUrl}
+              placeholder="Or paste an image URL"
+            />
+          </FormField>
+
+          {kind === "content" ? (
+            <FormField
+              label="Initial items"
+              hint="Add catalog titles by slug — one per line (e.g. death-note)."
+            >
+              <TextArea
+                value={contentSlugs}
+                onChange={(event) => setContentSlugs(event.target.value)}
+                placeholder={"death-note\njujutsu-kaisen\ndemon-slayer"}
+                className="min-h-28 font-mono text-xs"
+              />
+            </FormField>
+          ) : (
+            <FormField
+              label="Initial tracks"
+              hint="Add music tracks by slug — one per line (e.g. gurenge)."
+            >
+              <TextArea
+                value={trackSlugs}
+                onChange={(event) => setTrackSlugs(event.target.value)}
+                placeholder={"gurenge\nidol\nkick-back"}
+                className="min-h-28 font-mono text-xs"
+              />
+            </FormField>
+          )}
+
+          <FormError message={error} />
+          <FormActions
+            onCancel={() => setOpen(false)}
+            submitLabel="Create Collection"
+            loading={loading}
+          />
+        </form>
+      </FormShell>
+    </>
+  );
+}

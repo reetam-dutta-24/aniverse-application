@@ -2,11 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LayoutList, Plus } from "lucide-react";
+import { LayoutList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { COMMUNITY_DASHBOARD_NAV_ICONS } from "@/lib/community-dashboard-nav";
 import { getCommunityDashboardPath } from "@/lib/community-routes";
-import { GradientButton } from "@/components/ui/gradient-button";
+import { CreateCommunityPostButton } from "@/components/forms/create-community-post-button";
 import { SearchPill } from "@/components/dashboard/search-pill";
 import { CommunityDashboardFeedPost } from "@/components/community/community-dashboard-feed-post";
 import { CommunityDashboardMemberCard } from "@/components/community/community-dashboard-member-card";
@@ -144,13 +144,7 @@ export function CommunityDashboardPreview({
                   {postsToday} Posts Today
                 </span>
               </div>
-              <GradientButton
-                size="sm"
-                className="h-8 gap-1 rounded-full px-4 text-xs"
-              >
-                <Plus className="size-3.5" />
-                Create Posts
-              </GradientButton>
+              <CreateCommunityPostButton communitySlug={communityId} />
             </div>
 
             <div className="relative z-10 min-h-0 flex-1 overflow-hidden">

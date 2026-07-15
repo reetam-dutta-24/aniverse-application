@@ -15,6 +15,7 @@ import {
   inputClass,
 } from "@/components/admin/catalog-nested-fields";
 import { EnumMultiSelect, EnumSelect } from "@/components/admin/enum-selectors";
+import { ImageUploadInput } from "@/components/ui/image-upload-input";
 import type { MusicFormInput } from "@/lib/validators/admin/music";
 
 export interface MusicFormProps {
@@ -168,11 +169,19 @@ export function MusicForm({ mode, recordId, initial }: MusicFormProps) {
 
       <Section title="Media">
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="Cover image URL" hint="Use high-resolution images for sharp detail pages">
-            <input className={inputClass} value={form.imageUrl ?? ""} onChange={(e) => update("imageUrl", e.target.value)} />
+          <Field label="Cover image" hint="Use high-resolution images for sharp detail pages">
+            <ImageUploadInput
+              value={form.imageUrl ?? ""}
+              onChange={(value) => update("imageUrl", value)}
+              inputClassName={inputClass}
+            />
           </Field>
-          <Field label="Backdrop URL">
-            <input className={inputClass} value={form.backdropUrl ?? ""} onChange={(e) => update("backdropUrl", e.target.value)} />
+          <Field label="Backdrop">
+            <ImageUploadInput
+              value={form.backdropUrl ?? ""}
+              onChange={(value) => update("backdropUrl", value)}
+              inputClassName={inputClass}
+            />
           </Field>
         </div>
         <Field label="Description / synopsis">

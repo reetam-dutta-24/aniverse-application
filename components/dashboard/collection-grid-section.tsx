@@ -15,7 +15,9 @@ export interface CollectionGridSectionProps {
   title: string;
   searchPlaceholder: string;
   collections: Collection[];
-  /** First card gets edit footer (Most Liked section). */
+  /** Mark cards as user-owned so edit/delete actions appear. */
+  editable?: boolean;
+  /** @deprecated Use `editable` for all cards in the section. */
   highlightFirst?: boolean;
 }
 
@@ -24,6 +26,7 @@ export function CollectionGridSection({
   title,
   searchPlaceholder,
   collections,
+  editable = false,
   highlightFirst = false,
 }: CollectionGridSectionProps) {
   const [query, setQuery] = useState("");
@@ -81,7 +84,7 @@ export function CollectionGridSection({
               <CollectionCard
                 key={collection.id}
                 collection={collection}
-                editable={highlightFirst && i === 0 && safePage === 0}
+                editable={editable || (highlightFirst && i === 0 && safePage === 0)}
               />
             ))
           ) : (

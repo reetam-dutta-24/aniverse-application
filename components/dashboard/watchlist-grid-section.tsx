@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { PosterCard } from "@/components/cards/poster-card";
+import { WatchlistItemActions } from "@/components/forms/watchlist-item-actions";
 import {
   CarouselCardSlot,
   CarouselRowViewport,
@@ -21,6 +22,8 @@ export interface WatchlistGridSectionProps {
   searchPlaceholder: string;
   items: ContentItem[];
   action?: React.ReactNode;
+  /** Show status + remove controls on each item. */
+  manageable?: boolean;
 }
 
 /** Paginated poster grid — responsive columns, pagination dots only. */
@@ -29,6 +32,7 @@ export function WatchlistGridSection({
   searchPlaceholder,
   items,
   action,
+  manageable = false,
 }: WatchlistGridSectionProps) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
@@ -102,17 +106,20 @@ export function WatchlistGridSection({
             {pageItems.length > 0 ? (
               pageItems.map((item) => (
                 <CarouselCardSlot
-                  key={item.id}
+                  key={item.watchlistItemId ?? item.id}
                   id={item.id}
                   hoveredId={hoveredId}
                 >
-                  <PosterCard
-                    item={item}
-                    tintSeed={tintSeed}
-                    onHoverChange={(hovered) =>
-                      setHoveredId(hovered ? item.id : null)
-                    }
-                  />
+                  <div className="flex flex-col items-center gap-2">
+                    <PosterCard
+                      item={item}
+                      tintSeed={tintSeed}
+                      onHoverChange={(hovered) =>
+                        setHoveredId(hovered ? item.id : null)
+                      }
+                    />
+                    {manageable ? <WatchlistItemActions item={item} /> : null}
+                  </div>
                 </CarouselCardSlot>
               ))
             ) : (

@@ -20,12 +20,11 @@ import { TasteBreakdownPanel } from "@/components/onboarding/taste-breakdown-pan
 import { Chip } from "@/components/ui/chip";
 import { GradientButton } from "@/components/ui/gradient-button";
 import {
-  buildOnboardingRecommendations,
   emptyOnboardingSelection,
   onboardingSteps,
   type OnboardingRecommendations,
   type OnboardingSelection,
-} from "@/lib/data/onboarding";
+} from "@/lib/data/onboarding-config";
 import {
   clearLegacyOnboardingProfile,
   getOnboardingProfileWithLegacyMigration,
@@ -83,6 +82,7 @@ export function OnboardingFlow({
   const [buildingStep, setBuildingStep] = useState(0);
   const [recommendations, setRecommendations] =
     useState<OnboardingRecommendations | null>(null);
+  const [buildError, setBuildError] = useState<string>();
 
   const step = onboardingSteps[stepIndex];
   const picked = selection[step?.id ?? "contentTypes"] ?? [];
@@ -148,6 +148,7 @@ export function OnboardingFlow({
     }
     setPhase("building");
     setBuildingStep(0);
+    setBuildError(undefined);
   }
 
   useEffect(() => {
@@ -203,21 +204,41 @@ export function OnboardingFlow({
       setBuildingStep((i) => Math.min(i + 1, buildingSteps.length - 1));
     }, 420);
 
-    buildOnboardingRecommendations(selection).then((result) => {
-      const remaining = Math.max(0, 2200 - (Date.now() - started));
-      window.setTimeout(() => {
+    async function loadRecommendations() {
+      try {
+        const response = await fetch("/api/onboarding/recommendations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ selection }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data.error ?? "Could not build recommendations.");
+        }
+        const remaining = Math.max(0, 2200 - (Date.now() - started));
+        window.setTimeout(() => {
+          if (cancelled) return;
+          setRecommendations(data.recommendations);
+          saveOnboardingProfile(userId, selection, data.recommendations);
+          setPhase("results");
+        }, remaining);
+      } catch (error) {
         if (cancelled) return;
-        setRecommendations(result);
-        saveOnboardingProfile(userId, selection, result);
-        setPhase("results");
-      }, remaining);
-    });
+        setBuildError(
+          error instanceof Error ? error.message : "Could not build recommendations.",
+        );
+        setPhase("quiz");
+        setStepIndex(onboardingSteps.length - 1);
+      }
+    }
+
+    void loadRecommendations();
 
     return () => {
       cancelled = true;
       window.clearInterval(stepInterval);
     };
-  }, [phase, selection]);
+  }, [phase, selection, userId]);
 
   if (phase === "intro") {
     return (
@@ -293,6 +314,10 @@ export function OnboardingFlow({
             {buildingSteps[buildingStep]}
           </p>
         </div>
+      <div className="flex w-full max-w-[420px] flex-col items-center gap-3">
+        {buildError ? (
+          <p className="text-sm text-red-400">{buildError}</p>
+        ) : null}
         <div className="flex w-full flex-col gap-2">
           {buildingSteps.map((label, i) => (
             <div
@@ -313,6 +338,7 @@ export function OnboardingFlow({
             </div>
           ))}
         </div>
+      </div>
       </div>
     );
   }
@@ -496,6 +522,12 @@ export function OnboardingFlow({
           );
         })}
       </div>
+
+      {buildError ? (
+        <p className="w-full max-w-[420px] text-center text-sm text-red-400">
+          {buildError}
+        </p>
+      ) : null}
 
       <div className="flex w-full max-w-[420px] items-center gap-3">
         {stepIndex > 0 ? (

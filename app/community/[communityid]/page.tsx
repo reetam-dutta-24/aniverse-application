@@ -2,10 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CollectionCard, CommunityCard } from "@/components/cards";
 import { ArtistKpiSection } from "@/components/artist";
-import {
-  CommunityDashboardPreview,
-  CommunityDetailHero,
-} from "@/components/community";
+import { CommunityDashboardPreview, CommunityDetailHero } from "@/components/community";
+import { CommunityDetailOwnerActions } from "@/components/forms/community-detail-owner-actions";
 import { ContentPageSection } from "@/components/content";
 import {
   ContentCarouselSection,
@@ -16,6 +14,7 @@ import {
   getCommunityDetail,
 } from "@/lib/data/community-detail";
 import { getCommunityMemberPreview } from "@/lib/data/community";
+import { getOptionalUser } from "@/lib/data/user";
 
 interface CommunityPageProps {
   params: Promise<{ communityid: string }>;
@@ -42,16 +41,26 @@ export default async function CommunityDetailPage({
   params,
 }: CommunityPageProps) {
   const { communityid } = await params;
+  const viewer = await getOptionalUser();
   const [community, members] = await Promise.all([
-    getCommunityDetail(communityid),
-    getCommunityMemberPreview(),
+    getCommunityDetail(communityid, viewer?.id),
+    getCommunityMemberPreview(viewer?.id),
   ]);
 
   if (!community) notFound();
 
+  const showOwnerActions = community.canEdit || community.canDelete;
+
   return (
     <div className="flex w-full flex-col">
-      <CommunityDetailHero community={community} />
+      <CommunityDetailHero
+        community={community}
+        ownerActions={
+          showOwnerActions ? (
+            <CommunityDetailOwnerActions community={community} />
+          ) : undefined
+        }
+      />
       <ArtistKpiSection stats={community.engagementStats} />
 
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-10 px-4 pt-10 sm:gap-12 sm:px-8 lg:gap-14 lg:px-12">
