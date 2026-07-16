@@ -127,6 +127,7 @@ export function mapCommunityPost(
     authorRole?: MemberRole;
     viewerUserId?: string;
     viewerIsStaff?: boolean;
+    likedByViewer?: boolean;
   },
 ): AppCommunityPost {
   const isAuthor = context?.viewerUserId === row.authorId;
@@ -149,6 +150,7 @@ export function mapCommunityPost(
     likeCount: row.likeCount,
     commentCount: row.commentCount,
     shareCount: row.shareCount,
+    liked: context?.likedByViewer ?? false,
     canEdit: isAuthor,
     canDelete,
   };
@@ -205,6 +207,7 @@ export function mapCommunityToDetail(
     musicTracks?: import("@/types").MusicTrack[];
     favoriteItems?: import("@/types").ContentItem[];
     viewerUserId?: string;
+    likedPostIds?: Set<string>;
   } = {},
 ): CommunityDetail {
   const members = (row.members ?? []).map((member) => mapUserSummary(member.user));
@@ -225,6 +228,7 @@ export function mapCommunityToDetail(
       authorRole: memberRoleByUserId.get(post.authorId),
       viewerUserId: options.viewerUserId,
       viewerIsStaff,
+      likedByViewer: options.likedPostIds?.has(post.id) ?? false,
     });
 
   const posts = (options.posts ?? []).map(mapPostWithContext);

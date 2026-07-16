@@ -1,7 +1,3 @@
-import {
-  getFeaturedCatalogReviews,
-  getSpotlightFromCatalog,
-} from "@/lib/services/feed.service";
 import type {
   Collection,
   Community,
@@ -12,12 +8,7 @@ import type {
 } from "@/types";
 
 /**
- * Data layer for the landing page.
- *
- * Every accessor is async and currently resolves static mock data. When the
- * backend/database is ready, replace only the function bodies (Prisma,
- * Drizzle, fetch, etc.) — the UI components consuming these functions will
- * not need to change.
+ * Landing page data — static marketing content only.
  */
 
 export interface LandingFeature {
@@ -249,32 +240,9 @@ export async function getSpotlightContent(): Promise<{
   content: ContentItem;
   music: ContentItem;
 }> {
-  const spotlight = await getSpotlightFromCatalog();
-  const fallbackContent: ContentItem = {
-    id: "jujutsu-kaisen",
-    title: "Jujutsu Kaisen",
-    type: "anime",
-    imageUrl: "/images/posters/jujutsu-kaisen.jpg",
-    genres: [
-      { id: "action", label: "Action" },
-      { id: "thriller", label: "Thriller" },
-    ],
-    matchScore: 93,
-    meta: "2 Seasons",
-    year: 2020,
-  };
-  const fallbackMusic: ContentItem = {
-    id: "gurenge",
-    title: "Gurenge",
-    type: "song",
-    imageUrl: "/images/posters/gurenge.jpg",
-    genres: [{ id: "ost", label: "Anime OST" }],
-    meta: "OST",
-    year: 2019,
-  };
   return {
-    content: spotlight.content ?? fallbackContent,
-    music: spotlight.music ?? fallbackMusic,
+    content: spotlightContent,
+    music: spotlightMusic,
   };
 }
 
@@ -294,8 +262,7 @@ export async function getTrendingCommunities(): Promise<Community[]> {
 }
 
 export async function getFeaturedReviews(): Promise<Review[]> {
-  const reviews = await getFeaturedCatalogReviews(6);
-  return reviews.length > 0 ? reviews : featuredReviews;
+  return featuredReviews;
 }
 
 export async function getTasteStats(): Promise<StatMetric[]> {

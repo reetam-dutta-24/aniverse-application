@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { EntranceFade } from "@/components/landing/scroll-fade-in";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -67,7 +68,7 @@ export function Hero() {
 
       {/* Foreground content, nudged slightly above center */}
       <div className="relative z-10 flex h-full min-h-[60dvh] items-center justify-center px-4 sm:min-h-[720px] sm:px-6 lg:min-h-[935px]">
-        <div className="flex w-full max-w-[800px] -translate-y-4 flex-col items-center gap-6 py-8 text-center sm:-translate-y-8 sm:gap-[30px] lg:-translate-y-14">
+        <EntranceFade className="flex w-full max-w-[800px] -translate-y-4 flex-col items-center gap-6 py-8 text-center sm:-translate-y-8 sm:gap-[30px] lg:-translate-y-14">
           <h1 className="text-3xl font-bold leading-tight text-white sm:text-5xl sm:leading-[0.93] lg:text-display">
             Discover what matches{" "}
             <span className="text-brand-fuchsia">your taste</span>
@@ -96,7 +97,7 @@ export function Hero() {
               Explore Demo
             </Link>
           </div>
-        </div>
+        </EntranceFade>
       </div>
     </section>
   );

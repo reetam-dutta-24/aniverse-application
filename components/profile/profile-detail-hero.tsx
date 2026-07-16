@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { getProfileFriendsPath } from "@/lib/profile-routes";
 import { getAccentTint, getDetailHeroBoundaryGlow } from "@/lib/card-theme";
 import { Chip } from "@/components/ui/chip";
 import { ProfileHeroActivitySlider } from "@/components/profile/profile-hero-activity-slider";
@@ -116,7 +118,9 @@ export function ProfileDetailHero({ profile, isOwner }: ProfileDetailHeroProps) 
               </Chip>
             ) : null}
             <Chip chipKey="movie" className={DETAIL_CHIP}>
-              {profile.followerCount} Followers
+              <Link href={getProfileFriendsPath(profile.handle)} className="hover:underline">
+                {profile.followerCount} Friends
+              </Link>
             </Chip>
             <Chip variant="brand" className={DETAIL_CHIP}>
               Joined {profile.joinedAt}

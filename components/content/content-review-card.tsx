@@ -42,7 +42,7 @@ export function ContentReviewCard({ review }: ContentReviewCardProps) {
           {review.rating}/10
         </Chip>
       </div>
-      {review.likeCount != null ? (
+      {review.likeCount != null && !review.canLike ? (
         <p className="flex shrink-0 items-center gap-1 text-xs font-semibold text-muted">
           <Heart className="size-3.5 text-brand-magenta" />
           {review.likeCount.toLocaleString()} found this helpful

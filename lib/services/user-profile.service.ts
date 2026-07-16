@@ -7,7 +7,14 @@ import {
   buildProfileDetail,
   mapReviewRow,
 } from "@/lib/mappers/user-profile.mapper";
+import { mapUserSummary } from "@/lib/mappers/community.mapper";
 import { mapTrackToMusicTrack } from "@/lib/mappers/music.mapper";
+import {
+  getFollowerCount,
+  getRecentFollowers,
+  isUserFollowing,
+} from "@/lib/services/follow.service";
+import { getLikedReviewIds } from "@/lib/services/like.service";
 import { normalizeProfileSlug } from "@/lib/profile-routes";
 import { normalizeHandle } from "@/lib/services/user.service";
 import type { ProfileSearchItem } from "@/lib/search/types";
@@ -136,6 +143,9 @@ export async function getUserProfileDetail(
     artistRows,
     counts,
     watchMinutes,
+    followerCount,
+    recentFollowers,
+    viewerFollows,
   ] = await Promise.all([
     prisma.watchlistItem.findMany({
       where: { userId: user.id },
@@ -227,7 +237,17 @@ export async function getUserProfileDetail(
       where: { userId: user.id },
       _sum: { minutes: true },
     }),
+    getFollowerCount(user.id),
+    getRecentFollowers(user.id, 3),
+    viewerUserId && !isOwner
+      ? isUserFollowing(viewerUserId, user.handle)
+      : Promise.resolve(false),
   ]);
+
+  const likedReviewIds = await getLikedReviewIds(
+    viewerUserId,
+    reviewRows.map((row) => row.id),
+  );
 
   const [
     watchlistCount,
@@ -296,6 +316,13 @@ export async function getUserProfileDetail(
   const activeWatch = watchlistRows.find((row) => row.status === "WATCHING");
   const latestListen = listenRows[0];
 
+  const followerSummary =
+    followerCount > recentFollowers.length
+      ? `....+${Math.max(0, followerCount - recentFollowers.length)} friends`
+      : followerCount === 0
+        ? undefined
+        : `${followerCount} friends`;
+
   return buildProfileDetail({
     user,
     tasteProfile: user.tasteProfile,
@@ -316,7 +343,9 @@ export async function getUserProfileDetail(
     topArtists,
     collections: collectionRows.map(mapCollectionToCard),
     communities: communityRows.map((row) => mapCommunityToCard(row.community)),
-    reviews: reviewRows.map(mapReviewRow),
+    reviews: reviewRows.map((row) =>
+      mapReviewRow(row, { likedByViewer: likedReviewIds.has(row.id) }),
+    ),
     recentActivity,
     nowListening: latestListen
       ? {
@@ -340,6 +369,10 @@ export async function getUserProfileDetail(
       : latestListen
         ? `Listening to ${latestListen.track.title}`
         : undefined,
+    followerCount,
+    followers: recentFollowers.map(mapUserSummary),
+    followerSummary,
+    viewerFollows: isOwner ? undefined : viewerFollows,
   });
 }
 
@@ -369,12 +402,14 @@ export async function searchUserProfiles(
       ],
     },
     select: {
+      id: true,
       handle: true,
       name: true,
       bio: true,
       avatarColor: true,
       avatarUrl: true,
       portraitUrl: true,
+      _count: { select: { followers: true } },
     },
     take: limit,
     orderBy: { createdAt: "desc" },
@@ -386,7 +421,7 @@ export async function searchUserProfiles(
     handle: row.handle,
     avatarColor: row.avatarColor,
     portraitUrl: row.portraitUrl ?? row.avatarUrl ?? "/images/hero-1.png",
-    followerCount: 0,
+    followerCount: row._count.followers,
     bio: row.bio || undefined,
   }));
 }

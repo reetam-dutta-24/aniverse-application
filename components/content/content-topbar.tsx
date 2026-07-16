@@ -2,18 +2,21 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
-import { CircleUserRound } from "lucide-react";
+import {
+  UserProfileMenu,
+  type DashboardUser,
+} from "@/components/dashboard/user-profile-menu";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { GlobalSearch } from "@/components/search/global-search";
 
 export interface ContentTopbarProps {
-  userName: string;
+  user?: DashboardUser | null;
   initialSearchQuery?: string;
 }
 
-/** Content detail top bar — logo, global search, notifications, user. */
+/** Content detail top bar — logo, global search, notifications, user menu. */
 export function ContentTopbar({
-  userName,
+  user,
   initialSearchQuery,
 }: ContentTopbarProps) {
   return (
@@ -38,12 +41,16 @@ export function ContentTopbar({
 
         <div className="flex shrink-0 items-center gap-3 sm:gap-4">
           <NotificationBell />
-          <div className="hidden items-center gap-2 sm:flex">
-            <CircleUserRound className="size-8 text-white" strokeWidth={1.25} />
-            <span className="max-w-[140px] truncate text-sm font-medium text-white">
-              {userName}
-            </span>
-          </div>
+          {user ? (
+            <UserProfileMenu user={user} placement="topbar" />
+          ) : (
+            <Link
+              href="/login"
+              className="hidden rounded-full border border-white/20 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-white/10 sm:inline-flex"
+            >
+              Sign In
+            </Link>
+          )}
         </div>
       </div>
     </header>

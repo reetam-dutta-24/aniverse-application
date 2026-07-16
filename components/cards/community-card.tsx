@@ -87,7 +87,7 @@ export function CommunityCard({
     >
       <div
         className="flex flex-col items-center overflow-hidden rounded-[20px] bg-glass-purple"
-        style={{ minHeight: showManage ? 300 : 272 }}
+        style={{ height: showManage ? 300 : 272 }}
       >
         <div className="relative h-[84px] w-full shrink-0 overflow-hidden">
           {community.imageUrl ? (
@@ -102,7 +102,7 @@ export function CommunityCard({
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
         </div>
-        <div className="flex w-full flex-1 flex-col items-center gap-px bg-surface pb-2.5 shadow-card-inner">
+        <div className="flex w-full flex-1 flex-col items-center gap-px overflow-hidden bg-surface pb-2.5 shadow-card-inner">
           <h3 className="line-clamp-2 px-2.5 pt-2.5 text-center text-sm font-semibold leading-tight text-white">
             {community.name}
           </h3>

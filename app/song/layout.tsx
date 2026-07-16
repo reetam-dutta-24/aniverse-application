@@ -1,15 +1,7 @@
-import { ContentTopbar } from "@/components/content/content-topbar";
-import { getOptionalUser } from "@/lib/data/user";
+import { AppContentLayout } from "@/components/layout/app-content-layout";
 
 export default async function SongLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const user = await getOptionalUser();
-
-  return (
-    <div className="min-h-dvh bg-background">
-      <ContentTopbar userName={user?.name ?? "Guest"} />
-      <main className="w-full pb-16">{children}</main>
-    </div>
-  );
+  return <AppContentLayout>{children}</AppContentLayout>;
 }

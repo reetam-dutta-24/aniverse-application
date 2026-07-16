@@ -705,6 +705,7 @@ function buildDetailFromItem(
 /** Resolve full content detail by ID — DB first, mock fallback. */
 export async function getContentDetail(
   contentId: string,
+  viewerUserId?: string,
 ): Promise<ContentDetail | null> {
   const slug = normalizeContentSlug(contentId);
   const record = await getContentRecordBySlug(slug);
@@ -715,7 +716,7 @@ export async function getContentDetail(
     );
     const engagement = await getContentEngagementStats(record.id);
     const detail = mapContentRecordToDetail(record, engagement, related);
-    const userReviews = await getUserReviewsForTarget("content", slug);
+    const userReviews = await getUserReviewsForTarget("content", slug, viewerUserId);
     detail.reviews = mergeDisplayedReviews(userReviews, detail.reviews);
     return detail;
   }

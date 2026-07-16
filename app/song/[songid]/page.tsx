@@ -37,7 +37,7 @@ export default async function SongDetailPage({ params }: SongPageProps) {
   const { songid } = await params;
   const viewer = await getOptionalUser();
   const [song, members] = await Promise.all([
-    getSongDetail(songid),
+    getSongDetail(songid, viewer?.id),
     getCommunityMemberPreview(),
   ]);
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { detailHeroBtnBase } from "@/lib/detail-route-ui";
+import { emitCollectionFavoriteCount } from "@/components/collection/collection-favorite-count-chip";
 
 interface ToggleCollectionFavoriteButtonProps {
   collectionSlug: string;
@@ -37,6 +38,9 @@ export function ToggleCollectionFavoriteButton({
         );
       }
       setFavorited(Boolean(data.favorited));
+      if (typeof data.favoriteCount === "number") {
+        emitCollectionFavoriteCount(data.favoriteCount);
+      }
     } catch (toggleError) {
       setError(
         toggleError instanceof Error

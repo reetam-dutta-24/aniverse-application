@@ -296,6 +296,7 @@ function buildDetailFromTrack(
 
 export async function getSongDetail(
   songId: string,
+  viewerUserId?: string,
 ): Promise<ContentDetail | null> {
   const slug = normalizeSongSlug(songId);
   const record = await getTrackRecordBySlug(slug);
@@ -309,7 +310,7 @@ export async function getSongDetail(
     });
     const similar = similarRows.map((t) => mapTrackToMusicTrack(t));
     const detail = mapTrackRecordToSongDetail(record, engagement, similar);
-    const userReviews = await getUserReviewsForTarget("song", slug);
+    const userReviews = await getUserReviewsForTarget("song", slug, viewerUserId);
     detail.reviews = mergeDisplayedReviews(userReviews, detail.reviews);
     return detail;
   }

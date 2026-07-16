@@ -48,7 +48,7 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
   const { contentid } = await params;
   const viewer = await getOptionalUser();
   const [content, members] = await Promise.all([
-    getContentDetail(contentid),
+    getContentDetail(contentid, viewer?.id),
     getCommunityMemberPreview(),
   ]);
 

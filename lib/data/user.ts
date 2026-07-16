@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import type { DashboardUser } from "@/components/dashboard/user-profile-menu";
+import { isPlatformAdmin } from "@/lib/platform-roles";
 import { getUserById } from "@/lib/services/user.service";
 import type { UserSummary } from "@/types";
 
@@ -31,6 +33,24 @@ export async function getOptionalUser(): Promise<UserSummary | null> {
   if (!user) return null;
 
   return toUserSummary(user);
+}
+
+/** Full topbar user for consistent navbar across dashboard and content layouts. */
+export async function getOptionalTopbarUser(): Promise<DashboardUser | null> {
+  const session = await auth();
+  if (!session?.user?.id) return null;
+
+  const user = await getUserById(session.user.id);
+  if (!user) return null;
+
+  return {
+    name: user.name,
+    handle: user.handle,
+    email: user.email,
+    avatarColor: user.avatarColor,
+    avatarUrl: user.avatarUrl ?? undefined,
+    isAdmin: isPlatformAdmin(user.role),
+  };
 }
 
 /**

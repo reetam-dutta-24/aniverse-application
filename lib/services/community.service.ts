@@ -22,6 +22,7 @@ import {
   getTrendingMusic,
 } from "@/lib/services/feed.service";
 import { notifyCommunityPost } from "@/lib/services/notification.service";
+import { getLikedPostIds } from "@/lib/services/like.service";
 import {
   listCommunityVoiceChannels,
   listCommunityWatchChannels,
@@ -475,12 +476,16 @@ export async function getCommunityDetailBySlug(
       }),
     ]);
 
+  const allPostIds = [...posts, ...announcements].map((post) => post.id);
+  const likedPostIds = await getLikedPostIds(viewerUserId, allPostIds);
+
   return mapCommunityToDetail(row, {
     posts,
     announcements,
     voiceChannels,
     watchChannels,
     viewerUserId,
+    likedPostIds,
     memberPreview: row.members.map((member) => mapUserSummary(member.user)),
     onlineMembers: row.members.slice(0, 8).map((member) => ({
       id: member.user.id,

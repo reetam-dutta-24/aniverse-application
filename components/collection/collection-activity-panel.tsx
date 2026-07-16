@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { PlayCircle, Plus } from "lucide-react";
+import { PlayCircle } from "lucide-react";
 import { getCollectionPlayPath } from "@/lib/collection-routes";
 import { getContentDetailPath } from "@/lib/content-routes";
 import { getSongDetailPath } from "@/lib/song-routes";
@@ -16,6 +16,7 @@ import {
 } from "@/lib/detail-route-ui";
 import { AvatarStack } from "@/components/ui/avatar-stack";
 import { ToggleCollectionFavoriteButton } from "@/components/forms/toggle-collection-favorite-button";
+import { AddCollectionCollaboratorButton } from "@/components/forms/add-collection-collaborator-button";
 import type { CollectionCurrentActivity, UserSummary } from "@/types";
 
 export interface CollectionActivityPanelProps {
@@ -27,6 +28,8 @@ export interface CollectionActivityPanelProps {
   variant?: CollectionMediaVariant;
   collectionSlug?: string;
   initialFavorited?: boolean;
+  canFavorite?: boolean;
+  canManage?: boolean;
 }
 
 /** Right hero panel — image + CTAs capped to hero height. */
@@ -39,6 +42,8 @@ export function CollectionActivityPanel({
   variant = "content",
   collectionSlug,
   initialFavorited,
+  canFavorite = true,
+  canManage = false,
 }: CollectionActivityPanelProps) {
   const copy = COLLECTION_MEDIA_COPY[variant];
   const wallpaperImageUrl = fallbackImageUrl || activity?.imageUrl || "";
@@ -85,31 +90,17 @@ export function CollectionActivityPanel({
         ) : null}
 
         <div className={DETAIL_HERO_BTN_GROUP}>
-          {collectionSlug ? (
+          {collectionSlug && canFavorite ? (
             <ToggleCollectionFavoriteButton
               collectionSlug={collectionSlug}
               initialFavorited={initialFavorited}
             />
-          ) : (
-            <button
-              type="button"
-              className={detailHeroBtnBase(
-                "border-transparent bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white",
-              )}
-            >
-              <span className="truncate">Add To Favourites</span>
-            </button>
-          )}
+          ) : null}
 
-          <button
-            type="button"
-            className={detailHeroBtnBase(
-              "border-transparent bg-gradient-to-r from-blue-600 to-violet-600 text-white",
-            )}
-          >
-            <Plus className="size-3.5 shrink-0" />
-            <span className="truncate">Add Collaborators</span>
-          </button>
+          <AddCollectionCollaboratorButton
+            collectionSlug={collectionSlug ?? ""}
+            canManage={canManage && Boolean(collectionSlug)}
+          />
         </div>
 
         {contributors.length > 0 ? (

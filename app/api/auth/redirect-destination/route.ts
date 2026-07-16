@@ -10,5 +10,8 @@ export async function GET() {
   }
 
   const destination = await getPostAuthPath(session.user.id);
+  if (destination === null) {
+    return NextResponse.json({ destination: "/login", stale: true }, { status: 401 });
+  }
   return NextResponse.json({ destination });
 }

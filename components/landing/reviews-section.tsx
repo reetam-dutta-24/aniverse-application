@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ReviewCard } from "@/components/cards/review-card";
+import { ScrollFadeIn } from "@/components/landing/scroll-fade-in";
 import { SectionHeader } from "@/components/ui/section-header";
 import { cn } from "@/lib/utils";
 import type { Review } from "@/types";
@@ -60,11 +61,14 @@ export function ReviewsSection({ reviews }: ReviewsSectionProps) {
       id="reviews"
       className="flex w-full scroll-mt-[72px] flex-col items-center gap-10 bg-surface px-4 py-16 sm:px-6"
     >
-      <SectionHeader
-        title="Loved by fans worldwide"
-        subtitle="Real reviews from the AniVerse community"
-      />
+      <ScrollFadeIn>
+        <SectionHeader
+          title="Loved by fans worldwide"
+          subtitle="Real reviews from the AniVerse community"
+        />
+      </ScrollFadeIn>
 
+      <ScrollFadeIn delay={0.12} amount={0.25}>
       <div
         className="relative w-full max-w-[1200px]"
         onMouseEnter={() => setPaused(true)}
@@ -134,8 +138,10 @@ export function ReviewsSection({ reviews }: ReviewsSectionProps) {
           </button>
         ) : null}
       </div>
+      </ScrollFadeIn>
 
       {count > 1 ? (
+        <ScrollFadeIn delay={0.2}>
         <div className="flex items-center gap-2">
           {reviews.map((review, index) => (
             <button
@@ -152,6 +158,7 @@ export function ReviewsSection({ reviews }: ReviewsSectionProps) {
             />
           ))}
         </div>
+        </ScrollFadeIn>
       ) : null}
     </section>
   );

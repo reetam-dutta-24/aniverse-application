@@ -16,7 +16,7 @@ export function isNotificationNotFound(
 export interface CreateNotificationInput {
   userId: string;
   title: string;
-  category?: string;
+  category?: string | null;
   description?: string;
   imageUrl?: string;
   href?: string;
@@ -56,6 +56,58 @@ export async function createNotification(input: CreateNotificationInput) {
       createdAt: input.createdAt,
     },
   });
+}
+
+type NotificationPreferenceKey =
+  | "newEpisodes"
+  | "watchParties"
+  | "musicDrops"
+  | "communityPosts"
+  | "weeklyRecap";
+
+const CATEGORY_PREF_MAP: Record<string, NotificationPreferenceKey | null> = {
+  Episode: "newEpisodes",
+  "Watch Party": "watchParties",
+  "Music Drop": "musicDrops",
+  Community: "communityPosts",
+  Recap: "weeklyRecap",
+  Social: "communityPosts",
+  Watchlist: null,
+  Collection: null,
+  "AI Match": null,
+};
+
+export async function shouldNotifyUser(
+  userId: string,
+  category?: string | null,
+): Promise<boolean> {
+  if (!category) return true;
+  const prefKey = CATEGORY_PREF_MAP[category];
+  if (!prefKey) return true;
+
+  const prefs = await prisma.userPreferences.findUnique({
+    where: { userId },
+    select: {
+      newEpisodes: true,
+      watchParties: true,
+      musicDrops: true,
+      communityPosts: true,
+      weeklyRecap: true,
+    },
+  });
+
+  if (!prefs) {
+    return prefKey !== "communityPosts";
+  }
+
+  return prefs[prefKey];
+}
+
+export async function createNotificationIfAllowed(
+  input: CreateNotificationInput,
+) {
+  if (!(await shouldNotifyUser(input.userId, input.category))) return null;
+  return createNotification(input);
 }
 
 export async function markNotificationReadForUser(
@@ -118,15 +170,41 @@ export async function notifyCommunityPost(
 
   if (members.length === 0) return;
 
+  const allowedMembers: string[] = [];
+  for (const member of members) {
+    if (await shouldNotifyUser(member.userId, "Community")) {
+      allowedMembers.push(member.userId);
+    }
+  }
+  if (allowedMembers.length === 0) return;
+
   await prisma.notification.createMany({
-    data: members.map((member) => ({
-      userId: member.userId,
+    data: allowedMembers.map((userId) => ({
+      userId,
       title: "New Community Post",
       category: "Community",
       description: `${post.authorName} posted in ${community.name}: “${post.title}”`,
       imageUrl: community.imageUrl,
       href: `/community/${community.slug}/dashboard/posts`,
     })),
+  });
+}
+
+export async function notifyUserFollow(input: {
+  followerId: string;
+  followerName: string;
+  followingId: string;
+  followingHandle: string;
+}) {
+  if (input.followerId === input.followingId) return;
+  if (!(await shouldNotifyUser(input.followingId, "Social"))) return;
+
+  await createNotification({
+    userId: input.followingId,
+    title: "New Friend",
+    category: "Social",
+    description: `${input.followerName} added you as a friend.`,
+    href: `/profile/${input.followingHandle}`,
   });
 }
 
@@ -137,10 +215,9 @@ export async function notifyReviewPublished(input: {
   imageUrl?: string;
   headline?: string;
 }) {
-  await createNotification({
+  await createNotificationIfAllowed({
     userId: input.userId,
     title: "Review Published",
-    category: "Community",
     description: input.headline
       ? `Your review “${input.headline}” for ${input.targetLabel} is now live.`
       : `Your review for ${input.targetLabel} is now live.`,

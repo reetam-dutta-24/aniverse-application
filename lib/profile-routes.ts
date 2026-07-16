@@ -8,6 +8,11 @@ export function getProfilePath(handle: string): string {
   return `/profile/${handle}`;
 }
 
+/** Friends list for a user profile. */
+export function getProfileFriendsPath(handle: string): string {
+  return `/profile/${handle}/friends`;
+}
+
 export function isProfileId(id: string): boolean {
   return Boolean(id);
 }

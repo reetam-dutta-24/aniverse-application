@@ -12,6 +12,8 @@ import {
   DETAIL_HERO_BTN_PAIR,
 } from "@/lib/detail-route-ui";
 import { ProfileEditForm } from "@/components/forms/profile-edit-form";
+import { ToggleUserFriendButton } from "@/components/forms/toggle-user-friend-button";
+import { MessageUserButton } from "@/components/forms/message-user-button";
 import { ShareUrlButton } from "@/components/ui/share-url-button";
 import { AvatarStack } from "@/components/ui/avatar-stack";
 import { Chip } from "@/components/ui/chip";
@@ -61,6 +63,7 @@ export function ProfileListeningPanel({
   isOwner = false,
 }: ProfileListeningPanelProps) {
   const [editOpen, setEditOpen] = useState(false);
+  const [friendCount, setFriendCount] = useState(profile.followerCount);
   const {
     portraitUrl,
     name: userName,
@@ -71,10 +74,14 @@ export function ProfileListeningPanel({
     followerSummary,
     favoriteTypes,
     favoriteGenres,
+    viewerFollows,
   } = profile;
 
-  const followerText =
-    followerSummary ?? `${followers.length} users follow ${handle}`;
+  const friendText =
+    followerSummary ??
+    (friendCount > 0
+      ? `${friendCount} friends`
+      : undefined);
 
   return (
     <>
@@ -160,23 +167,20 @@ export function ProfileListeningPanel({
               ) : null}
             </div>
 
-            {followers.length > 0 ? (
+            {(followers.length > 0 || friendCount > 0) && friendText ? (
               <div className="flex items-center gap-2.5">
                 <AvatarStack
                   users={followers}
                   max={3}
                   size="md"
-                  overflowLabel="....+25"
+                  overflowLabel={
+                    friendCount > followers.length
+                      ? `....+${friendCount - followers.length}`
+                      : undefined
+                  }
                 />
                 <p className="min-w-0 flex-1 text-left text-[11px] leading-snug text-white/80 sm:text-xs">
-                  {followerText.includes(handle) ? (
-                    <>
-                      {followerText.slice(0, followerText.indexOf(handle))}
-                      <span className="font-medium text-white">{handle}</span>
-                    </>
-                  ) : (
-                    followerText
-                  )}
+                  {friendText}
                 </p>
               </div>
             ) : null}
@@ -230,11 +234,12 @@ export function ProfileListeningPanel({
               </div>
             ) : (
               <div className={cn(DETAIL_HERO_BTN_PAIR, "justify-center pt-0.5")}>
-                <ShareUrlButton
-                  label="Share Profile"
-                  title={`${userName} on AniVerse`}
-                  text={`Check out ${userName}'s profile on AniVerse`}
+                <ToggleUserFriendButton
+                  handle={handle}
+                  initialFollowing={viewerFollows}
+                  onFriendCountChange={setFriendCount}
                 />
+                <MessageUserButton handle={handle} name={userName} />
               </div>
             )}
           </div>

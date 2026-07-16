@@ -1,6 +1,7 @@
 import type { Prisma, Review } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { mapReviewRow } from "@/lib/mappers/user-profile.mapper";
+import { getLikedReviewIds } from "@/lib/services/like.service";
 import { notifyReviewPublished } from "@/lib/services/notification.service";
 import type { ReviewTargetType } from "@/lib/review-routes";
 import type { Review as AppReview } from "@/types";
@@ -54,7 +55,9 @@ export class ReviewTargetNotFoundError extends Error {
         ? "Content not found."
         : target === "song"
           ? "Song not found."
-          : "Artist not found.",
+          : target === "community"
+            ? "Community not found."
+            : "Artist not found.",
     );
     this.name = "ReviewTargetNotFoundError";
   }
@@ -107,6 +110,15 @@ async function resolveTargetId(
     return row.id;
   }
 
+  if (target === "community") {
+    const row = await prisma.community.findUnique({
+      where: { slug },
+      select: { id: true },
+    });
+    if (!row) throw new ReviewTargetNotFoundError(target);
+    return row.id;
+  }
+
   const row = await prisma.artist.findUnique({
     where: { slug },
     select: { id: true },
@@ -118,21 +130,31 @@ async function resolveTargetId(
 function targetWhere(
   target: ReviewTargetType,
   targetId: string,
-): Pick<Prisma.ReviewWhereInput, "contentId" | "trackId" | "artistId"> {
+): Pick<
+  Prisma.ReviewWhereInput,
+  "contentId" | "trackId" | "artistId" | "communityId"
+> {
   if (target === "content") return { contentId: targetId };
   if (target === "song") return { trackId: targetId };
+  if (target === "community") return { communityId: targetId };
   return { artistId: targetId };
 }
 
 function targetData(
   target: ReviewTargetType,
   targetId: string,
-): Pick<Prisma.ReviewCreateInput, "content" | "track" | "artist"> {
+): Pick<
+  Prisma.ReviewCreateInput,
+  "content" | "track" | "artist" | "community"
+> {
   if (target === "content") {
     return { content: { connect: { id: targetId } } };
   }
   if (target === "song") {
     return { track: { connect: { id: targetId } } };
+  }
+  if (target === "community") {
+    return { community: { connect: { id: targetId } } };
   }
   return { artist: { connect: { id: targetId } } };
 }
@@ -146,12 +168,26 @@ async function getReviewOrThrow(reviewId: string): Promise<ReviewWithAuthor> {
   return row;
 }
 
+export async function mapReviewsForViewer(
+  rows: ReviewWithAuthor[],
+  viewerUserId?: string,
+): Promise<AppReview[]> {
+  const likedIds = await getLikedReviewIds(
+    viewerUserId,
+    rows.map((row) => row.id),
+  );
+  return rows.map((row) =>
+    mapReviewRow(row, { likedByViewer: likedIds.has(row.id) }),
+  );
+}
+
 export async function getUserReviewsForTarget(
   target: ReviewTargetType,
   slug: string,
+  viewerUserId?: string,
 ): Promise<AppReview[]> {
   const rows = await listReviewsForTarget(target, slug);
-  return rows.map((row) => mapReviewRow(row));
+  return mapReviewsForViewer(rows, viewerUserId);
 }
 
 export function mergeDisplayedReviews(
@@ -240,6 +276,18 @@ async function resolveTargetMeta(
     return {
       label: row?.title ?? "this song",
       href: `/song/${row?.slug ?? targetId}`,
+      imageUrl: row?.imageUrl ?? undefined,
+    };
+  }
+
+  if (target === "community") {
+    const row = await prisma.community.findUnique({
+      where: { id: targetId },
+      select: { slug: true, name: true, imageUrl: true },
+    });
+    return {
+      label: row?.name ?? "this community",
+      href: `/community/${row?.slug ?? targetId}`,
       imageUrl: row?.imageUrl ?? undefined,
     };
   }

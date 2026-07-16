@@ -125,7 +125,7 @@ export default async function ProfileDetailPage({ params }: ProfilePageProps) {
         <InteractiveReviewSection
           title={`✍️ Recent Posts & Reviews By ${firstName}`}
           reviews={profile.reviews}
-          viewerUserId={isOwner ? viewer?.id : undefined}
+          viewerUserId={viewer?.id}
           allowCreate={false}
         />
       </div>

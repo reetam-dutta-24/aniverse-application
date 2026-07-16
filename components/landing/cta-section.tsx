@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
+import { ScrollFadeIn } from "@/components/landing/scroll-fade-in";
 import { cn } from "@/lib/utils";
 
 /** Full-width gradient CTA banner: "Create your AniVerse". */
@@ -9,6 +10,7 @@ export function CtaSection() {
       id="cta"
       className="flex min-h-[300px] w-full scroll-mt-[72px] flex-col items-center justify-center gap-8 bg-gradient-blue-violet px-6 py-12"
     >
+      <ScrollFadeIn direction="up" amount={0.35}>
       <div className="flex flex-col items-center gap-2 text-center">
         <h2 className="text-title font-bold text-white">
           Create your <span className="text-brand-pink">AniVerse</span>
@@ -17,6 +19,8 @@ export function CtaSection() {
           Your next favorite anime, song, artist, or community is waiting
         </p>
       </div>
+      </ScrollFadeIn>
+      <ScrollFadeIn delay={0.15} direction="up" amount={0.35}>
       <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-10">
         <Link
           href="/signup"
@@ -37,6 +41,7 @@ export function CtaSection() {
           Log In
         </Link>
       </div>
+      </ScrollFadeIn>
     </section>
   );
 }

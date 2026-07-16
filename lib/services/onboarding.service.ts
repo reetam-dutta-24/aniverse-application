@@ -6,14 +6,16 @@ import type {
   TasteBreakdownItem,
 } from "@/lib/data/onboarding-config";
 
-/** Where to send a user right after they authenticate. */
-export async function getPostAuthPath(userId: string): Promise<string> {
+/** Where to send a user right after they authenticate. Null if the session user no longer exists. */
+export async function getPostAuthPath(userId: string): Promise<string | null> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { onboardingCompletedAt: true },
   });
 
-  return user?.onboardingCompletedAt ? "/dashboard" : "/onboarding";
+  if (!user) return null;
+
+  return user.onboardingCompletedAt ? "/dashboard" : "/onboarding";
 }
 
 export interface TasteProfilePayload {

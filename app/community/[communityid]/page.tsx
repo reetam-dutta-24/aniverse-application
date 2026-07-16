@@ -4,7 +4,7 @@ import { CollectionCard, CommunityCard } from "@/components/cards";
 import { ArtistKpiSection } from "@/components/artist";
 import { CommunityDashboardPreview, CommunityDetailHero } from "@/components/community";
 import { CommunityDetailOwnerActions } from "@/components/forms/community-detail-owner-actions";
-import { ContentPageSection } from "@/components/content";
+import { ContentPageSection, InteractiveReviewSection } from "@/components/content";
 import {
   ContentCarouselSection,
   MusicCarouselSection,
@@ -13,6 +13,7 @@ import {
   getAllCommunityIds,
   getCommunityDetail,
 } from "@/lib/data/community-detail";
+import { getUserReviewsForTarget } from "@/lib/services/review.service";
 import { getCommunityMemberPreview } from "@/lib/data/community";
 import { getOptionalUser } from "@/lib/data/user";
 
@@ -42,9 +43,10 @@ export default async function CommunityDetailPage({
 }: CommunityPageProps) {
   const { communityid } = await params;
   const viewer = await getOptionalUser();
-  const [community, members] = await Promise.all([
+  const [community, members, reviews] = await Promise.all([
     getCommunityDetail(communityid, viewer?.id),
     getCommunityMemberPreview(viewer?.id),
+    getUserReviewsForTarget("community", communityid, viewer?.id),
   ]);
 
   if (!community) notFound();
@@ -113,6 +115,14 @@ export default async function CommunityDetailPage({
               />
             ),
           }))}
+        />
+
+        <InteractiveReviewSection
+          title={`✍️ Community Reviews for ${community.name}`}
+          reviews={reviews}
+          targetType="community"
+          targetSlug={community.id}
+          viewerUserId={viewer?.id}
         />
       </div>
     </div>

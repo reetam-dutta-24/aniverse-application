@@ -3,10 +3,11 @@ export async function shareCurrentUrl(options?: {
   title?: string;
   text?: string;
   preferClipboard?: boolean;
+  url?: string;
 }): Promise<boolean> {
   if (typeof window === "undefined") return false;
 
-  const url = window.location.href;
+  const url = options?.url ?? window.location.href;
 
   if (!options?.preferClipboard && navigator.share) {
     try {

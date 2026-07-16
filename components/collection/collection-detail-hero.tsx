@@ -1,6 +1,7 @@
 import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCardTint, getDetailHeroBoundaryGlow } from "@/lib/card-theme";
+import { CollectionFavoriteCountChip } from "@/components/collection/collection-favorite-count-chip";
 import { Chip, MatchChip } from "@/components/ui/chip";
 import { CollectionActivityPanel } from "@/components/collection/collection-activity-panel";
 import { CollectionHeroSpotlightSlider } from "@/components/collection/collection-hero-spotlight-slider";
@@ -17,6 +18,9 @@ export interface CollectionDetailHeroProps {
   /** Owner edit/delete controls — rendered in the hero header. */
   ownerActions?: React.ReactNode;
   initialFavorited?: boolean;
+  /** Hide favorite CTA on the viewer's own collection. */
+  canFavorite?: boolean;
+  canManage?: boolean;
 }
 
 const DETAIL_CHIP =
@@ -35,6 +39,8 @@ export function CollectionDetailHero({
   favoriteTracks,
   ownerActions,
   initialFavorited,
+  canFavorite = true,
+  canManage = false,
 }: CollectionDetailHeroProps) {
   const copy = COLLECTION_MEDIA_COPY[variant];
   const heroGlow = getDetailHeroBoundaryGlow(
@@ -109,9 +115,10 @@ export function CollectionDetailHero({
             <Chip variant="indigo" className={DETAIL_CHIP}>
               {copy.itemCount(collection.itemCount)}
             </Chip>
-            <Chip variant="brand" className={DETAIL_CHIP}>
-              {collection.favoriteCount} Favts
-            </Chip>
+            <CollectionFavoriteCountChip
+              initialCount={collection.favoriteCount}
+              className={DETAIL_CHIP}
+            />
             <Chip chipKey="mystery" className={DETAIL_CHIP}>
               {collection.visibility === "private" ? "🔒 Private" : "🌍 Public"}
             </Chip>
@@ -133,6 +140,8 @@ export function CollectionDetailHero({
           variant={variant}
           collectionSlug={collection.id}
           initialFavorited={initialFavorited}
+          canFavorite={canFavorite}
+          canManage={canManage}
         />
       </div>
     </section>

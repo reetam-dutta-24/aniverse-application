@@ -96,6 +96,8 @@ export default async function CollectionDetailPage({
         variant={isMusic ? "music" : "content"}
         favoriteTracks={isMusic ? tracks : undefined}
         initialFavorited={initialFavorited}
+        canFavorite={!canManageCollection}
+        canManage={canManageCollection}
         ownerActions={
           canManageCollection ? (
             <CollectionDetailOwnerActions collection={collection} />

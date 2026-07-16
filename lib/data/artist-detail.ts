@@ -350,12 +350,13 @@ export async function getAllArtistIds(): Promise<string[]> {
 
 export async function getArtistDetail(
   artistid: string,
+  viewerUserId?: string,
 ): Promise<ArtistDetail | null> {
   const slug = normalizeArtistSlug(artistid);
   const record = await getArtistRecordBySlug(slug);
   if (record) {
     const detail = mapArtistRecordToDetail(record);
-    const userReviews = await getUserReviewsForTarget("artist", slug);
+    const userReviews = await getUserReviewsForTarget("artist", slug, viewerUserId);
     detail.reviews = mergeDisplayedReviews(userReviews, detail.reviews);
     return detail;
   }

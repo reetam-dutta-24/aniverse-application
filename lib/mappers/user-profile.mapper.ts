@@ -23,6 +23,7 @@ type ReviewAuthor = Parameters<typeof mapUserSummary>[0];
 
 export function mapReviewRow(
   row: PrismaReview & { author: ReviewAuthor },
+  context?: { likedByViewer?: boolean },
 ): Review {
   return {
     id: row.id,
@@ -31,6 +32,8 @@ export function mapReviewRow(
     headline: row.headline ?? undefined,
     content: row.body,
     likeCount: row.likeCount,
+    liked: context?.likedByViewer ?? false,
+    canLike: true,
     createdAt: formatCardDate(row.createdAt),
   };
 }
@@ -141,6 +144,10 @@ export function buildProfileDetail(input: {
   nowListening?: UserProfileDetail["nowListening"];
   currentlyWatching?: UserProfileDetail["currentlyWatching"];
   activitySubtitle?: string;
+  followerCount?: number;
+  followers?: ReturnType<typeof mapUserSummary>[];
+  followerSummary?: string;
+  viewerFollows?: boolean;
 }): UserProfileDetail {
   const summaryChips = asStringArray(input.tasteProfile?.summaryChips);
   const selections =
@@ -184,7 +191,7 @@ export function buildProfileDetail(input: {
     portraitUrl,
     location: input.user.location || "Earth",
     online: false,
-    followerCount: 0,
+    followerCount: input.followerCount ?? 0,
     joinedAt: formatJoinedAt(input.user.createdAt),
     activitySubtitle: input.activitySubtitle,
     matchScore: input.user.aiTasteScore || undefined,
@@ -197,8 +204,9 @@ export function buildProfileDetail(input: {
     currentlyWatching: input.currentlyWatching,
     favoriteTypes,
     favoriteGenres,
-    followers: [],
-    followerSummary: undefined,
+    followers: input.followers ?? [],
+    followerSummary: input.followerSummary,
+    viewerFollows: input.viewerFollows,
     recentActivity: input.recentActivity,
     currentActivity: input.currentActivity,
     likedContent: input.likedContent,

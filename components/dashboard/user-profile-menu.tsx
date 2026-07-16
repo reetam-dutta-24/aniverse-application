@@ -8,6 +8,7 @@ import {
   ChevronDown,
   LayoutDashboard,
   LogOut,
+  MessageCircle,
   Settings,
   Shield,
   User,
@@ -106,6 +107,11 @@ export function UserProfileMenu({
       label: "View Profile",
       href: getProfilePath(user.handle),
       icon: User,
+    },
+    {
+      label: "Messages",
+      href: "/dashboard/messages",
+      icon: MessageCircle,
     },
     {
       label: "Dashboard",

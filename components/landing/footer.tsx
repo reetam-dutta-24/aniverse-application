@@ -1,3 +1,9 @@
+import {
+  ScrollFadeIn,
+  ScrollFadeItem,
+  ScrollFadeStagger,
+} from "@/components/landing/scroll-fade-in";
+
 const columns = [
   {
     heading: "Product",
@@ -46,6 +52,7 @@ export function Footer() {
   return (
     <footer className="flex w-full flex-col items-center gap-8 bg-surface px-6 py-10">
       <div className="flex w-full max-w-[1200px] flex-col items-center gap-8 lg:flex-row lg:items-start lg:gap-20">
+        <ScrollFadeIn direction="up">
         <div className="flex w-[260px] flex-col items-center gap-5 px-6 py-4">
           <p className="text-gradient-brand text-center text-[26px] font-semibold leading-none">
             AniVerse
@@ -55,10 +62,11 @@ export function Footer() {
             communities.
           </p>
         </div>
-        <div className="grid flex-1 grid-cols-2 gap-6 text-center sm:grid-cols-4">
+        </ScrollFadeIn>
+        <ScrollFadeStagger className="grid flex-1 grid-cols-2 gap-6 text-center sm:grid-cols-4">
           {columns.map((column) => (
+            <ScrollFadeItem key={column.heading}>
             <div
-              key={column.heading}
               className="flex flex-col items-center gap-3.5 px-4 py-3"
             >
               <p className="text-base font-semibold text-white">
@@ -74,14 +82,17 @@ export function Footer() {
                 </a>
               ))}
             </div>
+            </ScrollFadeItem>
           ))}
-        </div>
+        </ScrollFadeStagger>
       </div>
+      <ScrollFadeIn delay={0.1}>
       <div className="flex w-full max-w-[1200px] justify-center border-t border-white/10 pt-5 lg:justify-end">
         <p className="text-xs text-muted/80">
           © 2026 AniVerse. Built for entertainment lovers.
         </p>
       </div>
+      </ScrollFadeIn>
     </footer>
   );
 }

@@ -273,6 +273,9 @@ export interface Review {
   createdAt?: string;
   likeCount?: number;
   accent?: AccentColor;
+  liked?: boolean;
+  /** True for persisted user reviews that support the like API. */
+  canLike?: boolean;
 }
 
 /** Engagement stat tile on a content detail page. */
@@ -385,6 +388,7 @@ export interface CommunityPost {
   likeCount?: number;
   commentCount?: number;
   shareCount?: number;
+  liked?: boolean;
   /** True when the signed-in viewer authored this post. */
   canEdit?: boolean;
   canDelete?: boolean;
@@ -550,6 +554,8 @@ export interface UserProfileDetail {
   location: string;
   online: boolean;
   followerCount: number;
+  /** Whether the signed-in viewer follows this profile. */
+  viewerFollows?: boolean;
   joinedAt: string;
   /** e.g. "Currently Watching Death Note Ep 24" */
   activitySubtitle?: string;

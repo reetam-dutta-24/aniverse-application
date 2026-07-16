@@ -166,6 +166,48 @@ export function attachSocketServer(httpServer: HttpServer) {
     socket.on("disconnect", () => {
       joinedRooms.clear();
     });
+
+    socket.on("dm:join", async (payload: unknown) => {
+      const conversationId =
+        payload && typeof payload === "object" && "conversationId" in payload
+          ? String((payload as { conversationId: unknown }).conversationId)
+          : "";
+      if (!conversationId) {
+        socket.emit("dm:error", { message: "Invalid conversation." });
+        return;
+      }
+
+      const conversation = await import("@/lib/prisma").then((m) =>
+        m.prisma.directConversation.findUnique({
+          where: { id: conversationId },
+          select: { participantLowId: true, participantHighId: true },
+        }),
+      );
+
+      if (
+        !conversation ||
+        (conversation.participantLowId !== userId &&
+          conversation.participantHighId !== userId)
+      ) {
+        socket.emit("dm:error", { message: "Conversation not found." });
+        return;
+      }
+
+      const roomId = `dm:${conversationId}`;
+      await socket.join(roomId);
+      joinedRooms.add(roomId);
+    });
+
+    socket.on("dm:leave", (payload: unknown) => {
+      const conversationId =
+        payload && typeof payload === "object" && "conversationId" in payload
+          ? String((payload as { conversationId: unknown }).conversationId)
+          : "";
+      if (!conversationId) return;
+      const roomId = `dm:${conversationId}`;
+      void socket.leave(roomId);
+      joinedRooms.delete(roomId);
+    });
   });
 
   return io;

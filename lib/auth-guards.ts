@@ -9,12 +9,20 @@ import { getUserById } from "@/lib/services/user.service";
  * Middleware only blocks unauthenticated access; these handle the rest.
  */
 
+/** Send stale JWT sessions through a route handler that can clear auth cookies. */
+function clearStaleSession(redirectTo: string): never {
+  const params = new URLSearchParams({ callbackUrl: redirectTo });
+  redirect(`/api/auth/clear-stale-session?${params}`);
+}
+
 /** Redirect logged-in users away from landing / auth pages. */
 export async function redirectAuthenticatedAway() {
   const session = await auth();
   if (!session?.user?.id) return;
 
   const destination = await getPostAuthPath(session.user.id);
+  if (destination === null) clearStaleSession("/");
+
   redirect(destination);
 }
 
@@ -22,6 +30,10 @@ export async function redirectAuthenticatedAway() {
 export async function requireUserId(): Promise<string> {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
+
+  const user = await getUserById(session.user.id);
+  if (!user) clearStaleSession("/login");
+
   return session.user.id;
 }
 
@@ -39,6 +51,7 @@ export async function requireIncompleteOnboarding() {
 export async function requireCompletedOnboarding() {
   const userId = await requireUserId();
   const destination = await getPostAuthPath(userId);
+  if (destination === null) clearStaleSession("/login");
   if (destination === "/onboarding") redirect("/onboarding");
   return userId;
 }

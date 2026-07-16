@@ -37,7 +37,7 @@ export default async function ArtistDetailPage({ params }: ArtistPageProps) {
   const { artistid } = await params;
   const viewer = await getOptionalUser();
   const [artist, members] = await Promise.all([
-    getArtistDetail(artistid),
+    getArtistDetail(artistid, viewer?.id),
     getCommunityMemberPreview(),
   ]);
 

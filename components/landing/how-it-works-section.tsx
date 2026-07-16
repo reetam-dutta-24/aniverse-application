@@ -1,4 +1,9 @@
 import { SectionHeader } from "@/components/ui/section-header";
+import {
+  ScrollFadeIn,
+  ScrollFadeItem,
+  ScrollFadeStagger,
+} from "@/components/landing/scroll-fade-in";
 
 const steps = [
   {
@@ -30,15 +35,17 @@ export function HowItWorksSection() {
       id="how-it-works"
       className="flex w-full scroll-mt-[72px] flex-col items-center gap-10 bg-surface px-6 py-16"
     >
-      <SectionHeader
-        title="How AniVerse Works"
-        subtitle="Start with your taste. AniVerse does the rest."
-      />
+      <ScrollFadeIn>
+        <SectionHeader
+          title="How AniVerse Works"
+          subtitle="Start with your taste. AniVerse does the rest."
+        />
+      </ScrollFadeIn>
       <div className="w-full overflow-x-auto py-6">
-        <div className="mx-auto flex w-max flex-nowrap items-stretch gap-6 px-2 lg:gap-8">
+        <ScrollFadeStagger className="mx-auto flex w-max flex-nowrap items-stretch gap-6 px-2 lg:gap-8">
         {steps.map((step) => (
+          <ScrollFadeItem key={step.number}>
           <div
-            key={step.number}
             className="flex h-auto min-h-[220px] w-[230px] shrink-0 flex-col items-center gap-3 rounded-card bg-glass-magenta px-4 py-7 shadow-glow-pink-soft transition-shadow duration-300 hover:shadow-glow-pink lg:w-[250px]"
           >
             <div className="flex w-full items-center justify-center gap-5">
@@ -53,8 +60,9 @@ export function HowItWorksSection() {
               {step.body}
             </p>
           </div>
+          </ScrollFadeItem>
         ))}
-        </div>
+        </ScrollFadeStagger>
       </div>
     </section>
   );

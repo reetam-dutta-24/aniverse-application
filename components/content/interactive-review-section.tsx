@@ -8,6 +8,7 @@ import {
   DeleteReviewButton,
   EditReviewButton,
 } from "@/components/forms/review-form";
+import { ToggleReviewLikeButton } from "@/components/forms/toggle-review-like-button";
 import { cn } from "@/lib/utils";
 import type { ReviewTargetType } from "@/lib/review-routes";
 import type { Review } from "@/types";
@@ -67,6 +68,14 @@ export function InteractiveReviewSection({
     Boolean(viewerUserId && targetType && targetSlug && allowCreate) &&
     !ownReview;
 
+  function handleReviewLikeChange(reviewId: string, liked: boolean, likeCount: number) {
+    setReviews((current) =>
+      current.map((entry) =>
+        entry.id === reviewId ? { ...entry, liked, likeCount } : entry,
+      ),
+    );
+  }
+
   const slides = reviews.map((review) => {
     const isOwner = viewerUserId === review.author.id;
 
@@ -85,6 +94,18 @@ export function InteractiveReviewSection({
             </div>
           ) : null}
           <ContentReviewCard review={review} />
+          {viewerUserId && review.canLike ? (
+            <div className="mt-2 flex justify-center">
+              <ToggleReviewLikeButton
+                reviewId={review.id}
+                initialLiked={review.liked}
+                initialLikeCount={review.likeCount ?? 0}
+                onChange={(liked, likeCount) =>
+                  handleReviewLikeChange(review.id, liked, likeCount)
+                }
+              />
+            </div>
+          ) : null}
         </div>
       ),
     };

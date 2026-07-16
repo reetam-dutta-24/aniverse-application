@@ -1,5 +1,10 @@
 import { SectionHeader } from "@/components/ui/section-header";
 import { StatCard } from "@/components/ui/stat-card";
+import {
+  ScrollFadeIn,
+  ScrollFadeItem,
+  ScrollFadeStagger,
+} from "@/components/landing/scroll-fade-in";
 import { getTasteStats } from "@/lib/data/landing";
 
 /** "Understand your entertainment taste" — gradient stat cards. */
@@ -11,15 +16,19 @@ export async function StatsSection() {
       id="analytics"
       className="flex w-full scroll-mt-[72px] flex-col items-center gap-10 px-6 py-16"
     >
-      <SectionHeader
-        title="Understand your entertainment taste"
-        subtitle="Track what you watch, hear, save, and love"
-      />
-      <div className="grid w-full max-w-[1200px] grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
+      <ScrollFadeIn>
+        <SectionHeader
+          title="Understand your entertainment taste"
+          subtitle="Track what you watch, hear, save, and love"
+        />
+      </ScrollFadeIn>
+      <ScrollFadeStagger className="grid w-full max-w-[1200px] grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
         {stats.map((stat) => (
-          <StatCard key={stat.id} label={stat.label} value={stat.value} />
+          <ScrollFadeItem key={stat.id}>
+            <StatCard label={stat.label} value={stat.value} />
+          </ScrollFadeItem>
         ))}
-      </div>
+      </ScrollFadeStagger>
     </section>
   );
 }

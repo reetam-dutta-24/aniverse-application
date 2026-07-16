@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Heart, MessageCircle, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { shareCurrentUrl } from "@/lib/share-url";
 import type { CommunityPost, MemberRole } from "@/types";
 
 import {
@@ -28,8 +30,45 @@ export function CommunityDashboardFeedPost({
   communitySlug,
   className,
 }: CommunityDashboardFeedPostProps) {
+  const [liked, setLiked] = useState(post.liked ?? false);
+  const [likeCount, setLikeCount] = useState(post.likeCount ?? 0);
+  const [likeLoading, setLikeLoading] = useState(false);
+
+  const [shareCopied, setShareCopied] = useState(false);
+
+  async function handleShare() {
+    const url = `${window.location.origin}/community/${communitySlug}/dashboard/posts`;
+    const ok = await shareCurrentUrl({
+      title: post.title,
+      text: `Check out this post in the community`,
+      url,
+      preferClipboard: true,
+    });
+    if (ok) {
+      setShareCopied(true);
+      window.setTimeout(() => setShareCopied(false), 2000);
+    }
+  }
   const initial = post.author.name.trim().charAt(0).toUpperCase();
   const role = post.authorRole ? ROLE_LABELS[post.authorRole] : "Member";
+
+  async function handleLikeToggle() {
+    setLikeLoading(true);
+    try {
+      const response = await fetch(
+        `/api/communities/${encodeURIComponent(communitySlug)}/posts/${encodeURIComponent(post.id)}/like`,
+        { method: "POST" },
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) return;
+      setLiked(Boolean(data.liked));
+      if (typeof data.likeCount === "number") {
+        setLikeCount(data.likeCount);
+      }
+    } finally {
+      setLikeLoading(false);
+    }
+  }
 
   return (
     <article
@@ -92,18 +131,31 @@ export function CommunityDashboardFeedPost({
       ) : null}
 
       <div className="flex items-center gap-3 text-[11px] font-semibold text-white/55">
-        <span className="flex items-center gap-1">
-          <Heart className="size-3.5 text-brand-magenta/70" />
-          {post.likeCount?.toLocaleString() ?? 0} Likes
-        </span>
+        <button
+          type="button"
+          disabled={likeLoading}
+          onClick={() => void handleLikeToggle()}
+          className={cn(
+            "flex items-center gap-1 transition-colors",
+            liked ? "text-brand-magenta" : "hover:text-brand-magenta/80",
+          )}
+          aria-pressed={liked}
+        >
+          <Heart className={cn("size-3.5", liked && "fill-current text-brand-magenta")} />
+          {likeCount.toLocaleString()} Likes
+        </button>
         <span className="flex items-center gap-1">
           <MessageCircle className="size-3.5 text-brand-purple/70" />
           {post.commentCount?.toLocaleString() ?? 0} Comments
         </span>
-        <span className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => void handleShare()}
+          className="flex items-center gap-1 transition-colors hover:text-brand-fuchsia/80"
+        >
           <Share2 className="size-3.5 text-brand-fuchsia/70" />
-          Share
-        </span>
+          {shareCopied ? "Copied!" : "Share"}
+        </button>
         <div className="ms-auto flex items-center gap-2">
           {post.canEdit ? (
             <EditCommunityPostButton communitySlug={communitySlug} post={post} />
