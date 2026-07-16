@@ -575,8 +575,10 @@ async function seedDemoUserLibrary(
         data: {
           communityId: community.id,
           authorId: author.id,
+          title: postSeed.title ?? postSeed.content.slice(0, 120),
           content: postSeed.content,
           imageUrl: postSeed.imageUrl,
+          kind: postSeed.kind ?? "POST",
           likeCount: postSeed.likeCount,
           commentCount: postSeed.commentCount,
           shareCount: postSeed.shareCount,

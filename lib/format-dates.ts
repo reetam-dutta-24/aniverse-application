@@ -30,3 +30,13 @@ export function formatPostedAt(date: Date): string {
   if (relative === "Just now") return "Posted just now";
   return `Posted ${relative}`;
 }
+
+/** Compact chat timestamp, e.g. "Just now" or "2:34 PM". */
+export function formatChatSentAt(date: Date, now = new Date()): string {
+  const diffMs = now.getTime() - date.getTime();
+  if (diffMs < 60_000) return "Just now";
+  return date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}

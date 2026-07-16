@@ -211,6 +211,7 @@ export interface CollectionPlayQueue {
   collectionKind: "content" | "music";
   itemCount: number;
   ownerName: string;
+  canManage?: boolean;
   tracks?: CollectionPlayTrack[];
   items?: CollectionPlayContentItem[];
 }
@@ -375,13 +376,18 @@ export interface Member extends UserSummary {
 export interface CommunityPost {
   id: string;
   author: UserSummary;
-  content: string;
+  title: string;
+  content?: string;
   imageUrl?: string;
+  kind?: "post" | "announcement";
   createdAt?: string;
   authorRole?: MemberRole;
   likeCount?: number;
   commentCount?: number;
   shareCount?: number;
+  /** True when the signed-in viewer authored this post. */
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 export interface ChatMessage {
@@ -414,9 +420,13 @@ export interface WatchParty {
   nowPlaying?: string;
   live?: boolean;
   viewerCount?: number;
+  memberLimit?: number;
   participants?: UserSummary[];
   accent?: AccentColor;
   imageUrl?: string;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  viewerJoined?: boolean;
 }
 
 export interface VoiceChannel {
@@ -424,9 +434,13 @@ export interface VoiceChannel {
   title: string;
   subtitle?: string;
   memberCount?: number;
+  memberLimit?: number;
   participants?: UserSummary[];
   accent?: AccentColor;
   hostName?: string;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  viewerJoined?: boolean;
 }
 
 export interface CommunityDashboardSettings {

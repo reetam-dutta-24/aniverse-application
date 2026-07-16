@@ -9,6 +9,7 @@ import {
   getAllCommunityIds,
   getCommunityDetail,
 } from "@/lib/data/community-detail";
+import { getOptionalUser } from "@/lib/data/user";
 
 interface CommunityDashboardSectionPageProps {
   params: Promise<{ communityid: string; section: string }>;
@@ -48,10 +49,15 @@ export default async function CommunityDashboardSectionPage({
 
   if (!isCommunityDashboardSection(section)) notFound();
 
-  const community = await getCommunityDetail(communityid);
+  const viewer = await getOptionalUser();
+  const community = await getCommunityDetail(communityid, viewer?.id);
   if (!community) notFound();
 
   return (
-    <CommunityDashboardSectionContent section={section} community={community} />
+    <CommunityDashboardSectionContent
+      section={section}
+      community={community}
+      viewerUserId={viewer?.id}
+    />
   );
 }

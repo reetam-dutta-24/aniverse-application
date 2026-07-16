@@ -39,15 +39,36 @@ export async function saveUploadedImage(
     throw new UploadValidationError("Image must be 5 MB or smaller.");
   }
 
+  if (file.size === 0) {
+    throw new UploadValidationError(
+      "The uploaded file is empty. Try again or choose a smaller image.",
+    );
+  }
+
   const ext = EXT_BY_MIME[file.type];
   const filename = `${randomUUID()}${ext}`;
   const relativeDir = path.join("uploads", userId);
   const absoluteDir = path.join(process.cwd(), "public", relativeDir);
 
-  await mkdir(absoluteDir, { recursive: true });
+  try {
+    await mkdir(absoluteDir, { recursive: true });
 
-  const bytes = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(absoluteDir, filename), bytes);
+    const bytes = Buffer.from(await file.arrayBuffer());
+    if (bytes.length === 0) {
+      throw new UploadValidationError(
+        "The uploaded file could not be read. Try a smaller image.",
+      );
+    }
+
+    await writeFile(path.join(absoluteDir, filename), bytes);
+  } catch (error) {
+    if (error instanceof UploadValidationError) {
+      throw error;
+    }
+    throw new UploadValidationError(
+      "Could not save the image. Check that the app can write to public/uploads.",
+    );
+  }
 
   return `/${relativeDir.replace(/\\/g, "/")}/${filename}`;
 }

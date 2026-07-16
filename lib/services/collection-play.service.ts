@@ -108,6 +108,7 @@ export async function getCollectionPlayQueue(
       collectionKind,
       itemCount: tracks.length,
       ownerName: row.user.name,
+      canManage: Boolean(viewerUserId && row.userId === viewerUserId),
       tracks,
     };
   }
@@ -144,6 +145,7 @@ export async function getCollectionPlayQueue(
     collectionKind,
     itemCount: items.length,
     ownerName: row.user.name,
+    canManage: Boolean(viewerUserId && row.userId === viewerUserId),
     items,
   };
 }

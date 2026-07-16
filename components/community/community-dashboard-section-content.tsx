@@ -1,19 +1,30 @@
 "use client";
 
-import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getAccentStyle } from "@/lib/accents";
-import { GradientButton } from "@/components/ui/gradient-button";
 import { AvatarStack } from "@/components/ui/avatar-stack";
 import { CommunityDashboardFeedPost } from "@/components/community/community-dashboard-feed-post";
-import { ChatMessage } from "@/components/community/chat-message";
-import { ChatInput } from "@/components/community/chat-input";
+import { CommunityChatPanel } from "@/components/community/community-chat-panel";
+import { sectionToChatChannel } from "@/lib/community-chat";
+import {
+  CreateAnnouncementButton,
+  CreateCommunityPostButton,
+} from "@/components/forms/create-community-post-button";
+import {
+  CreateVoiceChannelButton,
+  VoiceChannelActions,
+} from "@/components/forms/community-voice-channel-form";
+import {
+  CreateWatchChannelButton,
+  WatchChannelActions,
+} from "@/components/forms/community-watch-channel-form";
 import type { CommunityDashboardSection } from "@/lib/community-routes";
 import type { CommunityDetail } from "@/types";
 
 export interface CommunityDashboardSectionContentProps {
   section: CommunityDashboardSection;
   community: CommunityDetail;
+  viewerUserId?: string;
 }
 
 function SectionHeader({
@@ -56,8 +67,10 @@ function ScrollBody({
 
 function WatchChannelRow({
   party,
+  communitySlug,
 }: {
   party: CommunityDetail["dashboardWatchParties"][number];
+  communitySlug: string;
 }) {
   const accent = getAccentStyle(party.accent ?? "purple");
 
@@ -77,34 +90,34 @@ function WatchChannelRow({
       </div>
       <div className="min-w-0 flex-1">
         <h3 className="text-base font-bold text-white">{party.title}</h3>
+        {party.nowPlaying ? (
+          <p className="mt-1 text-sm text-white/65">{party.nowPlaying}</p>
+        ) : null}
         {party.participants?.length ? (
           <div className="mt-2 flex items-center gap-2">
             <AvatarStack users={party.participants} size="sm" />
             <span className="text-xs text-white/60">
-              {party.viewerCount ?? 0} Members watching right now
+              {party.viewerCount ?? 0}
+              {party.memberLimit ? ` / ${party.memberLimit}` : ""} members watching
             </span>
           </div>
-        ) : null}
+        ) : (
+          <p className="mt-2 text-xs text-white/50">
+            0{party.memberLimit ? ` / ${party.memberLimit}` : ""} members watching
+          </p>
+        )}
       </div>
-      <div className="flex shrink-0 flex-wrap gap-2 sm:flex-col">
-        <GradientButton size="sm" className="rounded-full px-5">
-          Join
-        </GradientButton>
-        <button
-          type="button"
-          className="rounded-full border border-brand-magenta px-5 py-2 text-xs font-semibold text-white transition-colors hover:bg-brand-magenta/10"
-        >
-          More About The Content
-        </button>
-      </div>
+      <WatchChannelActions communitySlug={communitySlug} channel={party} />
     </div>
   );
 }
 
 function VoiceChannelRow({
   channel,
+  communitySlug,
 }: {
   channel: CommunityDetail["dashboardVoiceChannels"][number];
+  communitySlug: string;
 }) {
   const accent = getAccentStyle(channel.accent ?? "purple");
 
@@ -125,14 +138,17 @@ function VoiceChannelRow({
           <div className="mt-2 flex items-center gap-2">
             <AvatarStack users={channel.participants} size="sm" />
             <span className="text-xs text-white/60">
-              {channel.memberCount ?? 0} Members in the VC
+              {channel.memberCount ?? 0}
+              {channel.memberLimit ? ` / ${channel.memberLimit}` : ""} members in VC
             </span>
           </div>
-        ) : null}
+        ) : (
+          <p className="mt-2 text-xs text-white/50">
+            0{channel.memberLimit ? ` / ${channel.memberLimit}` : ""} members in VC
+          </p>
+        )}
       </div>
-      <GradientButton size="sm" className="shrink-0 rounded-full px-6">
-        Join VC
-      </GradientButton>
+      <VoiceChannelActions communitySlug={communitySlug} channel={channel} />
     </div>
   );
 }
@@ -165,7 +181,11 @@ function SettingsToggle({
 export function CommunityDashboardSectionContent({
   section,
   community,
+  viewerUserId,
 }: CommunityDashboardSectionContentProps) {
+  const canModerate = community.canEdit;
+  const communitySlug = community.id;
+
   switch (section) {
     case "posts":
       return (
@@ -183,45 +203,46 @@ export function CommunityDashboardSectionContent({
                 {community.dashboardPostsToday} Posts Today
               </span>
             </div>
-            <GradientButton size="sm" className="h-8 gap-1 rounded-full px-4 text-xs">
-              <Plus className="size-3.5" />
-              Create Posts
-            </GradientButton>
+            <CreateCommunityPostButton communitySlug={communitySlug} />
           </SectionHeader>
           <ScrollBody className="flex flex-col items-center gap-3">
-            {community.dashboardPosts.map((post) => (
-              <CommunityDashboardFeedPost key={post.id} post={post} />
-            ))}
+            {community.dashboardPosts.length === 0 ? (
+              <p className="text-sm text-white/55">No posts yet. Be the first to share.</p>
+            ) : (
+              community.dashboardPosts.map((post) => (
+                <CommunityDashboardFeedPost
+                  key={post.id}
+                  post={post}
+                  communitySlug={communitySlug}
+                />
+              ))
+            )}
           </ScrollBody>
         </>
       );
 
     case "chat":
       return (
-        <>
-          <ScrollBody className="flex flex-col gap-4 pb-2">
-            {community.dashboardChatMessages.map((message) => (
-              <ChatMessage key={message.id} message={message} />
-            ))}
-          </ScrollBody>
-          <div className="shrink-0 border-t border-cyan-400/12 bg-black/25 px-4 py-3 sm:px-5">
-            <ChatInput placeholder="Heyyyy Nice To Meet You All" />
-          </div>
-        </>
+        <CommunityChatPanel
+          communitySlug={communitySlug}
+          channel={sectionToChatChannel("chat")}
+          viewerUserId={viewerUserId}
+          isMember={Boolean(community.viewerRole)}
+          accent={community.accent}
+          placeholder="Heyyyy Nice To Meet You All"
+        />
       );
 
     case "anime-chat":
       return (
-        <>
-          <ScrollBody className="flex flex-col gap-4 pb-2">
-            {community.dashboardAnimeChatMessages.map((message) => (
-              <ChatMessage key={message.id} message={message} />
-            ))}
-          </ScrollBody>
-          <div className="shrink-0 border-t border-cyan-400/12 bg-black/25 px-4 py-3 sm:px-5">
-            <ChatInput placeholder="Share your anime hot takes…" />
-          </div>
-        </>
+        <CommunityChatPanel
+          communitySlug={communitySlug}
+          channel={sectionToChatChannel("anime-chat")}
+          viewerUserId={viewerUserId}
+          isMember={Boolean(community.viewerRole)}
+          accent={community.accent}
+          placeholder="Share your anime hot takes…"
+        />
       );
 
     case "watch-channel":
@@ -240,15 +261,20 @@ export function CommunityDashboardSectionContent({
                 {community.dashboardMembersWatching} Members Watching Now
               </span>
             </div>
-            <GradientButton size="sm" className="h-8 gap-1 rounded-full px-4 text-xs">
-              <Plus className="size-3.5" />
-              Create Watch Channel
-            </GradientButton>
+            <CreateWatchChannelButton communitySlug={communitySlug} />
           </SectionHeader>
           <ScrollBody className="flex flex-col gap-4">
-            {community.dashboardWatchParties.map((party) => (
-              <WatchChannelRow key={party.id} party={party} />
-            ))}
+            {community.dashboardWatchParties.length === 0 ? (
+              <p className="text-sm text-white/55">No watch channels yet.</p>
+            ) : (
+              community.dashboardWatchParties.map((party) => (
+                <WatchChannelRow
+                  key={party.id}
+                  party={party}
+                  communitySlug={communitySlug}
+                />
+              ))
+            )}
           </ScrollBody>
         </>
       );
@@ -269,15 +295,20 @@ export function CommunityDashboardSectionContent({
                 {community.dashboardMembersInVc} Members in VCs Now
               </span>
             </div>
-            <GradientButton size="sm" className="h-8 gap-1 rounded-full px-4 text-xs">
-              <Plus className="size-3.5" />
-              Create Voice Channel
-            </GradientButton>
+            <CreateVoiceChannelButton communitySlug={communitySlug} />
           </SectionHeader>
           <ScrollBody className="flex flex-col gap-4">
-            {community.dashboardVoiceChannels.map((channel) => (
-              <VoiceChannelRow key={channel.id} channel={channel} />
-            ))}
+            {community.dashboardVoiceChannels.length === 0 ? (
+              <p className="text-sm text-white/55">No voice channels yet.</p>
+            ) : (
+              community.dashboardVoiceChannels.map((channel) => (
+                <VoiceChannelRow
+                  key={channel.id}
+                  channel={channel}
+                  communitySlug={communitySlug}
+                />
+              ))
+            )}
           </ScrollBody>
         </>
       );
@@ -289,15 +320,22 @@ export function CommunityDashboardSectionContent({
             <p className="text-sm text-white/65">
               Only Admins And Mods Can Create Announcements
             </p>
-            <GradientButton size="sm" className="h-8 gap-1 rounded-full px-4 text-xs">
-              <Plus className="size-3.5" />
-              Post Announcement
-            </GradientButton>
+            {canModerate ? (
+              <CreateAnnouncementButton communitySlug={communitySlug} />
+            ) : null}
           </SectionHeader>
           <ScrollBody className="flex flex-col items-center gap-3">
-            {community.dashboardAnnouncements.map((post) => (
-              <CommunityDashboardFeedPost key={post.id} post={post} />
-            ))}
+            {community.dashboardAnnouncements.length === 0 ? (
+              <p className="text-sm text-white/55">No announcements yet.</p>
+            ) : (
+              community.dashboardAnnouncements.map((post) => (
+                <CommunityDashboardFeedPost
+                  key={post.id}
+                  post={post}
+                  communitySlug={communitySlug}
+                />
+              ))
+            )}
           </ScrollBody>
         </>
       );

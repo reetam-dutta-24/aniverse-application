@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { COMMUNITY_DASHBOARD_NAV_ICONS } from "@/lib/community-dashboard-nav";
 import { getCommunityDashboardPath } from "@/lib/community-routes";
 import { CreateCommunityPostButton } from "@/components/forms/create-community-post-button";
+import { GradientButton } from "@/components/ui/gradient-button";
 import { SearchPill } from "@/components/dashboard/search-pill";
 import { CommunityDashboardFeedPost } from "@/components/community/community-dashboard-feed-post";
 import { CommunityDashboardMemberCard } from "@/components/community/community-dashboard-member-card";
@@ -153,6 +154,7 @@ export function CommunityDashboardPreview({
                   <CommunityDashboardFeedPost
                     key={post.id}
                     post={post}
+                    communitySlug={communityId}
                     className={postTeaserClass(index, posts.length)}
                   />
                 ))}

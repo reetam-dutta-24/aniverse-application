@@ -21,7 +21,9 @@ import {
   parseLyricsText,
 } from "@/lib/lyrics-display";
 import { getPlayAccentTheme, type PlayAccentTheme } from "@/lib/play-ambient";
+import { moveToPlayNext, removeQueueItem } from "@/lib/play-queue-utils";
 import { PlayAmbientBackground } from "@/components/collection/play-ambient-background";
+import { PlayQueueRowActions } from "@/components/collection/play-queue-row-actions";
 import { Chip, RatingChip } from "@/components/ui/chip";
 import type {
   CollectionPlayContentItem,
@@ -31,6 +33,7 @@ import type {
 
 interface CollectionPlayViewProps {
   collectionSlug: string;
+  initialQueue?: CollectionPlayQueue;
 }
 
 const PLAY_MIN_H = "min-h-[calc(100dvh-3.5rem)] sm:min-h-[calc(100dvh-4.5rem)]";
@@ -247,17 +250,26 @@ function SynopsisPanel({
 
 function MusicPlayQueue({
   queue,
+  collectionSlug,
 }: {
   queue: CollectionPlayQueue & { tracks: CollectionPlayTrack[] };
+  collectionSlug: string;
 }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [tracks, setTracks] = useState(queue.tracks);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.8);
+  const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null);
 
-  const tracks = queue.tracks;
+  const canManage = queue.canManage ?? false;
+
+  useEffect(() => {
+    setTracks(queue.tracks);
+  }, [queue.tracks]);
+
   const currentTrack = tracks[currentIndex];
 
   const playIndex = useCallback(
@@ -292,14 +304,14 @@ function MusicPlayQueue({
   }, [volume]);
 
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    const audioEl = audioRef.current;
+    if (!audioEl) return;
 
     function onTimeUpdate() {
-      setProgress(audio.currentTime);
+      setProgress(audioEl.currentTime);
     }
     function onLoadedMetadata() {
-      setDuration(audio.duration || currentTrack?.durationSeconds || 0);
+      setDuration(audioEl.duration || currentTrack?.durationSeconds || 0);
     }
     function onEnded() {
       if (currentIndex < tracks.length - 1) {
@@ -309,13 +321,13 @@ function MusicPlayQueue({
       }
     }
 
-    audio.addEventListener("timeupdate", onTimeUpdate);
-    audio.addEventListener("loadedmetadata", onLoadedMetadata);
-    audio.addEventListener("ended", onEnded);
+    audioEl.addEventListener("timeupdate", onTimeUpdate);
+    audioEl.addEventListener("loadedmetadata", onLoadedMetadata);
+    audioEl.addEventListener("ended", onEnded);
     return () => {
-      audio.removeEventListener("timeupdate", onTimeUpdate);
-      audio.removeEventListener("loadedmetadata", onLoadedMetadata);
-      audio.removeEventListener("ended", onEnded);
+      audioEl.removeEventListener("timeupdate", onTimeUpdate);
+      audioEl.removeEventListener("loadedmetadata", onLoadedMetadata);
+      audioEl.removeEventListener("ended", onEnded);
     };
   }, [currentIndex, currentTrack?.durationSeconds, playIndex, tracks.length]);
 
@@ -357,6 +369,81 @@ function MusicPlayQueue({
     setProgress(value);
   }
 
+  const handleAddToQueue = useCallback(
+    (index: number) => {
+      if (index === currentIndex || index === currentIndex + 1) return;
+      const { items, newCurrentIndex } = moveToPlayNext(
+        tracks,
+        index,
+        currentIndex,
+      );
+      setTracks(items);
+      setCurrentIndex(newCurrentIndex);
+    },
+    [tracks, currentIndex],
+  );
+
+  const handleRemove = useCallback(
+    async (itemId: string, index: number): Promise<boolean> => {
+      setDeleteLoadingId(itemId);
+      try {
+        const response = await fetch(
+          `/api/collections/${encodeURIComponent(collectionSlug)}/items/${encodeURIComponent(itemId)}`,
+          { method: "DELETE" },
+        );
+        if (!response.ok) {
+          return false;
+        }
+
+        const wasCurrent = index === currentIndex;
+        const wasPlaying = isPlaying && wasCurrent;
+        const { items, newCurrentIndex } = removeQueueItem(
+          tracks,
+          index,
+          currentIndex,
+        );
+        setTracks(items);
+
+        if (items.length === 0) {
+          const audio = audioRef.current;
+          if (audio) {
+            audio.pause();
+            audio.src = "";
+          }
+          setIsPlaying(false);
+          setProgress(0);
+          setCurrentIndex(0);
+          return true;
+        }
+
+        setCurrentIndex(newCurrentIndex);
+
+        if (wasCurrent) {
+          const audio = audioRef.current;
+          const nextTrack = items[newCurrentIndex];
+          if (!audio || !nextTrack) return true;
+          audio.src = nextTrack.previewUrl;
+          audio.load();
+          setProgress(0);
+          if (wasPlaying) {
+            try {
+              await audio.play();
+              setIsPlaying(true);
+            } catch {
+              setIsPlaying(false);
+            }
+          } else {
+            setIsPlaying(false);
+          }
+        }
+        return true;
+      } finally {
+        setDeleteLoadingId(null);
+      }
+    },
+    [collectionSlug, tracks, currentIndex, isPlaying],
+  );
+
   const progressMax = duration || currentTrack?.durationSeconds || 1;
   const bannerUrl =
     currentTrack?.backdropUrl ?? currentTrack?.imageUrl ?? queue.imageUrl;
@@ -397,11 +484,12 @@ function MusicPlayQueue({
           }
         />
 
-        <div className="mb-2 hidden grid-cols-[40px_52px_minmax(0,1fr)_72px] gap-3 border-b border-white/[0.08] px-2 pb-2 text-[10px] font-medium uppercase tracking-wide text-white/40 sm:grid">
+        <div className="mb-2 hidden grid-cols-[40px_52px_minmax(0,1fr)_72px_80px] gap-3 border-b border-white/[0.08] px-2 pb-2 text-[10px] font-medium uppercase tracking-wide text-white/40 sm:grid">
           <span>#</span>
           <span>Cover</span>
           <span>Title</span>
           <span className="text-right">Time</span>
+          <span />
         </div>
 
         <ol className="flex flex-col gap-0.5">
@@ -409,11 +497,9 @@ function MusicPlayQueue({
             const active = index === currentIndex;
             return (
               <li key={track.itemId}>
-                <button
-                  type="button"
-                  onClick={() => void playIndex(index)}
+                <div
                   className={cn(
-                    "group grid w-full grid-cols-[32px_48px_minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-2 py-2.5 text-left transition sm:grid-cols-[40px_52px_minmax(0,1fr)_72px]",
+                    "group grid w-full grid-cols-[32px_48px_minmax(0,1fr)_56px_72px] items-center gap-3 rounded-lg px-2 py-2.5 sm:grid-cols-[40px_52px_minmax(0,1fr)_72px_80px]",
                     !active && "hover:bg-white/[0.05]",
                   )}
                   style={
@@ -425,50 +511,68 @@ function MusicPlayQueue({
                       : undefined
                   }
                 >
-                  <span className="text-center text-sm text-white/50 group-hover:hidden">
-                    {active && isPlaying ? (
-                      <span
-                        className="inline-block size-2 animate-pulse rounded-full"
-                        style={{ backgroundColor: theme.primary }}
-                      />
-                    ) : (
-                      track.position
-                    )}
-                  </span>
-                  <span
-                    className="hidden group-hover:inline"
-                    style={{ color: theme.primary }}
+                  <button
+                    type="button"
+                    onClick={() => void playIndex(index)}
+                    className="contents text-left"
                   >
-                    {active && isPlaying ? (
-                      <Pause className="mx-auto size-4" />
-                    ) : (
-                      <Play className="mx-auto size-4 fill-current" />
-                    )}
-                  </span>
-
-                  <QueueCover
-                    imageUrl={track.imageUrl}
-                    title={track.title}
-                    theme={theme}
-                  />
-
-                  <span className="min-w-0">
+                    <span className="text-center text-sm text-white/50 group-hover:hidden">
+                      {active && isPlaying ? (
+                        <span
+                          className="inline-block size-2 animate-pulse rounded-full"
+                          style={{ backgroundColor: theme.primary }}
+                        />
+                      ) : (
+                        track.position
+                      )}
+                    </span>
                     <span
-                      className="block truncate text-sm font-medium"
-                      style={active ? { color: theme.primary } : { color: "white" }}
+                      className="hidden group-hover:inline"
+                      style={{ color: theme.primary }}
                     >
-                      {track.title}
+                      {active && isPlaying ? (
+                        <Pause className="mx-auto size-4" />
+                      ) : (
+                        <Play className="mx-auto size-4 fill-current" />
+                      )}
                     </span>
-                    <span className="block truncate text-xs text-white/55">
-                      {track.artist}
-                      {track.source ? ` · ${track.source}` : ""}
-                    </span>
-                  </span>
 
-                  <span className="text-right text-xs text-white/45">
-                    {track.durationLabel}
-                  </span>
-                </button>
+                    <QueueCover
+                      imageUrl={track.imageUrl}
+                      title={track.title}
+                      theme={theme}
+                    />
+
+                    <span className="min-w-0">
+                      <span
+                        className="block truncate text-sm font-medium"
+                        style={active ? { color: theme.primary } : { color: "white" }}
+                      >
+                        {track.title}
+                      </span>
+                      <span className="block truncate text-xs text-white/55">
+                        {track.artist}
+                        {track.source ? ` · ${track.source}` : ""}
+                      </span>
+                    </span>
+
+                    <span className="text-right text-xs text-white/45">
+                      {track.durationLabel}
+                    </span>
+                  </button>
+
+                  <PlayQueueRowActions
+                    onAddToQueue={() => handleAddToQueue(index)}
+                    onDelete={() => handleRemove(track.itemId, index)}
+                    canDelete={canManage}
+                    itemTitle={track.title}
+                    collectionName={queue.name}
+                    addDisabled={
+                      index === currentIndex || index === currentIndex + 1
+                    }
+                    deleteLoading={deleteLoadingId === track.itemId}
+                  />
+                </div>
               </li>
             );
           })}
@@ -644,11 +748,21 @@ function MusicPlayQueue({
 
 function ContentPlayQueue({
   queue,
+  collectionSlug,
 }: {
   queue: CollectionPlayQueue & { items: CollectionPlayContentItem[] };
+  collectionSlug: string;
 }) {
-  const items = queue.items;
+  const [items, setItems] = useState(queue.items);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null);
+
+  const canManage = queue.canManage ?? false;
+
+  useEffect(() => {
+    setItems(queue.items);
+  }, [queue.items]);
+
   const activeItem = items[activeIndex];
 
   const bannerUrl =
@@ -656,6 +770,49 @@ function ContentPlayQueue({
   const theme = useMemo(
     () => getPlayAccentTheme(activeItem?.accent),
     [activeItem?.accent],
+  );
+
+  const handleAddToQueue = useCallback(
+    (index: number) => {
+      if (index === activeIndex || index === activeIndex + 1) return;
+      const { items: nextItems, newCurrentIndex } = moveToPlayNext(
+        items,
+        index,
+        activeIndex,
+      );
+      setItems(nextItems);
+      setActiveIndex(newCurrentIndex);
+    },
+    [items, activeIndex],
+  );
+
+  const handleRemove = useCallback(
+    async (itemId: string, index: number): Promise<boolean> => {
+      setDeleteLoadingId(itemId);
+      try {
+        const response = await fetch(
+          `/api/collections/${encodeURIComponent(collectionSlug)}/items/${encodeURIComponent(itemId)}`,
+          { method: "DELETE" },
+        );
+        if (!response.ok) {
+          return false;
+        }
+
+        const { items: nextItems, newCurrentIndex } = removeQueueItem(
+          items,
+          index,
+          activeIndex,
+        );
+        setItems(nextItems);
+        setActiveIndex(
+          nextItems.length === 0 ? 0 : Math.min(newCurrentIndex, nextItems.length - 1),
+        );
+        return true;
+      } finally {
+        setDeleteLoadingId(null);
+      }
+    },
+    [collectionSlug, items, activeIndex],
   );
 
   return (
@@ -674,11 +831,11 @@ function ContentPlayQueue({
           theme={theme}
         />
 
-        <div className="mb-2 hidden grid-cols-[40px_52px_minmax(0,1fr)_88px] gap-3 border-b border-white/[0.08] px-2 pb-2 text-[10px] font-medium uppercase tracking-wide text-white/40 sm:grid">
+        <div className="mb-2 hidden grid-cols-[40px_52px_minmax(0,1fr)_120px] gap-3 border-b border-white/[0.08] px-2 pb-2 text-[10px] font-medium uppercase tracking-wide text-white/40 sm:grid">
           <span>#</span>
           <span>Cover</span>
           <span>Title</span>
-          <span className="text-right">Action</span>
+          <span className="text-right">Actions</span>
         </div>
 
         <ol className="flex flex-col gap-0.5">
@@ -688,7 +845,7 @@ function ContentPlayQueue({
               <li key={item.itemId}>
                 <div
                   className={cn(
-                    "grid grid-cols-[40px_48px_minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-2 py-2.5 sm:grid-cols-[40px_52px_minmax(0,1fr)_88px]",
+                    "group grid grid-cols-[40px_48px_minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-2 py-2.5 sm:grid-cols-[40px_52px_minmax(0,1fr)_120px]",
                     !active && "hover:bg-white/[0.05]",
                   )}
                   style={
@@ -700,22 +857,22 @@ function ContentPlayQueue({
                       : undefined
                   }
                 >
-                  <span className="text-center text-sm text-white/50">
-                    {active ? (
-                      <span
-                        className="inline-block size-2 rounded-full"
-                        style={{ backgroundColor: theme.primary }}
-                      />
-                    ) : (
-                      item.position
-                    )}
-                  </span>
-
                   <button
                     type="button"
                     onClick={() => setActiveIndex(index)}
-                    className="flex min-w-0 items-center gap-3 text-left sm:contents"
+                    className="contents text-left"
                   >
+                    <span className="text-center text-sm text-white/50">
+                      {active ? (
+                        <span
+                          className="inline-block size-2 rounded-full"
+                          style={{ backgroundColor: theme.primary }}
+                        />
+                      ) : (
+                        item.position
+                      )}
+                    </span>
+
                     <QueueCover
                       imageUrl={item.imageUrl}
                       title={item.title}
@@ -737,13 +894,26 @@ function ContentPlayQueue({
                     </span>
                   </button>
 
-                  <Link
-                    href={getContentDetailPath(item.id)}
-                    className="rounded-full border px-3 py-1 text-center text-xs text-white transition hover:bg-white/5"
-                    style={{ borderColor: theme.border }}
-                  >
-                    Watch
-                  </Link>
+                  <div className="flex items-center justify-end gap-1">
+                    <PlayQueueRowActions
+                      onAddToQueue={() => handleAddToQueue(index)}
+                      onDelete={() => handleRemove(item.itemId, index)}
+                      canDelete={canManage}
+                      itemTitle={item.title}
+                      collectionName={queue.name}
+                      addDisabled={
+                        index === activeIndex || index === activeIndex + 1
+                      }
+                      deleteLoading={deleteLoadingId === item.itemId}
+                    />
+                    <Link
+                      href={getContentDetailPath(item.id)}
+                      className="rounded-full border px-3 py-1 text-center text-xs text-white transition hover:bg-white/5"
+                      style={{ borderColor: theme.border }}
+                    >
+                      Watch
+                    </Link>
+                  </div>
                 </div>
               </li>
             );
@@ -874,12 +1044,24 @@ function ContentPlayQueue({
   );
 }
 
-export function CollectionPlayView({ collectionSlug }: CollectionPlayViewProps) {
-  const [queue, setQueue] = useState<CollectionPlayQueue | null>(null);
-  const [loading, setLoading] = useState(true);
+export function CollectionPlayView({
+  collectionSlug,
+  initialQueue,
+}: CollectionPlayViewProps) {
+  const [queue, setQueue] = useState<CollectionPlayQueue | null>(
+    initialQueue ?? null,
+  );
+  const [loading, setLoading] = useState(!initialQueue);
   const [error, setError] = useState<string>();
 
   useEffect(() => {
+    if (initialQueue) {
+      setQueue(initialQueue);
+      setLoading(false);
+      setError(undefined);
+      return;
+    }
+
     setLoading(true);
     setError(undefined);
 
@@ -898,7 +1080,7 @@ export function CollectionPlayView({ collectionSlug }: CollectionPlayViewProps) 
       .then((data) => setQueue(data.queue))
       .catch((fetchError: Error) => setError(fetchError.message))
       .finally(() => setLoading(false));
-  }, [collectionSlug]);
+  }, [collectionSlug, initialQueue]);
 
   const isEmpty = useMemo(() => {
     if (!queue) return false;
@@ -927,9 +1109,15 @@ export function CollectionPlayView({ collectionSlug }: CollectionPlayViewProps) 
           </Link>
         </div>
       ) : queue.collectionKind === "music" && queue.tracks?.length ? (
-        <MusicPlayQueue queue={{ ...queue, tracks: queue.tracks }} />
+        <MusicPlayQueue
+          queue={{ ...queue, tracks: queue.tracks }}
+          collectionSlug={collectionSlug}
+        />
       ) : queue.items?.length ? (
-        <ContentPlayQueue queue={{ ...queue, items: queue.items }} />
+        <ContentPlayQueue
+          queue={{ ...queue, items: queue.items }}
+          collectionSlug={collectionSlug}
+        />
       ) : (
         <p className="relative z-10 px-6 py-8 text-sm text-white/55">Nothing to play.</p>
       )}

@@ -44,6 +44,7 @@ export function ImageUploadInput({
       const response = await fetch("/api/upload", {
         method: "POST",
         body: formData,
+        credentials: "include",
       });
       const data = await response.json().catch(() => ({}));
 
@@ -51,13 +52,19 @@ export function ImageUploadInput({
         throw new Error(data.error ?? "Could not upload image.");
       }
 
+      if (typeof data.url !== "string" || !data.url) {
+        throw new Error("Upload succeeded but no image URL was returned.");
+      }
+
       onChange(data.url);
     } catch (uploadError) {
-      setError(
-        uploadError instanceof Error
-          ? uploadError.message
-          : "Could not upload image.",
-      );
+      const message =
+        uploadError instanceof TypeError
+          ? "Network error — make sure the dev server is running, then try again."
+          : uploadError instanceof Error
+            ? uploadError.message
+            : "Could not upload image.";
+      setError(message);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";

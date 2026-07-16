@@ -38,11 +38,45 @@ export const communityFormSchema = z.object({
 export const communityUpdateSchema = communityFormSchema.partial();
 
 export const communityPostFormSchema = z.object({
-  content: z.string().min(1, "Post content is required.").max(5000),
-  imageUrl: imageUrlField,
+  title: z.string().min(1, "Post title is required.").max(200),
+  imageUrl: imageUrlField.refine((value) => Boolean(value?.trim()), {
+    message: "Post image is required.",
+  }),
+  content: z.string().max(5000).optional(),
+  kind: z.enum(["POST", "ANNOUNCEMENT"]).default("POST"),
 });
 
-export const communityPostUpdateSchema = communityPostFormSchema.partial();
+export const communityPostUpdateSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  imageUrl: imageUrlField,
+  content: z.string().max(5000).optional(),
+});
+
+export const voiceChannelFormSchema = z.object({
+  title: z.string().min(1, "Channel title is required.").max(120),
+  memberLimit: z.coerce.number().int().min(2).max(100).default(10),
+});
+
+export const voiceChannelUpdateSchema = voiceChannelFormSchema.partial();
+
+export const watchChannelFormSchema = z
+  .object({
+    title: z.string().min(1, "Channel title is required.").max(120),
+    memberLimit: z.coerce.number().int().min(2).max(100).default(20),
+    contentSlug: z.string().optional(),
+    trackSlug: z.string().optional(),
+  })
+  .refine((value) => Boolean(value.contentSlug?.trim() || value.trackSlug?.trim()), {
+    message: "Select content or music for the watch channel.",
+    path: ["contentSlug"],
+  });
+
+export const watchChannelUpdateSchema = z.object({
+  title: z.string().min(1).max(120).optional(),
+  memberLimit: z.coerce.number().int().min(2).max(100).optional(),
+  contentSlug: z.string().optional(),
+  trackSlug: z.string().optional(),
+});
 
 export const joinCommunitySchema = z.object({
   slug: z.string().min(1, "Community slug is required."),
@@ -52,3 +86,7 @@ export type CommunityFormInput = z.infer<typeof communityFormSchema>;
 export type CommunityUpdateInput = z.infer<typeof communityUpdateSchema>;
 export type CommunityPostFormInput = z.infer<typeof communityPostFormSchema>;
 export type CommunityPostUpdateInput = z.infer<typeof communityPostUpdateSchema>;
+export type VoiceChannelFormInput = z.infer<typeof voiceChannelFormSchema>;
+export type VoiceChannelUpdateInput = z.infer<typeof voiceChannelUpdateSchema>;
+export type WatchChannelFormInput = z.infer<typeof watchChannelFormSchema>;
+export type WatchChannelUpdateInput = z.infer<typeof watchChannelUpdateSchema>;

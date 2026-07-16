@@ -121,7 +121,17 @@ export function mapUserSummary(
   };
 }
 
-export function mapCommunityPost(row: CommunityPostWithAuthor): AppCommunityPost {
+export function mapCommunityPost(
+  row: CommunityPostWithAuthor,
+  context?: {
+    authorRole?: MemberRole;
+    viewerUserId?: string;
+    viewerIsStaff?: boolean;
+  },
+): AppCommunityPost {
+  const isAuthor = context?.viewerUserId === row.authorId;
+  const canDelete = isAuthor || Boolean(context?.viewerIsStaff);
+
   return {
     id: row.id,
     author: {
@@ -130,12 +140,17 @@ export function mapCommunityPost(row: CommunityPostWithAuthor): AppCommunityPost
       avatarColor: row.author.avatarColor,
       avatarUrl: row.author.avatarUrl ?? undefined,
     },
-    content: row.content,
+    title: row.title,
+    content: row.content ?? undefined,
     imageUrl: row.imageUrl ?? undefined,
+    kind: row.kind === "ANNOUNCEMENT" ? "announcement" : "post",
     createdAt: formatPostedAt(row.createdAt),
+    authorRole: context?.authorRole,
     likeCount: row.likeCount,
     commentCount: row.commentCount,
     shareCount: row.shareCount,
+    canEdit: isAuthor,
+    canDelete,
   };
 }
 
@@ -178,6 +193,9 @@ export function mapCommunityToDetail(
   row: CommunityWithCounts,
   options: {
     posts?: CommunityPostWithAuthor[];
+    announcements?: CommunityPostWithAuthor[];
+    voiceChannels?: import("@/types").VoiceChannel[];
+    watchChannels?: import("@/types").WatchParty[];
     memberPreview?: UserSummary[];
     onlineMembers?: Member[];
     collections?: AppCollection[];
@@ -191,7 +209,28 @@ export function mapCommunityToDetail(
 ): CommunityDetail {
   const members = (row.members ?? []).map((member) => mapUserSummary(member.user));
   const memberPreview = options.memberPreview ?? members.slice(0, 6);
-  const posts = (options.posts ?? []).map(mapCommunityPost);
+  const memberRoleByUserId = new Map(
+    (row.members ?? []).map((member) => [member.userId, mapMemberRole(member.role)]),
+  );
+  const viewerIsStaff =
+    options.viewerUserId != null &&
+    (row.members ?? []).some(
+      (member) =>
+        member.userId === options.viewerUserId &&
+        (member.role === "ADMIN" || member.role === "MODERATOR"),
+    );
+
+  const mapPostWithContext = (post: CommunityPostWithAuthor) =>
+    mapCommunityPost(post, {
+      authorRole: memberRoleByUserId.get(post.authorId),
+      viewerUserId: options.viewerUserId,
+      viewerIsStaff,
+    });
+
+  const posts = (options.posts ?? []).map(mapPostWithContext);
+  const announcements = (options.announcements ?? []).map(mapPostWithContext);
+  const voiceChannels = options.voiceChannels ?? [];
+  const watchChannels = options.watchChannels ?? [];
   const onlineMembers =
     options.onlineMembers ?? (row.members ?? []).slice(0, 8).map(mapCommunityMember);
 
@@ -263,9 +302,9 @@ export function mapCommunityToDetail(
     dashboardNav: defaultDashboardNav,
     dashboardChatMessages: [],
     dashboardAnimeChatMessages: [],
-    dashboardWatchParties: [],
-    dashboardVoiceChannels: [],
-    dashboardAnnouncements: posts.slice(0, 2),
+    dashboardWatchParties: watchChannels,
+    dashboardVoiceChannels: voiceChannels,
+    dashboardAnnouncements: announcements,
     dashboardAnalytics: [
       {
         id: "active",
@@ -275,8 +314,14 @@ export function mapCommunityToDetail(
       { id: "posts", label: "Posts", value: String(row.postCount) },
       { id: "members", label: "Members", value: String(row.memberCount) },
     ],
-    dashboardMembersWatching: Math.min(row.memberCount, 40 + posts.length),
-    dashboardMembersInVc: Math.min(row.memberCount, 12 + posts.length),
+    dashboardMembersWatching: watchChannels.reduce(
+      (sum, channel) => sum + (channel.viewerCount ?? 0),
+      0,
+    ),
+    dashboardMembersInVc: voiceChannels.reduce(
+      (sum, channel) => sum + (channel.memberCount ?? 0),
+      0,
+    ),
     dashboardSettings: defaultDashboardSettings,
     watchedMost: options.watchedMost ?? [],
     trending: options.trending ?? [],

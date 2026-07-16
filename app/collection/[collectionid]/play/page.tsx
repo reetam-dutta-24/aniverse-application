@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { CollectionPlayView } from "@/components/collection/collection-play-view";
 import { getCollectionDetail } from "@/lib/data/collection-detail";
+import { getOptionalUser } from "@/lib/data/user";
+import { getCollectionPlayQueue } from "@/lib/services/collection-play.service";
 
 interface CollectionPlayPageProps {
   params: Promise<{ collectionid: string }>;
@@ -22,5 +25,12 @@ export default async function CollectionPlayPage({
   params,
 }: CollectionPlayPageProps) {
   const { collectionid } = await params;
-  return <CollectionPlayView collectionSlug={collectionid} />;
+  const viewer = await getOptionalUser();
+  const queue = await getCollectionPlayQueue(collectionid, viewer?.id);
+
+  if (!queue) notFound();
+
+  return (
+    <CollectionPlayView collectionSlug={collectionid} initialQueue={queue} />
+  );
 }

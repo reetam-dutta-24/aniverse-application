@@ -50,6 +50,11 @@ model User {
   notifications         Notification[]
   communityMemberships  CommunityMember[]
   communityPosts        CommunityPost[]
+  communityChatMessages CommunityChatMessage[]
+  voiceChannelsCreated  CommunityVoiceChannel[] @relation("VoiceChannelCreator")
+  voiceChannelMembers   CommunityVoiceChannelMember[]
+  watchChannelsCreated  CommunityWatchChannel[] @relation("WatchChannelCreator")
+  watchChannelMembers   CommunityWatchChannelMember[]
   ratings               Rating[]
   watchEvents           WatchEvent[]
   listenEvents          ListenEvent[]
@@ -194,6 +199,7 @@ model Content {
   relatedFrom      ContentRelated[]     @relation("ContentRelatedFrom")
   relatedTo        ContentRelated[]     @relation("ContentRelatedTo")
   catalogReviews   CatalogReview[]
+  watchChannels    CommunityWatchChannel[]
 
   @@index([type])
   @@index([slug])
@@ -348,6 +354,7 @@ model MusicTrack {
   listenEvents    ListenEvent[]
   reviews         Review[]
   catalogReviews  CatalogReview[]
+  watchChannels   CommunityWatchChannel[]
 
   @@index([slug])
   @@index([artistId])
@@ -516,10 +523,18 @@ model Community {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
-  members CommunityMember[]
-  posts   CommunityPost[]
+  members       CommunityMember[]
+  posts         CommunityPost[]
+  chatMessages  CommunityChatMessage[]
+  voiceChannels CommunityVoiceChannel[]
+  watchChannels CommunityWatchChannel[]
 
   @@index([slug])
+}
+
+enum CommunityPostKind {
+  POST
+  ANNOUNCEMENT
 }
 
 model CommunityMember {
@@ -537,20 +552,107 @@ model CommunityMember {
 }
 
 model CommunityPost {
-  id           String   @id @default(cuid())
+  id           String            @id @default(cuid())
   communityId  String
   authorId     String
-  content      String   @db.Text
+  title        String
+  content      String?           @db.Text
   imageUrl     String?
-  likeCount    Int      @default(0)
-  commentCount Int      @default(0)
-  shareCount   Int      @default(0)
-  createdAt    DateTime @default(now())
+  kind         CommunityPostKind @default(POST)
+  likeCount    Int               @default(0)
+  commentCount Int               @default(0)
+  shareCount   Int               @default(0)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
 
   community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
   author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([communityId])
+  @@index([communityId, kind])
+}
+
+enum CommunityChatChannel {
+  GENERAL
+  ANIME
+}
+
+model CommunityChatMessage {
+  id          String               @id @default(cuid())
+  communityId String
+  authorId    String
+  channel     CommunityChatChannel
+  content     String               @db.Text
+  createdAt   DateTime             @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, channel, createdAt])
+}
+
+model CommunityVoiceChannel {
+  id          String   @id @default(cuid())
+  communityId String
+  creatorId   String
+  title       String
+  memberLimit Int      @default(10)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  community Community                     @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  creator   User                          @relation("VoiceChannelCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  members   CommunityVoiceChannelMember[]
+
+  @@index([communityId])
+}
+
+model CommunityVoiceChannelMember {
+  id        String   @id @default(cuid())
+  channelId String
+  userId    String
+  joinedAt  DateTime @default(now())
+
+  channel CommunityVoiceChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user    User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, userId])
+  @@index([channelId])
+}
+
+model CommunityWatchChannel {
+  id          String   @id @default(cuid())
+  communityId String
+  creatorId   String
+  title       String
+  contentId   String?
+  trackId     String?
+  mediaTitle  String?
+  imageUrl    String?
+  memberLimit Int      @default(20)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  community Community                     @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  creator   User                          @relation("WatchChannelCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  content   Content?                      @relation(fields: [contentId], references: [id], onDelete: SetNull)
+  track     MusicTrack?                   @relation(fields: [trackId], references: [id], onDelete: SetNull)
+  members   CommunityWatchChannelMember[]
+
+  @@index([communityId])
+}
+
+model CommunityWatchChannelMember {
+  id        String   @id @default(cuid())
+  channelId String
+  userId    String
+  joinedAt  DateTime @default(now())
+
+  channel CommunityWatchChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user    User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, userId])
+  @@index([channelId])
 }
 
 model Review {

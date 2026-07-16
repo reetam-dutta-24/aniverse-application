@@ -89,14 +89,12 @@ export default async function WatchlistPage() {
         title={`🔥 High Priority Watchlist  (${stats.highPriority})`}
         searchPlaceholder="Search Priority Content……. "
         items={highPriority}
-        manageable
       />
 
       <WatchlistGridSection
         title={`📋 All Watchlist Items  (${stats.savedItems})`}
         searchPlaceholder="Search Watchlist Content……. "
         items={allItems}
-        manageable
       />
     </div>
   );

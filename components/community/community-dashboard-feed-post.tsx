@@ -1,8 +1,13 @@
 "use client";
 
-import { Heart, MessageCircle, Pencil, Share2 } from "lucide-react";
+import { Heart, MessageCircle, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CommunityPost, MemberRole } from "@/types";
+
+import {
+  DeleteCommunityPostButton,
+  EditCommunityPostButton,
+} from "@/components/forms/community-post-form";
 
 const ROLE_LABELS: Record<MemberRole, string> = {
   owner: "Admin",
@@ -13,12 +18,14 @@ const ROLE_LABELS: Record<MemberRole, string> = {
 
 export interface CommunityDashboardFeedPostProps {
   post: CommunityPost;
+  communitySlug: string;
   className?: string;
 }
 
 /** Figma dashboard feed post — author row, hero image, caption, interactions. */
 export function CommunityDashboardFeedPost({
   post,
+  communitySlug,
   className,
 }: CommunityDashboardFeedPostProps) {
   const initial = post.author.name.trim().charAt(0).toUpperCase();
@@ -79,7 +86,10 @@ export function CommunityDashboardFeedPost({
         </div>
       ) : null}
 
-      <p className="text-xs leading-relaxed text-white/75">{post.content}</p>
+      <p className="text-sm font-semibold text-white/90">{post.title}</p>
+      {post.content && post.content !== post.title ? (
+        <p className="text-xs leading-relaxed text-white/65">{post.content}</p>
+      ) : null}
 
       <div className="flex items-center gap-3 text-[11px] font-semibold text-white/55">
         <span className="flex items-center gap-1">
@@ -94,13 +104,14 @@ export function CommunityDashboardFeedPost({
           <Share2 className="size-3.5 text-brand-fuchsia/70" />
           Share
         </span>
-        <button
-          type="button"
-          aria-label="Edit post"
-          className="ms-auto text-white/60 transition-colors hover:text-white"
-        >
-          <Pencil className="size-3" />
-        </button>
+        <div className="ms-auto flex items-center gap-2">
+          {post.canEdit ? (
+            <EditCommunityPostButton communitySlug={communitySlug} post={post} />
+          ) : null}
+          {post.canDelete ? (
+            <DeleteCommunityPostButton communitySlug={communitySlug} post={post} />
+          ) : null}
+        </div>
       </div>
     </article>
   );

@@ -1,41 +1,31 @@
 import { NextResponse } from "next/server";
 import { requireUserApi } from "@/lib/api-auth";
-import { mapCommunityPost } from "@/lib/mappers/community.mapper";
 import {
   CommunityForbiddenError,
   CommunityNotFoundError,
-  createCommunityPost,
-  listCommunityPosts,
 } from "@/lib/services/community.service";
-import { communityPostFormSchema } from "@/lib/validators/community";
+import {
+  createCommunityVoiceChannel,
+  listCommunityVoiceChannels,
+} from "@/lib/services/community-channel.service";
+import { voiceChannelFormSchema } from "@/lib/validators/community";
 
 interface RouteContext {
   params: Promise<{ slug: string }>;
 }
 
-export async function GET(request: Request, context: RouteContext) {
+export async function GET(_request: Request, context: RouteContext) {
   const { slug } = await context.params;
-  const { searchParams } = new URL(request.url);
-  const kindParam = searchParams.get("kind");
-  const kind =
-    kindParam === "announcement"
-      ? "ANNOUNCEMENT"
-      : kindParam === "post"
-        ? "POST"
-        : undefined;
 
   try {
-    const posts = await listCommunityPosts(slug, 24, kind);
-    return NextResponse.json({ posts: posts.map((post) => mapCommunityPost(post)) });
+    const channels = await listCommunityVoiceChannels(slug);
+    return NextResponse.json({ channels });
   } catch (error) {
     if (error instanceof CommunityNotFoundError) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
-    console.error("[community posts GET]", error);
-    return NextResponse.json(
-      { error: "Could not load posts." },
-      { status: 500 },
-    );
+    console.error("[voice-channels GET]", error);
+    return NextResponse.json({ error: "Could not load voice channels." }, { status: 500 });
   }
 }
 
@@ -47,7 +37,7 @@ export async function POST(request: Request, context: RouteContext) {
 
   try {
     const body = await request.json();
-    const parsed = communityPostFormSchema.safeParse(body);
+    const parsed = voiceChannelFormSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.issues[0]?.message ?? "Invalid input." },
@@ -55,8 +45,12 @@ export async function POST(request: Request, context: RouteContext) {
       );
     }
 
-    const post = await createCommunityPost(auth.userId, slug, parsed.data);
-    return NextResponse.json({ post: mapCommunityPost(post) }, { status: 201 });
+    const channel = await createCommunityVoiceChannel(
+      auth.userId,
+      slug,
+      parsed.data,
+    );
+    return NextResponse.json({ channel }, { status: 201 });
   } catch (error) {
     if (error instanceof CommunityForbiddenError) {
       return NextResponse.json({ error: error.message }, { status: 403 });
@@ -64,7 +58,7 @@ export async function POST(request: Request, context: RouteContext) {
     if (error instanceof CommunityNotFoundError) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
-    console.error("[community posts POST]", error);
-    return NextResponse.json({ error: "Could not create post." }, { status: 500 });
+    console.error("[voice-channels POST]", error);
+    return NextResponse.json({ error: "Could not create voice channel." }, { status: 500 });
   }
 }

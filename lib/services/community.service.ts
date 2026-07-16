@@ -21,6 +21,10 @@ import {
   getTrendingContent,
   getTrendingMusic,
 } from "@/lib/services/feed.service";
+import {
+  listCommunityVoiceChannels,
+  listCommunityWatchChannels,
+} from "@/lib/services/community-channel.service";
 
 const communityInclude = {
   members: {
@@ -263,12 +267,19 @@ export async function leaveCommunity(userId: string, slug: string) {
   await syncCommunityMemberCount(community.id);
 }
 
-export async function listCommunityPosts(slug: string, limit = 20) {
+export async function listCommunityPosts(
+  slug: string,
+  limit = 20,
+  kind?: "POST" | "ANNOUNCEMENT",
+) {
   const community = await prisma.community.findUnique({ where: { slug } });
   if (!community) throw new CommunityNotFoundError("Community not found.");
 
   return prisma.communityPost.findMany({
-    where: { communityId: community.id },
+    where: {
+      communityId: community.id,
+      ...(kind ? { kind } : {}),
+    },
     include: {
       author: {
         select: { id: true, name: true, avatarColor: true, avatarUrl: true },
@@ -290,12 +301,19 @@ export async function createCommunityPost(
   });
   if (!membership) throw new CommunityForbiddenError("Join the community first.");
 
+  const kind = input.kind ?? "POST";
+  if (kind === "ANNOUNCEMENT" && !["ADMIN", "MODERATOR"].includes(membership.role)) {
+    throw new CommunityForbiddenError("Only admins and moderators can post announcements.");
+  }
+
   const post = await prisma.communityPost.create({
     data: {
       communityId: membership.communityId,
       authorId: userId,
-      content: input.content.trim(),
+      title: input.title.trim(),
+      content: input.content?.trim() || input.title.trim(),
       imageUrl: input.imageUrl?.trim() || null,
+      kind,
     },
     include: {
       author: {
@@ -326,7 +344,10 @@ export async function updateCommunityPost(
   return prisma.communityPost.update({
     where: { id: postId },
     data: {
-      ...(input.content ? { content: input.content.trim() } : {}),
+      ...(input.title ? { title: input.title.trim() } : {}),
+      ...(input.content !== undefined
+        ? { content: input.content?.trim() || undefined }
+        : {}),
       ...(input.imageUrl !== undefined
         ? { imageUrl: input.imageUrl?.trim() || null }
         : {}),
@@ -410,9 +431,12 @@ export async function getCommunityDetailBySlug(
     if (!isMember) return null;
   }
 
-  const [posts, watchedMost, trending, musicTracks, collections, similarRows] =
+  const [posts, announcements, voiceChannels, watchChannels, watchedMost, trending, musicTracks, collections, similarRows] =
     await Promise.all([
-      listCommunityPosts(slug, 12),
+      listCommunityPosts(slug, 24, "POST"),
+      listCommunityPosts(slug, 12, "ANNOUNCEMENT"),
+      listCommunityVoiceChannels(slug, viewerUserId),
+      listCommunityWatchChannels(slug, viewerUserId),
       viewerUserId
         ? getContinueWatchingContent(viewerUserId, 8)
         : getTrendingContent(8),
@@ -436,6 +460,9 @@ export async function getCommunityDetailBySlug(
 
   return mapCommunityToDetail(row, {
     posts,
+    announcements,
+    voiceChannels,
+    watchChannels,
     viewerUserId,
     memberPreview: row.members.map((member) => mapUserSummary(member.user)),
     onlineMembers: row.members.slice(0, 8).map((member) => ({
