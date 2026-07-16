@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { requireUserApi } from "@/lib/api-auth";
 import {
   addCollectionItem,
+  CollectionItemDuplicateError,
   CollectionNotFoundError,
+  isCollectionItemDuplicate,
 } from "@/lib/services/collection.service";
 import { collectionItemFormSchema } from "@/lib/validators/collection";
 
@@ -31,6 +33,12 @@ export async function POST(request: Request, context: RouteContext) {
   } catch (error) {
     if (error instanceof CollectionNotFoundError) {
       return NextResponse.json({ error: error.message }, { status: 404 });
+    }
+    if (isCollectionItemDuplicate(error)) {
+      return NextResponse.json(
+        { error: (error as CollectionItemDuplicateError).message },
+        { status: 409 },
+      );
     }
     console.error("[collection items POST]", error);
     return NextResponse.json(

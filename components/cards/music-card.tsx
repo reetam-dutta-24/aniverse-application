@@ -8,6 +8,7 @@ import { useCarouselTintSeed } from "@/components/carousel/carousel-section-cont
 import { cn } from "@/lib/utils";
 import { getCardTint } from "@/lib/card-theme";
 import { SLOT_H, SLOT_W } from "@/lib/card-dimensions";
+import { CardAddToCollectionButton } from "@/components/forms/add-to-collection-dialog";
 import type { MusicTrack } from "@/types";
 import { Chip, MatchChip, RatingChip } from "@/components/ui/chip";
 
@@ -171,41 +172,45 @@ export function MusicCard({
               )}
             </div>
 
-            <div className="flex h-[196px] flex-col items-center gap-1.5 bg-black px-2.5 pb-2.5 pt-1.5">
-              <p className="line-clamp-1 w-full text-center text-sm font-semibold text-white">
-                {track.title}
-              </p>
-              <p className="line-clamp-1 text-[11px] font-normal text-muted">
-                {track.artist}
-              </p>
-
-              <div className="flex flex-wrap items-center justify-center gap-1">
-                <Chip language={langLabel}>{langLabel}</Chip>
-                <Chip musicKind={track.kind}>{kindLabel(track.kind)}</Chip>
+            <div className="flex h-[196px] flex-col items-center gap-1.5 bg-black px-2.5 pb-2 pt-2">
+              <div className="w-full text-center">
+                <p className="line-clamp-2 text-sm font-semibold leading-tight text-white">
+                  {track.title}
+                </p>
+                <p className="line-clamp-1 text-[11px] font-normal text-muted">
+                  {track.artist}
+                </p>
               </div>
 
-              <div className="flex w-full items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={onListen}
-                  className="flex cursor-pointer items-center gap-1 rounded-full border border-brand-magenta px-2 py-0.5 text-[10px] font-normal text-white transition-colors hover:bg-brand-magenta/15"
-                >
-                  <Headphones className="size-3.5 text-brand-magenta" />
-                  Listen Now
-                </button>
-                <button
-                  type="button"
-                  onClick={handleViewDetails}
-                  className="flex cursor-pointer items-center gap-1 rounded-full border border-brand-magenta px-2 py-0.5 text-[10px] font-normal text-white transition-colors hover:bg-brand-magenta/15"
-                >
-                  <PlayCircle className="size-3.5 text-brand-magenta" />
-                  View Details
-                </button>
-              </div>
-
-              <p className="h-[34px] w-full overflow-hidden text-left text-[10px] font-normal leading-[11px] text-white/85 line-clamp-3">
+              <p className="h-[36px] w-full overflow-hidden text-center text-[10px] font-normal leading-[12px] text-white/80 line-clamp-3">
                 {trackDescription(track)}
               </p>
+
+              <div className="mt-auto flex w-full flex-col items-center gap-1.5 pt-1">
+                <div className="flex w-full items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={onListen}
+                    className="flex cursor-pointer items-center gap-1 rounded-full border border-brand-magenta px-2 py-0.5 text-[10px] font-normal text-white transition-colors hover:bg-brand-magenta/15"
+                  >
+                    <Headphones className="size-3.5 text-brand-magenta" />
+                    Listen Now
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleViewDetails}
+                    className="flex cursor-pointer items-center gap-1 rounded-full border border-brand-magenta px-2 py-0.5 text-[10px] font-normal text-white transition-colors hover:bg-brand-magenta/15"
+                  >
+                    <PlayCircle className="size-3.5 text-brand-magenta" />
+                    View Details
+                  </button>
+                </div>
+                <CardAddToCollectionButton
+                  itemKind="song"
+                  itemSlug={track.id}
+                  itemTitle={track.title}
+                />
+              </div>
             </div>
           </div>
         </div>

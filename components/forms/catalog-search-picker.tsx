@@ -232,6 +232,8 @@ interface CatalogMultiSearchPickerProps {
   placeholder?: string;
   hint?: string;
   maxItems?: number;
+  /** Slugs already in the target collection — hidden from search and blocked on add. */
+  blockedIds?: string[];
 }
 
 function SelectionCard({
@@ -312,8 +314,10 @@ export function CatalogMultiSearchPicker({
   placeholder = "Search and add more…",
   hint = "Search, pick an item, then keep searching to add more — all in one go.",
   maxItems = 24,
+  blockedIds = [],
 }: CatalogMultiSearchPickerProps) {
   const [labels, setLabels] = useState<Record<string, CatalogPickerSelection>>({});
+  const [duplicateNotice, setDuplicateNotice] = useState<string>();
 
   function syncSelections(nextValues: string[], nextLabels: Record<string, CatalogPickerSelection>) {
     onChange(nextValues);
@@ -323,7 +327,16 @@ export function CatalogMultiSearchPicker({
   }
 
   function addSelection(selection: CatalogPickerSelection) {
-    if (values.includes(selection.id) || values.length >= maxItems) return;
+    if (blockedIds.includes(selection.id)) {
+      setDuplicateNotice(`"${selection.title}" is already in this collection.`);
+      return;
+    }
+    if (values.includes(selection.id)) {
+      setDuplicateNotice(`"${selection.title}" is already selected.`);
+      return;
+    }
+    if (values.length >= maxItems) return;
+    setDuplicateNotice(undefined);
     const nextLabels = { ...labels, [selection.id]: selection };
     setLabels(nextLabels);
     syncSelections([...values, selection.id], nextLabels);
@@ -393,12 +406,18 @@ export function CatalogMultiSearchPicker({
       ) : (
         <CatalogSearchInput
           allowedTypes={allowedTypes}
-          excludeIds={values}
+          excludeIds={[...blockedIds, ...values]}
           placeholder={placeholder}
           onSelect={addSelection}
           autoFocus={values.length === 0}
         />
       )}
+
+      {duplicateNotice ? (
+        <p className="text-xs text-amber-200" role="alert">
+          {duplicateNotice}
+        </p>
+      ) : null}
 
       {!atLimit ? (
         <p className="text-xs text-white/40">

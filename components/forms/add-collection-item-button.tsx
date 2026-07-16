@@ -12,6 +12,7 @@ import {
   FormActions,
   FormError,
   FormField,
+  FormNotice,
   FormShell,
 } from "@/components/forms/form-shell";
 import type { SearchResultType } from "@/lib/search/types";
@@ -19,15 +20,18 @@ import type { SearchResultType } from "@/lib/search/types";
 export function AddCollectionItemButton({
   collectionSlug,
   collectionKind = "content",
+  existingItemSlugs = [],
 }: {
   collectionSlug: string;
   collectionKind?: "content" | "music";
+  existingItemSlugs?: string[];
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [slugs, setSlugs] = useState<string[]>([]);
   const [selections, setSelections] = useState<CatalogPickerSelection[]>([]);
   const [error, setError] = useState<string>();
+  const [notice, setNotice] = useState<string>();
   const [loading, setLoading] = useState(false);
 
   const allowedTypes: SearchResultType[] =
@@ -42,6 +46,7 @@ export function AddCollectionItemButton({
     setSlugs([]);
     setSelections([]);
     setError(undefined);
+    setNotice(undefined);
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -53,8 +58,11 @@ export function AddCollectionItemButton({
 
     setLoading(true);
     setError(undefined);
+    setNotice(undefined);
 
     const failures: string[] = [];
+    const duplicates: string[] = [];
+    let added = 0;
 
     for (const selection of selections) {
       const body =
@@ -75,6 +83,11 @@ export function AddCollectionItemButton({
         body: JSON.stringify(body),
       });
 
+      if (response.status === 409) {
+        duplicates.push(selection.title);
+        continue;
+      }
+
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         failures.push(
@@ -82,18 +95,32 @@ export function AddCollectionItemButton({
             ? `${selection.title}: ${data.error}`
             : selection.title,
         );
+        continue;
       }
+
+      added += 1;
     }
 
     setLoading(false);
 
-    if (failures.length === selections.length) {
+    if (added === 0 && duplicates.length > 0 && failures.length === 0) {
+      setNotice(
+        duplicates.length === 1
+          ? `"${duplicates[0]}" is already in this collection.`
+          : `These items are already in the collection: ${duplicates.join(", ")}.`,
+      );
+      return;
+    }
+
+    if (added === 0) {
       setError(failures[0] ?? "Could not add items.");
       return;
     }
 
-    if (failures.length > 0) {
-      setError(`Some items could not be added: ${failures.join("; ")}`);
+    if (duplicates.length > 0) {
+      setNotice(
+        `Added ${added} item${added === 1 ? "" : "s"}. Skipped duplicates: ${duplicates.join(", ")}.`,
+      );
     }
 
     setOpen(false);
@@ -135,9 +162,11 @@ export function AddCollectionItemButton({
               onChange={setSlugs}
               onSelectionsChange={setSelections}
               placeholder={searchPlaceholder}
+              blockedIds={existingItemSlugs}
             />
           </FormField>
 
+          <FormNotice message={notice} variant="warning" />
           <FormError message={error} />
           <FormActions
             onCancel={() => {

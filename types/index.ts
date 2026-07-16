@@ -162,6 +162,59 @@ export interface MusicCollectionDetail extends CollectionDetail {
   similarVibesSongs: MusicTrack[];
 }
 
+/** Ordered track row for `/collection/[id]/play` music queue. */
+export interface CollectionPlayTrack {
+  itemId: string;
+  position: number;
+  id: string;
+  title: string;
+  artist: string;
+  kind: string;
+  source?: string;
+  durationSeconds?: number;
+  durationLabel: string;
+  imageUrl?: string;
+  backdropUrl?: string;
+  previewUrl: string;
+  lyrics?: string;
+  language?: string;
+  rating?: number;
+  description?: string;
+  genreLabels: { id: string; label: string }[];
+  accent?: ContentItem["accent"];
+}
+
+/** Ordered content row for `/collection/[id]/play` binge queue. */
+export interface CollectionPlayContentItem {
+  itemId: string;
+  position: number;
+  id: string;
+  title: string;
+  type: ContentItem["type"];
+  imageUrl?: string;
+  backdropUrl?: string;
+  rating?: number;
+  meta?: string;
+  year?: number;
+  synopsis?: string;
+  description?: string;
+  genres: { id: string; label: string }[];
+  highlightTags?: string[];
+  accent?: ContentItem["accent"];
+}
+
+export interface CollectionPlayQueue {
+  id: string;
+  name: string;
+  description?: string;
+  imageUrl?: string;
+  collectionKind: "content" | "music";
+  itemCount: number;
+  ownerName: string;
+  tracks?: CollectionPlayTrack[];
+  items?: CollectionPlayContentItem[];
+}
+
 /** A single metric shown in the analytics/stats strip. */
 export interface StatMetric {
   id: string;

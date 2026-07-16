@@ -17,11 +17,13 @@ import {
 } from "@/components/content";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { isMovieContentType } from "@/lib/content-media";
+import { getCommunityMemberPreview } from "@/lib/data/community";
+import { getOptionalUser } from "@/lib/data/user";
 import {
   getAllContentIds,
   getContentDetail,
 } from "@/lib/data/content-detail";
-import { getCommunityMemberPreview } from "@/lib/data/community";
+import { isContentFavorited } from "@/lib/services/favorite.service";
 
 interface ContentPageProps {
   params: Promise<{ contentid: string }>;
@@ -46,6 +48,7 @@ export async function generateMetadata({
 
 export default async function ContentDetailPage({ params }: ContentPageProps) {
   const { contentid } = await params;
+  const viewer = await getOptionalUser();
   const [content, members] = await Promise.all([
     getContentDetail(contentid),
     getCommunityMemberPreview(),
@@ -53,12 +56,19 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
 
   if (!content) notFound();
 
+  const initialFavorited = viewer?.id
+    ? await isContentFavorited(viewer.id, content.id)
+    : false;
+
   const isMovie = isMovieContentType(content.type);
   const movieEpisode = content.episodes[0];
 
   return (
     <div className="flex w-full flex-col gap-10 sm:gap-12 lg:gap-14">
-      <ContentDetailHero content={content} />
+      <ContentDetailHero
+        content={content}
+        initialFavorited={initialFavorited}
+      />
 
       {isMovie ? (
         <ContentMovieSection

@@ -16,6 +16,7 @@ export interface CollectionDetailHeroProps {
   favoriteTracks?: MusicTrack[];
   /** Owner edit/delete controls — rendered in the hero header. */
   ownerActions?: React.ReactNode;
+  initialFavorited?: boolean;
 }
 
 const DETAIL_CHIP =
@@ -33,6 +34,7 @@ export function CollectionDetailHero({
   variant = "content",
   favoriteTracks,
   ownerActions,
+  initialFavorited,
 }: CollectionDetailHeroProps) {
   const copy = COLLECTION_MEDIA_COPY[variant];
   const heroGlow = getDetailHeroBoundaryGlow(
@@ -129,6 +131,8 @@ export function CollectionDetailHero({
           contributors={collection.contributors}
           contributorSummary={collection.contributorSummary}
           variant={variant}
+          collectionSlug={collection.id}
+          initialFavorited={initialFavorited}
         />
       </div>
     </section>

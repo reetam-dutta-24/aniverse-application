@@ -7,6 +7,7 @@ export const COLLECTION_MEDIA_COPY: Record<
     spotlightTitle: string;
     resumeCta: string;
     detailsCta: string;
+    playOrderCta: string;
     emptySpotlight: string;
     viewAllTitle: string;
     continueTitle: string;
@@ -19,6 +20,7 @@ export const COLLECTION_MEDIA_COPY: Record<
     spotlightTitle: "❤️ Your Favourite Items In This Collection",
     resumeCta: "Resume Watching",
     detailsCta: "View Show Details",
+    playOrderCta: "Watch in Order",
     emptySpotlight: "No favourites match your search.",
     viewAllTitle: "📂 View All Items",
     continueTitle: "⏳ Continue Watching",
@@ -30,6 +32,7 @@ export const COLLECTION_MEDIA_COPY: Record<
     spotlightTitle: "❤️ Your Favourite Songs In This Collection",
     resumeCta: "Resume Listening",
     detailsCta: "View Song Details",
+    playOrderCta: "Play the Playlist",
     emptySpotlight: "No songs match your search.",
     viewAllTitle: "🎵 View All Songs",
     continueTitle: "🎧 Continue Listening",

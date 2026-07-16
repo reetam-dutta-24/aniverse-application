@@ -26,6 +26,7 @@ export const musicFormSchema = z.object({
   artistSlug: optionalString,
   kind: z.enum(["song", "ost", "album"]).default("song"),
   description: optionalLongString,
+  lyrics: optionalLongString,
   source: optionalString,
   album: optionalString,
   language: z.union([languageEnum, z.literal("")]).optional(),

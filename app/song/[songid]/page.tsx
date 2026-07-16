@@ -10,7 +10,9 @@ import {
 } from "@/components/content";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { getCommunityMemberPreview } from "@/lib/data/community";
+import { getOptionalUser } from "@/lib/data/user";
 import { getAllSongIds, getSongDetail } from "@/lib/data/song-detail";
+import { isContentFavorited } from "@/lib/services/favorite.service";
 
 interface SongPageProps {
   params: Promise<{ songid: string }>;
@@ -35,6 +37,7 @@ export async function generateMetadata({
 
 export default async function SongDetailPage({ params }: SongPageProps) {
   const { songid } = await params;
+  const viewer = await getOptionalUser();
   const [song, members] = await Promise.all([
     getSongDetail(songid),
     getCommunityMemberPreview(),
@@ -42,9 +45,13 @@ export default async function SongDetailPage({ params }: SongPageProps) {
 
   if (!song) notFound();
 
+  const initialFavorited = viewer?.id
+    ? await isContentFavorited(viewer.id, song.id)
+    : false;
+
   return (
     <div className="flex w-full flex-col gap-10 sm:gap-12 lg:gap-14">
-      <ContentDetailHero content={song} />
+      <ContentDetailHero content={song} initialFavorited={initialFavorited} />
 
       <ContentPageSection
         title="🎤 Artists, Album And Show/Anime/Movie"

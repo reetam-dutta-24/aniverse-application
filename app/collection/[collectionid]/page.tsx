@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { Play } from "lucide-react";
 import { CollectionCard, CommunityCard } from "@/components/cards";
 import { CollectionDetailHero } from "@/components/collection";
 import { ContentPageSection } from "@/components/content";
@@ -12,12 +14,14 @@ import {
 import { AddCollectionItemButton } from "@/components/forms/add-collection-item-button";
 import { CollectionDetailOwnerActions } from "@/components/forms/collection-detail-owner-actions";
 import { COLLECTION_MEDIA_COPY } from "@/lib/collection-media-copy";
+import { getCollectionPlayPath } from "@/lib/collection-routes";
 import { getCommunityMemberPreview } from "@/lib/data/community";
 import { getOptionalUser } from "@/lib/data/user";
 import {
   getAllCollectionIds,
   getCollectionDetail,
 } from "@/lib/data/collection-detail";
+import { isCollectionFavorited } from "@/lib/services/favorite.service";
 
 interface CollectionPageProps {
   params: Promise<{ collectionid: string }>;
@@ -59,10 +63,29 @@ export default async function CollectionDetailPage({
   const canManageCollection =
     !!viewer?.id && collection.ownerId === viewer.id;
 
+  const initialFavorited = viewer?.id
+    ? await isCollectionFavorited(viewer.id, collection.id)
+    : false;
+
+  const playInOrderAction = (
+    <Link
+      href={getCollectionPlayPath(collection.id)}
+      className="inline-flex items-center gap-1.5 rounded-full border border-brand-magenta/70 bg-transparent px-5 py-2 text-sm font-semibold text-white transition hover:bg-brand-magenta/15"
+    >
+      <Play className="size-4 fill-current" />
+      {isMusic ? "Listen in order" : "Watch in order"}
+    </Link>
+  );
+
   const addItemAction = (
     <AddCollectionItemButton
       collectionSlug={collection.id}
       collectionKind={collection.collectionKind ?? "content"}
+      existingItemSlugs={
+        isMusic
+          ? tracks.map((track) => track.id)
+          : collection.allItems.map((item) => item.id)
+      }
     />
   );
 
@@ -72,6 +95,7 @@ export default async function CollectionDetailPage({
         collection={collection}
         variant={isMusic ? "music" : "content"}
         favoriteTracks={isMusic ? tracks : undefined}
+        initialFavorited={initialFavorited}
         ownerActions={
           canManageCollection ? (
             <CollectionDetailOwnerActions collection={collection} />
@@ -86,7 +110,12 @@ export default async function CollectionDetailPage({
               title={copy.viewAllTitle}
               searchPlaceholder="Search tracks…"
               tracks={tracks}
-              action={addItemAction}
+              action={
+                <div className="flex flex-wrap items-center gap-2">
+                  {playInOrderAction}
+                  {addItemAction}
+                </div>
+              }
             />
 
             <MusicCarouselSection
@@ -107,7 +136,12 @@ export default async function CollectionDetailPage({
               title={copy.viewAllTitle}
               searchPlaceholder="Search items…"
               items={collection.allItems}
-              action={addItemAction}
+              action={
+                <div className="flex flex-wrap items-center gap-2">
+                  {playInOrderAction}
+                  {addItemAction}
+                </div>
+              }
             />
 
             <ContentCarouselSection

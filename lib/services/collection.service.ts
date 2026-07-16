@@ -150,6 +150,10 @@ export async function createCollection(userId: string, input: CollectionFormInpu
   for (const contentSlug of input.initialContentSlugs ?? []) {
     const contentId = await findContentIdBySlug(slugify(contentSlug));
     if (!contentId) continue;
+    const duplicate = await prisma.collectionItem.findFirst({
+      where: { collectionId: collection.id, contentId },
+    });
+    if (duplicate) continue;
     await prisma.collectionItem.create({
       data: { collectionId: collection.id, contentId, position: position++ },
     });
@@ -157,6 +161,10 @@ export async function createCollection(userId: string, input: CollectionFormInpu
   for (const trackSlug of input.initialTrackSlugs ?? []) {
     const trackId = await findTrackIdBySlug(slugify(trackSlug));
     if (!trackId) continue;
+    const duplicate = await prisma.collectionItem.findFirst({
+      where: { collectionId: collection.id, trackId },
+    });
+    if (duplicate) continue;
     await prisma.collectionItem.create({
       data: { collectionId: collection.id, trackId, position: position++ },
     });
@@ -230,6 +238,28 @@ export async function addCollectionItem(
   }
   if (input.trackSlug && !trackId) {
     throw new CollectionNotFoundError("Track not found.");
+  }
+
+  if (contentId) {
+    const duplicate = await prisma.collectionItem.findFirst({
+      where: { collectionId: collection.id, contentId },
+    });
+    if (duplicate) {
+      throw new CollectionItemDuplicateError(
+        "This title is already in the collection.",
+      );
+    }
+  }
+
+  if (trackId) {
+    const duplicate = await prisma.collectionItem.findFirst({
+      where: { collectionId: collection.id, trackId },
+    });
+    if (duplicate) {
+      throw new CollectionItemDuplicateError(
+        "This song is already in the collection.",
+      );
+    }
   }
 
   const nextPosition =
@@ -414,6 +444,17 @@ export class CollectionConflictError extends Error {
     super("A collection with this slug already exists.");
     this.name = "CollectionConflictError";
   }
+}
+
+export class CollectionItemDuplicateError extends Error {
+  constructor(message = "This item is already in the collection.") {
+    super(message);
+    this.name = "CollectionItemDuplicateError";
+  }
+}
+
+export function isCollectionItemDuplicate(error: unknown) {
+  return error instanceof CollectionItemDuplicateError;
 }
 
 export function isCollectionConflict(error: unknown) {

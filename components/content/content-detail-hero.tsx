@@ -4,7 +4,6 @@ import {
   Headphones,
   Heart,
   Plus,
-  PlayCircle,
   Star,
   Users,
 } from "lucide-react";
@@ -23,14 +22,15 @@ import {
   getDetailHeroBoundaryGlow,
 } from "@/lib/card-theme";
 import { Button } from "@/components/ui/button";
-import { GradientButton } from "@/components/ui/gradient-button";
 import { Chip, MatchChip } from "@/components/ui/chip";
 import { DetailImage } from "@/components/ui/detail-image";
 import { ContentHeroActions } from "@/components/content/content-hero-actions";
+import { ContentHeroPosterActions } from "@/components/content/content-hero-poster-actions";
 import type { ContentDetail, ContentEngagementStat, ContentMetadata, Episode, MediaType } from "@/types";
 
 export interface ContentDetailHeroProps {
   content: ContentDetail;
+  initialFavorited?: boolean;
 }
 
 const STAT_ICONS: Record<string, LucideIcon> = {
@@ -157,7 +157,10 @@ function buildMetadataRows(
 }
 
 /** Figma hero — full-width, accent-themed inner boundary, neutral poster vignette. */
-export function ContentDetailHero({ content }: ContentDetailHeroProps) {
+export function ContentDetailHero({
+  content,
+  initialFavorited,
+}: ContentDetailHeroProps) {
   const tint = getAccentTint(content.accent);
   const heroGlow = getDetailHeroBoundaryGlow(tint.glass);
   const statBackground = getAccentStatBackground(content.accent);
@@ -170,9 +173,6 @@ export function ContentDetailHero({ content }: ContentDetailHeroProps) {
   const metadataChips = buildMetadataChips(content.metadata);
   const metadataRows = buildMetadataRows(content.metadata, content.type);
   const continueEpisode = resolveContinueEpisode(content);
-  const trailerLabel = isMovie
-    ? "Full Movie"
-    : (content.seasons[0]?.label ?? "Season 1");
 
   return (
     <section
@@ -302,16 +302,6 @@ export function ContentDetailHero({ content }: ContentDetailHeroProps) {
                 <Plus className="size-3.5 shrink-0" />
                 <span className="truncate">Add To Collection</span>
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className={detailHeroBtnBase(
-                  "border-brand-magenta text-white",
-                )}
-              >
-                <Heart className="size-3.5 shrink-0 text-brand-magenta" />
-                <span className="truncate">Add To Favourites</span>
-              </Button>
             </div>
           </div>
 
@@ -363,41 +353,11 @@ export function ContentDetailHero({ content }: ContentDetailHeroProps) {
               className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/92 via-black/15 to-black/35"
             />
 
-            <div
-              className={cn(
-                DETAIL_HERO_BTN_GROUP,
-                "absolute inset-x-0 bottom-0 justify-center bg-gradient-to-t from-black/95 via-black/80 to-transparent px-4 pb-4 pt-10 sm:px-5 sm:pb-5",
-              )}
-            >
-              <GradientButton
-                size="sm"
-                className={detailHeroBtnBase("gap-1.5")}
-              >
-                <PlayCircle className="size-4 shrink-0" />
-                <span className="flex min-w-0 flex-col items-start leading-tight">
-                  <span className="truncate text-[10px] font-semibold sm:text-[11px]">
-                    {songMedia ? "Play Now" : isMovie ? "Watch Movie" : "Watch Trailer"}
-                  </span>
-                  <span className="truncate text-[9px] font-normal opacity-90">
-                    {songMedia
-                      ? (content.metadata.episodeDuration ?? "Full Track")
-                      : trailerLabel}
-                  </span>
-                </span>
-              </GradientButton>
-              <Button
-                variant="outline"
-                size="sm"
-                className={detailHeroBtnBase(
-                  "border-brand-magenta bg-black/60 text-white",
-                )}
-              >
-                <Plus className="size-3.5 shrink-0 text-brand-magenta" />
-                <span className="truncate">
-                  {songMedia ? "Add To Playlist" : "Add To Watchlist"}
-                </span>
-              </Button>
-            </div>
+            <ContentHeroPosterActions
+              content={content}
+              continueEpisode={continueEpisode}
+              initialFavorited={initialFavorited}
+            />
           </div>
         </div>
       </div>

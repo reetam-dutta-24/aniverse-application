@@ -225,6 +225,14 @@ export function MusicForm({ mode, recordId, initial }: MusicFormProps) {
         <Field label="Description / synopsis">
           <textarea className={`${inputClass} min-h-32 py-2`} value={form.description ?? ""} onChange={(e) => update("description", e.target.value)} />
         </Field>
+        <Field label="Lyrics" hint="One line per lyric. Shown 4 lines at a time during playlist playback.">
+          <textarea
+            className={`${inputClass} min-h-40 py-2 font-mono text-xs leading-relaxed`}
+            value={form.lyrics ?? ""}
+            onChange={(e) => update("lyrics", e.target.value)}
+            placeholder={"Line 1 of the song…\nLine 2…\nLine 3…"}
+          />
+        </Field>
       </Section>
 
       <CatalogReviewsEditor reviews={form.catalogReviews} onChange={(catalogReviews) => update("catalogReviews", catalogReviews)} />

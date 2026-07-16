@@ -366,6 +366,7 @@ async function seedMusic(
       artist: item.artist,
       kind: item.kind,
       description: item.description ?? null,
+      lyrics: item.lyrics ?? null,
       source: item.source ?? null,
       album: item.album ?? null,
       language: item.language ?? null,

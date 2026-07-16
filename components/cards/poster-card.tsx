@@ -9,6 +9,7 @@ import { useCarouselTintSeed } from "@/components/carousel/carousel-section-cont
 import { cn } from "@/lib/utils";
 import { getCardTint } from "@/lib/card-theme";
 import { SLOT_H, SLOT_W } from "@/lib/card-dimensions";
+import { CardAddToCollectionButton } from "@/components/forms/add-to-collection-dialog";
 import type { ContentItem } from "@/types";
 import { Chip, MatchChip, RatingChip } from "@/components/ui/chip";
 
@@ -43,6 +44,14 @@ function defaultDescription(title: string) {
   return `${title} — matched to your genres, ratings, and watch history on AniVerse.`;
 }
 
+function resolveCollectionItemKind(
+  type: ContentItem["type"],
+): "content" | "song" | null {
+  if (type === "song" || type === "album") return "song";
+  if (type === "artist" || type === "playlist") return null;
+  return "content";
+}
+
 function resolveMeta(item: ContentItem) {
   const meta =
     item.meta ??
@@ -75,6 +84,7 @@ export function PosterCard({
   const tint = getCardTint(item.id, tintSeed);
   const description = item.description ?? defaultDescription(item.title);
   const { meta, year } = resolveMeta(item);
+  const collectionItemKind = resolveCollectionItemKind(item.type);
 
   function handleViewDetails() {
     if (onViewDetails) {
@@ -189,28 +199,12 @@ export function PosterCard({
               )}
             </div>
 
-            <div className="flex h-[196px] flex-col items-center gap-1 bg-black px-2.5 pb-2 pt-1.5">
-              <p className="line-clamp-1 w-full text-center text-sm font-semibold text-white">
+            <div className="flex h-[196px] flex-col items-center gap-1.5 bg-black px-2.5 pb-2 pt-2">
+              <p className="line-clamp-2 w-full text-center text-sm font-semibold leading-tight text-white">
                 {item.title}
               </p>
 
-              <div className="flex flex-wrap items-center justify-center gap-1">
-                {(item.genres ?? []).map((genre) => (
-                  <Chip
-                    key={genre.id}
-                    genreId={genre.id}
-                    genreLabel={genre.label}
-                  >
-                    {genre.label}
-                  </Chip>
-                ))}
-              </div>
-
-              {item.matchScore != null ? (
-                <MatchChip score={item.matchScore} />
-              ) : null}
-
-              <p className="h-[34px] w-full overflow-hidden text-left text-[10px] font-normal leading-[11px] text-white/85 line-clamp-3">
+              <p className="h-[36px] w-full overflow-hidden text-center text-[10px] font-normal leading-[12px] text-white/80 line-clamp-3">
                 {description}
               </p>
 
@@ -219,22 +213,31 @@ export function PosterCard({
                 <span>{year}</span>
               </p>
 
-              <div className="flex w-full items-center justify-center gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={onWatch}
-                  className="flex cursor-pointer items-center gap-1 rounded-full border border-brand-magenta px-2 py-0.5 text-[10px] font-normal text-white transition-colors hover:bg-brand-magenta/15"
-                >
-                  <PlayCircle className="size-3.5 text-brand-magenta" />
-                  Watch Now
-                </button>
-                <button
-                  type="button"
-                  onClick={handleViewDetails}
-                  className="cursor-pointer rounded-full border border-brand-magenta px-2 py-0.5 text-[10px] font-normal text-white transition-colors hover:bg-brand-magenta/15"
-                >
-                  View Details
-                </button>
+              <div className="mt-auto flex w-full flex-col items-center gap-1.5 pt-1">
+                <div className="flex w-full items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={onWatch}
+                    className="flex cursor-pointer items-center gap-1 rounded-full border border-brand-magenta px-2 py-0.5 text-[10px] font-normal text-white transition-colors hover:bg-brand-magenta/15"
+                  >
+                    <PlayCircle className="size-3.5 text-brand-magenta" />
+                    Watch Now
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleViewDetails}
+                    className="cursor-pointer rounded-full border border-brand-magenta px-2 py-0.5 text-[10px] font-normal text-white transition-colors hover:bg-brand-magenta/15"
+                  >
+                    View Details
+                  </button>
+                </div>
+                {collectionItemKind ? (
+                  <CardAddToCollectionButton
+                    itemKind={collectionItemKind}
+                    itemSlug={item.id}
+                    itemTitle={item.title}
+                  />
+                ) : null}
               </div>
             </div>
           </div>

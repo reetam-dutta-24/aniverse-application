@@ -16,6 +16,7 @@ const emptyForm: MusicFormInput = {
   artistSlug: "",
   kind: "song",
   description: "",
+  lyrics: "",
   source: "",
   album: "",
   language: "",

@@ -43,6 +43,8 @@ model User {
   tasteProfile          TasteProfile?
   preferences           UserPreferences?
   watchlistItems        WatchlistItem[]
+  collectionFavorites   CollectionFavorite[]
+  contentFavorites      ContentFavorite[]
   collections           Collection[]
   reviews               Review[]
   notifications         Notification[]
@@ -179,6 +181,7 @@ model Content {
 
   genres           ContentGenre[]
   watchlistItems   WatchlistItem[]
+  favorites        ContentFavorite[]
   collectionItems  CollectionItem[]
   reviews          Review[]
   ratings          Rating[]
@@ -318,6 +321,7 @@ model MusicTrack {
   artist          String
   kind            String
   description     String?  @db.Text
+  lyrics          String?  @db.Text
   source          String?
   album           String?
   language        String?
@@ -439,6 +443,7 @@ model Collection {
 
   user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   items CollectionItem[]
+  favorites CollectionFavorite[]
 
   @@index([userId])
   @@index([slug])
@@ -457,6 +462,34 @@ model CollectionItem {
   track      MusicTrack? @relation(fields: [trackId], references: [id], onDelete: Cascade)
 
   @@index([collectionId])
+}
+
+model CollectionFavorite {
+  id           String   @id @default(cuid())
+  userId       String
+  collectionId String
+  createdAt    DateTime @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, collectionId])
+  @@index([userId])
+  @@index([collectionId])
+}
+
+model ContentFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  contentId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contentId])
+  @@index([userId])
+  @@index([contentId])
 }
 
 // ─── Communities & social ────────────────────────────────────────────────────

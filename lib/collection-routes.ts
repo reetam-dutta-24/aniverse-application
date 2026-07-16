@@ -6,3 +6,7 @@ export function normalizeCollectionSlug(id: string): string {
 export function getCollectionDetailPath(collectionId: string): string {
   return `/collection/${normalizeCollectionSlug(collectionId)}`;
 }
+
+export function getCollectionPlayPath(collectionId: string): string {
+  return `/collection/${normalizeCollectionSlug(collectionId)}/play`;
+}

@@ -2,6 +2,7 @@ export {
   ContentMovieSection,
 } from "./content-movie-section";
 export { ContentHeroActions, type ContentHeroActionsProps } from "./content-hero-actions";
+export { ContentHeroPosterActions, type ContentHeroPosterActionsProps } from "./content-hero-poster-actions";
 export { ContentDetailHero, type ContentDetailHeroProps } from "./content-detail-hero";
 export {
   ContentCarouselSection,

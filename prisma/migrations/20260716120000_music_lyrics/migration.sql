@@ -1,0 +1,1 @@
+ALTER TABLE "MusicTrack" ADD COLUMN IF NOT EXISTS "lyrics" TEXT;

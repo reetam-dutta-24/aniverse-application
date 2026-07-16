@@ -205,6 +205,7 @@ export interface MusicSeed {
   artistSlug?: string;
   kind: "song" | "ost" | "album";
   description?: string;
+  lyrics?: string;
   source?: string;
   contentSlug?: string;
   album?: string;

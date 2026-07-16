@@ -38,7 +38,15 @@ export async function GET(request: Request) {
     listCollectionsForUser(auth.userId),
   ]);
 
-  return NextResponse.json({ stats, collections });
+  const kind = searchParams.get("kind");
+  const filtered =
+    kind === "music"
+      ? collections.filter((collection) => collection.collectionKind === "music")
+      : kind === "content"
+        ? collections.filter((collection) => collection.collectionKind !== "music")
+        : collections;
+
+  return NextResponse.json({ stats, collections: filtered });
 }
 
 export async function POST(request: Request) {

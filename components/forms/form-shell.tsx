@@ -1,6 +1,7 @@
 "use client";
 
-import { Children, cloneElement, isValidElement, useEffect } from "react";
+import { Children, cloneElement, isValidElement, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,12 @@ export function FormShell({
   children,
   className,
 }: FormShellProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     function onKeyDown(event: KeyboardEvent) {
@@ -30,10 +37,19 @@ export function FormShell({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open, onClose]);
 
-  if (!open) return null;
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  if (!open || !mounted) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       <button
         type="button"
         aria-label="Close dialog"
@@ -63,7 +79,8 @@ export function FormShell({
         </div>
         <div className="overflow-y-auto px-5 py-4">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -147,6 +164,32 @@ export function SelectInput({
 export function FormError({ message }: { message?: string }) {
   if (!message) return null;
   return <p className="text-sm text-red-400">{message}</p>;
+}
+
+export function FormNotice({
+  message,
+  variant = "info",
+}: {
+  message?: string;
+  variant?: "info" | "success" | "warning";
+}) {
+  if (!message) return null;
+  const styles = {
+    info: "border-white/15 bg-white/5 text-white/75",
+    success: "border-green-500/30 bg-green-500/10 text-green-300",
+    warning: "border-amber-500/30 bg-amber-500/10 text-amber-200",
+  };
+  return (
+    <p
+      className={cn(
+        "rounded-xl border px-3 py-2.5 text-sm",
+        styles[variant],
+      )}
+      role="alert"
+    >
+      {message}
+    </p>
+  );
 }
 
 export function FormTagMultiSelect({

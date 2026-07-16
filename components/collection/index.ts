@@ -11,6 +11,9 @@ export {
   type CollectionHeroSpotlightSliderProps,
 } from "./collection-hero-spotlight-slider";
 export {
+  CollectionPlayView,
+} from "./collection-play-view";
+export {
   DETAIL_HERO_BTN_GROUP,
   DETAIL_HERO_BTN_PAIR,
   DETAIL_HERO_BTN_PAIR_GAP,

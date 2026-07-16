@@ -1,6 +1,8 @@
+"use client";
+
 import Link from "next/link";
-import { Heart, PlayCircle, Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { PlayCircle, Plus } from "lucide-react";
+import { getCollectionPlayPath } from "@/lib/collection-routes";
 import { getContentDetailPath } from "@/lib/content-routes";
 import { getSongDetailPath } from "@/lib/song-routes";
 import {
@@ -13,6 +15,7 @@ import {
   DETAIL_HERO_BTN_ACCENT_SOLID,
 } from "@/lib/detail-route-ui";
 import { AvatarStack } from "@/components/ui/avatar-stack";
+import { ToggleCollectionFavoriteButton } from "@/components/forms/toggle-collection-favorite-button";
 import type { CollectionCurrentActivity, UserSummary } from "@/types";
 
 export interface CollectionActivityPanelProps {
@@ -22,6 +25,8 @@ export interface CollectionActivityPanelProps {
   contributors: UserSummary[];
   contributorSummary?: string;
   variant?: CollectionMediaVariant;
+  collectionSlug?: string;
+  initialFavorited?: boolean;
 }
 
 /** Right hero panel — image + CTAs capped to hero height. */
@@ -32,20 +37,29 @@ export function CollectionActivityPanel({
   contributors,
   contributorSummary,
   variant = "content",
+  collectionSlug,
+  initialFavorited,
 }: CollectionActivityPanelProps) {
   const copy = COLLECTION_MEDIA_COPY[variant];
-  const imageUrl = activity?.imageUrl ?? fallbackImageUrl ?? "";
+  const wallpaperImageUrl = fallbackImageUrl || activity?.imageUrl || "";
   const title = activity?.title ?? fallbackTitle ?? "Featured";
 
   return (
     <aside className="flex h-full min-h-0 max-h-[calc(100dvh-4.5rem)] flex-col overflow-hidden bg-black">
       <div className="relative min-h-0 flex-1 overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={imageUrl}
-          alt={title}
-          className="size-full object-cover object-top"
-        />
+        {wallpaperImageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={wallpaperImageUrl}
+            alt={title}
+            className="size-full object-cover object-top"
+          />
+        ) : (
+          <div
+            aria-hidden
+            className="size-full bg-gradient-to-br from-brand-purple/30 via-[#1a0d2e] to-black"
+          />
+        )}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/25 via-transparent to-black/30"
@@ -71,15 +85,21 @@ export function CollectionActivityPanel({
         ) : null}
 
         <div className={DETAIL_HERO_BTN_GROUP}>
-          <button
-            type="button"
-            className={detailHeroBtnBase(
-              "border-2 border-brand-magenta bg-black text-white shadow-[0_0_14px_rgba(255,0,204,0.45)]",
-            )}
-          >
-            <PlayCircle className="size-4 shrink-0 text-brand-magenta" />
-            <span className="truncate">{copy.resumeCta}</span>
-          </button>
+          {collectionSlug ? (
+            <ToggleCollectionFavoriteButton
+              collectionSlug={collectionSlug}
+              initialFavorited={initialFavorited}
+            />
+          ) : (
+            <button
+              type="button"
+              className={detailHeroBtnBase(
+                "border-transparent bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white",
+              )}
+            >
+              <span className="truncate">Add To Favourites</span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -103,30 +123,17 @@ export function CollectionActivityPanel({
           </div>
         ) : null}
 
-        <div className={DETAIL_HERO_BTN_GROUP}>
-          <button
-            type="button"
-            className={detailHeroBtnBase(
-              "border-transparent bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white",
-            )}
-          >
-            <Heart className="size-3.5 shrink-0 fill-current" />
-            <span className="truncate">Add To Favourites</span>
-          </button>
-
-          {activity ? (
+        {collectionSlug ? (
+          <div className={DETAIL_HERO_BTN_GROUP}>
             <Link
-              href={
-                variant === "music"
-                  ? getSongDetailPath(activity.contentId)
-                  : getContentDetailPath(activity.contentId)
-              }
+              href={getCollectionPlayPath(collectionSlug)}
               className={detailHeroBtnBase(DETAIL_HERO_BTN_ACCENT_SOLID)}
             >
-              <span className="truncate">{copy.detailsCta}</span>
+              <PlayCircle className="size-4 shrink-0" />
+              <span className="truncate">{copy.playOrderCta}</span>
             </Link>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
     </aside>
   );
