@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { shareCurrentUrl } from "@/lib/share-url";
 import { Button } from "@/components/ui/button";
 import {
   DETAIL_HERO_BTN_PAIR_ROW,
@@ -89,28 +91,17 @@ export interface ContentHeroActionsProps {
 export function ContentHeroActions({ content }: ContentHeroActionsProps) {
   const accent = content.accent ?? "blue";
   const cta = SHARE_STYLES[accent] ?? SHARE_STYLES.blue;
+  const [copied, setCopied] = useState(false);
 
   async function handleShare() {
-    const url = window.location.href;
-    const shareData = {
+    const ok = await shareCurrentUrl({
       title: content.title,
       text: `Check out ${content.title} on AniVerse`,
-      url,
-    };
-
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-        return;
-      } catch {
-        /* user cancelled or unsupported payload */
-      }
-    }
-
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch {
-      /* clipboard unavailable */
+      preferClipboard: true,
+    });
+    if (ok) {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
     }
   }
 
@@ -124,7 +115,7 @@ export function ContentHeroActions({ content }: ContentHeroActionsProps) {
         className={cn(detailHeroBtnBase(), "w-full text-white sm:w-auto", cta.share)}
       >
         <Share2 className={cn("size-4 shrink-0", cta.shareIcon)} />
-        Share
+        {copied ? "Link Copied!" : "Share"}
       </Button>
     </div>
   );

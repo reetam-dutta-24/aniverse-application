@@ -16,6 +16,7 @@ import { CommunityCard } from "@/components/cards/community-card";
 import { MusicCard } from "@/components/cards/music-card";
 import { PosterCard } from "@/components/cards/poster-card";
 import { GoalLinksRow } from "@/components/onboarding/goal-links-row";
+import { OnboardingProfileStep } from "@/components/onboarding/onboarding-profile-step";
 import { TasteBreakdownPanel } from "@/components/onboarding/taste-breakdown-panel";
 import { Chip } from "@/components/ui/chip";
 import { GradientButton } from "@/components/ui/gradient-button";
@@ -34,7 +35,7 @@ import {
 import { sectionTintSeed } from "@/lib/card-theme";
 import { cn } from "@/lib/utils";
 
-type Phase = "intro" | "quiz" | "building" | "results";
+type Phase = "intro" | "profile" | "quiz" | "building" | "results";
 
 const buildingSteps = [
   "Reading your genre picks…",
@@ -77,7 +78,7 @@ export function OnboardingFlow({
   const [selection, setSelection] = useState<OnboardingSelection>(
     emptyOnboardingSelection,
   );
-  const [phase, setPhase] = useState<Phase>("intro");
+  const [phase, setPhase] = useState<Phase>(retakeMode ? "intro" : "profile");
   const [isRetake, setIsRetake] = useState(retakeMode);
   const [buildingStep, setBuildingStep] = useState(0);
   const [recommendations, setRecommendations] =
@@ -138,7 +139,7 @@ export function OnboardingFlow({
 
   function handleContinue() {
     if (phase === "intro") {
-      setPhase("quiz");
+      setPhase(isRetake ? "quiz" : "profile");
       return;
     }
     if (!canContinue) return;
@@ -156,7 +157,7 @@ export function OnboardingFlow({
 
     if (!retakeMode) {
       setSelection(emptyOnboardingSelection);
-      setPhase("intro");
+      setPhase("profile");
       return;
     }
 
@@ -240,6 +241,16 @@ export function OnboardingFlow({
     };
   }, [phase, selection, userId]);
 
+  if (phase === "profile") {
+    return (
+      <OnboardingProfileStep
+        userName={userName}
+        onContinue={() => setPhase("quiz")}
+        onSkip={() => setPhase("quiz")}
+      />
+    );
+  }
+
   if (phase === "intro") {
     return (
       <div className="flex w-full max-w-[640px] flex-col items-center gap-8 text-center">
@@ -256,7 +267,7 @@ export function OnboardingFlow({
           <p className="mt-3 text-sm text-muted sm:text-subtitle">
             {isRetake
               ? "Retake the taste test to refresh your AI matches, music picks, and community recommendations."
-              : "Answer a short taste test and we'll build your personalized universe — matched anime, music, communities, and collections before you even reach the dashboard."}
+              : "First set up your public profile, then answer a short taste test — we'll build your personalized universe before you reach the dashboard."}
           </p>
         </div>
         <ul className="grid w-full grid-cols-2 gap-3 text-left sm:grid-cols-4">
@@ -284,7 +295,7 @@ export function OnboardingFlow({
           className="w-full max-w-[320px] rounded-full"
           onClick={handleContinue}
         >
-          Start {isRetake ? "Retake" : "Taste Test"}
+          Start {isRetake ? "Retake" : "Setup"}
           <ArrowRight className="ms-1.5 size-4" />
         </GradientButton>
         <button

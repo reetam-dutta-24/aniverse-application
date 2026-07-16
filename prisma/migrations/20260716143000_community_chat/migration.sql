@@ -1,4 +1,8 @@
-CREATE TYPE "CommunityChatChannel" AS ENUM ('GENERAL', 'ANIME');
+DO $$ BEGIN
+  CREATE TYPE "CommunityChatChannel" AS ENUM ('GENERAL', 'ANIME');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS "CommunityChatMessage" (
     "id" TEXT NOT NULL,

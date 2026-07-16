@@ -11,12 +11,13 @@ export const metadata: Metadata = {
 };
 
 export default async function SettingsPage() {
-  const [user, data] = await Promise.all([getCurrentUser(), getSettingsData()]);
+  const user = await getCurrentUser();
+  const data = await getSettingsData(user.id);
 
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-6 sm:gap-8">
       <WelcomeBanner userName={user.name} variant="settings" />
-      <SettingsView data={data} />
+      <SettingsView data={data} userId={user.id} />
     </div>
   );
 }

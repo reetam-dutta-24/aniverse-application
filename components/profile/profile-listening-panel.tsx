@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Pencil, Share2 } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getArtistDetailPath } from "@/lib/artist-routes";
 import { getContentDetailPath } from "@/lib/content-routes";
@@ -10,11 +11,14 @@ import {
   detailHeroBtnBase,
   DETAIL_HERO_BTN_PAIR,
 } from "@/lib/detail-route-ui";
+import { ProfileEditForm } from "@/components/forms/profile-edit-form";
+import { ShareUrlButton } from "@/components/ui/share-url-button";
 import { AvatarStack } from "@/components/ui/avatar-stack";
 import { Chip } from "@/components/ui/chip";
 import type {
   ProfileCurrentlyWatching,
   ProfileNowListening,
+  UserProfileDetail,
   UserSummary,
 } from "@/types";
 
@@ -28,15 +32,8 @@ const GENRE_CHIP_KEYS = {
 } as const;
 
 export interface ProfileListeningPanelProps {
-  portraitUrl: string;
-  userName: string;
-  handle: string;
-  nowListening?: ProfileNowListening;
-  currentlyWatching?: ProfileCurrentlyWatching;
-  followers: UserSummary[];
-  followerSummary?: string;
-  favoriteTypes: string[];
-  favoriteGenres: string[];
+  profile: UserProfileDetail;
+  isOwner?: boolean;
 }
 
 function PreferenceRow({
@@ -60,172 +57,197 @@ function PreferenceRow({
 
 /** Right hero panel — portrait, listening/watching status, followers, preferences, CTAs. */
 export function ProfileListeningPanel({
-  portraitUrl,
-  userName,
-  handle,
-  nowListening,
-  currentlyWatching,
-  followers,
-  followerSummary,
-  favoriteTypes,
-  favoriteGenres,
+  profile,
+  isOwner = false,
 }: ProfileListeningPanelProps) {
+  const [editOpen, setEditOpen] = useState(false);
+  const {
+    portraitUrl,
+    name: userName,
+    handle,
+    nowListening,
+    currentlyWatching,
+    followers,
+    followerSummary,
+    favoriteTypes,
+    favoriteGenres,
+  } = profile;
+
   const followerText =
     followerSummary ?? `${followers.length} users follow ${handle}`;
 
   return (
-    <aside className="relative flex h-full min-h-0 flex-col overflow-hidden border-l border-cyan-400/20 bg-black shadow-[inset_0_0_40px_rgba(0,255,230,0.08)]">
-      <div className="relative min-h-0 flex-1 overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={portraitUrl}
-          alt={userName}
-          className="size-full object-cover object-top"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-gradient-to-l from-lime-300/20 via-transparent to-transparent"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/20 via-transparent to-black/25"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 shadow-[inset_0_0_60px_rgba(0,0,0,0.42)]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-[26%] bg-gradient-to-t from-black from-22% via-black/75 to-transparent"
-        />
-      </div>
+    <>
+      <aside className="relative flex h-full min-h-0 flex-col overflow-hidden border-l border-cyan-400/20 bg-black shadow-[inset_0_0_40px_rgba(0,255,230,0.08)]">
+        <div className="relative min-h-0 flex-1 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={portraitUrl}
+            alt={userName}
+            className="size-full object-cover object-top"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-gradient-to-l from-lime-300/20 via-transparent to-transparent"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/20 via-transparent to-black/25"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 shadow-[inset_0_0_60px_rgba(0,0,0,0.42)]"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-[26%] bg-gradient-to-t from-black from-22% via-black/75 to-transparent"
+          />
+        </div>
 
-      <div className="relative z-10 -mt-10 shrink-0 bg-black px-4 pb-3.5 pt-3 sm:-mt-12 sm:px-5 sm:pb-4">
-        <div className="flex flex-col gap-3 sm:gap-3.5">
-          <div className="space-y-0.5 text-center">
-          {nowListening ? (
-            <>
-              <p className="text-sm text-white sm:text-[15px]">
-                Currently Listening To{" "}
-                {nowListening.songId ? (
-                  <Link
-                    href={getSongDetailPath(nowListening.songId)}
-                    className={ACCENT_LINK}
-                  >
-                    {nowListening.title}
-                  </Link>
-                ) : (
-                  <span className={ACCENT_LINK}>{nowListening.title}</span>
-                )}
-              </p>
-              <p className="text-sm text-white sm:text-[15px]">
-                By{" "}
-                {nowListening.artistId ? (
-                  <Link
-                    href={getArtistDetailPath(nowListening.artistId)}
-                    className="font-medium text-white underline decoration-white/70 underline-offset-2 transition-colors hover:text-white/90"
-                  >
-                    {nowListening.artist}
-                  </Link>
-                ) : (
-                  <span className="font-medium text-white underline decoration-white/70 underline-offset-2">
-                    {nowListening.artist}
-                  </span>
-                )}
-              </p>
-            </>
-          ) : null}
-
-          {currentlyWatching ? (
-            <>
-              <p className="text-sm text-white sm:text-[15px]">
-                And Watching{" "}
-                <span className="font-semibold">{currentlyWatching.title}</span>
-              </p>
-              <p className="text-sm">
-                <Link
-                  href={getContentDetailPath(currentlyWatching.contentId)}
-                  className={ACCENT_LINK}
-                >
-                  {currentlyWatching.episodeLabel}
-                </Link>
-              </p>
-            </>
-          ) : null}
-          </div>
-
-          {followers.length > 0 ? (
-          <div className="flex items-center gap-2.5">
-            <AvatarStack
-              users={followers}
-              max={3}
-              size="md"
-              overflowLabel="....+25"
-            />
-            <p className="min-w-0 flex-1 text-left text-[11px] leading-snug text-white/80 sm:text-xs">
-              {followerText.includes(handle) ? (
+        <div className="relative z-10 -mt-10 shrink-0 bg-black px-4 pb-3.5 pt-3 sm:-mt-12 sm:px-5 sm:pb-4">
+          <div className="flex flex-col gap-3 sm:gap-3.5">
+            <div className="space-y-0.5 text-center">
+              {nowListening ? (
                 <>
-                  {followerText.slice(0, followerText.indexOf(handle))}
-                  <span className="font-medium text-white">{handle}</span>
+                  <p className="text-sm text-white sm:text-[15px]">
+                    Currently Listening To{" "}
+                    {nowListening.songId ? (
+                      <Link
+                        href={getSongDetailPath(nowListening.songId)}
+                        className={ACCENT_LINK}
+                      >
+                        {nowListening.title}
+                      </Link>
+                    ) : (
+                      <span className={ACCENT_LINK}>{nowListening.title}</span>
+                    )}
+                  </p>
+                  <p className="text-sm text-white sm:text-[15px]">
+                    By{" "}
+                    {nowListening.artistId ? (
+                      <Link
+                        href={getArtistDetailPath(nowListening.artistId)}
+                        className="font-medium text-white underline decoration-white/70 underline-offset-2 transition-colors hover:text-white/90"
+                      >
+                        {nowListening.artist}
+                      </Link>
+                    ) : (
+                      <span className="font-medium text-white underline decoration-white/70 underline-offset-2">
+                        {nowListening.artist}
+                      </span>
+                    )}
+                  </p>
                 </>
-              ) : (
-                followerText
-              )}
-            </p>
-          </div>
-          ) : null}
+              ) : null}
 
-          <div className="space-y-2.5">
-          <PreferenceRow label="Favorite Types">
-            {favoriteTypes.map((type) => (
-              <Chip
-                key={type}
-                chipKey="movie"
-                className="h-5 px-2.5 text-[10px] font-medium"
-              >
-                {type}
-              </Chip>
-            ))}
-          </PreferenceRow>
+              {currentlyWatching ? (
+                <>
+                  <p className="text-sm text-white sm:text-[15px]">
+                    And Watching{" "}
+                    <span className="font-semibold">
+                      {currentlyWatching.title}
+                    </span>
+                  </p>
+                  <p className="text-sm">
+                    <Link
+                      href={getContentDetailPath(currentlyWatching.contentId)}
+                      className={ACCENT_LINK}
+                    >
+                      {currentlyWatching.episodeLabel}
+                    </Link>
+                  </p>
+                </>
+              ) : null}
+            </div>
 
-          <PreferenceRow label="Favorite Genre">
-            {favoriteGenres.map((genre) => (
-              <Chip
-                key={genre}
-                chipKey={
-                  GENRE_CHIP_KEYS[genre as keyof typeof GENRE_CHIP_KEYS] ??
-                  "default"
-                }
-                className="h-5 px-2.5 text-[10px] font-medium"
-              >
-                {genre}
-              </Chip>
-            ))}
-          </PreferenceRow>
-          </div>
+            {followers.length > 0 ? (
+              <div className="flex items-center gap-2.5">
+                <AvatarStack
+                  users={followers}
+                  max={3}
+                  size="md"
+                  overflowLabel="....+25"
+                />
+                <p className="min-w-0 flex-1 text-left text-[11px] leading-snug text-white/80 sm:text-xs">
+                  {followerText.includes(handle) ? (
+                    <>
+                      {followerText.slice(0, followerText.indexOf(handle))}
+                      <span className="font-medium text-white">{handle}</span>
+                    </>
+                  ) : (
+                    followerText
+                  )}
+                </p>
+              </div>
+            ) : null}
 
-          <div className={cn(DETAIL_HERO_BTN_PAIR, "justify-center pt-0.5")}>
-          <button
-            type="button"
-            className={detailHeroBtnBase(
-              "border-transparent bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white",
+            <div className="space-y-2.5">
+              <PreferenceRow label="Favorite Types">
+                {favoriteTypes.map((type) => (
+                  <Chip
+                    key={type}
+                    chipKey="movie"
+                    className="h-5 px-2.5 text-[10px] font-medium"
+                  >
+                    {type}
+                  </Chip>
+                ))}
+              </PreferenceRow>
+
+              <PreferenceRow label="Favorite Genre">
+                {favoriteGenres.map((genre) => (
+                  <Chip
+                    key={genre}
+                    chipKey={
+                      GENRE_CHIP_KEYS[genre as keyof typeof GENRE_CHIP_KEYS] ??
+                      "default"
+                    }
+                    className="h-5 px-2.5 text-[10px] font-medium"
+                  >
+                    {genre}
+                  </Chip>
+                ))}
+              </PreferenceRow>
+            </div>
+
+            {isOwner ? (
+              <div className={cn(DETAIL_HERO_BTN_PAIR, "justify-center pt-0.5")}>
+                <button
+                  type="button"
+                  onClick={() => setEditOpen(true)}
+                  className={detailHeroBtnBase(
+                    "border-transparent bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white",
+                  )}
+                >
+                  <Pencil className="size-3.5 shrink-0" />
+                  <span className="truncate">Edit Profile</span>
+                </button>
+                <ShareUrlButton
+                  label="Share Profile"
+                  title={`${userName} on AniVerse`}
+                  text={`Check out ${userName}'s profile on AniVerse`}
+                />
+              </div>
+            ) : (
+              <div className={cn(DETAIL_HERO_BTN_PAIR, "justify-center pt-0.5")}>
+                <ShareUrlButton
+                  label="Share Profile"
+                  title={`${userName} on AniVerse`}
+                  text={`Check out ${userName}'s profile on AniVerse`}
+                />
+              </div>
             )}
-          >
-            <Pencil className="size-3.5 shrink-0" />
-            <span className="truncate">Edit Profile</span>
-          </button>
-          <button
-            type="button"
-            className={detailHeroBtnBase(
-              "border-2 border-brand-magenta bg-black text-white",
-            )}
-          >
-            <Share2 className="size-3.5 shrink-0 text-brand-magenta" />
-            <span className="truncate">Share Profile</span>
-          </button>
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+
+      {isOwner ? (
+        <ProfileEditForm
+          open={editOpen}
+          profile={profile}
+          onClose={() => setEditOpen(false)}
+        />
+      ) : null}
+    </>
   );
 }

@@ -1,8 +1,5 @@
 import { cn } from "@/lib/utils";
-import {
-  getCardTint,
-  getDetailHeroBoundaryGlow,
-} from "@/lib/card-theme";
+import { getAccentTint, getDetailHeroBoundaryGlow } from "@/lib/card-theme";
 import { Chip } from "@/components/ui/chip";
 import { ProfileHeroActivitySlider } from "@/components/profile/profile-hero-activity-slider";
 import { ProfileListeningPanel } from "@/components/profile/profile-listening-panel";
@@ -10,6 +7,7 @@ import type { UserProfileDetail } from "@/types";
 
 export interface ProfileDetailHeroProps {
   profile: UserProfileDetail;
+  isOwner?: boolean;
 }
 
 const DETAIL_CHIP =
@@ -69,8 +67,8 @@ function OnlineIndicator({ className }: { className?: string }) {
 }
 
 /** Figma profile hero — avatar + bio + activity slider left; listening panel right. */
-export function ProfileDetailHero({ profile }: ProfileDetailHeroProps) {
-  const tint = getCardTint(profile.id, 0);
+export function ProfileDetailHero({ profile, isOwner }: ProfileDetailHeroProps) {
+  const tint = getAccentTint(profile.profileAccent);
   const heroGlow = getDetailHeroBoundaryGlow(tint.glass);
 
   return (
@@ -139,17 +137,7 @@ export function ProfileDetailHero({ profile }: ProfileDetailHeroProps) {
           />
         </div>
 
-        <ProfileListeningPanel
-          portraitUrl={profile.portraitUrl}
-          userName={profile.name}
-          handle={profile.handle}
-          nowListening={profile.nowListening}
-          currentlyWatching={profile.currentlyWatching}
-          followers={profile.followers}
-          followerSummary={profile.followerSummary}
-          favoriteTypes={profile.favoriteTypes}
-          favoriteGenres={profile.favoriteGenres}
-        />
+        <ProfileListeningPanel profile={profile} isOwner={isOwner} />
       </div>
     </section>
   );

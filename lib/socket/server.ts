@@ -11,6 +11,8 @@ import {
   assertCommunityChatMember,
   createCommunityChatMessage,
 } from "@/lib/services/community-chat.service";
+import { communityChatSendSchema } from "@/lib/validators/community-chat";
+import { setSocketServer } from "@/lib/socket/io-instance";
 
 interface ChatJoinPayload {
   communitySlug: string;
@@ -19,6 +21,11 @@ interface ChatJoinPayload {
 
 interface ChatSendPayload extends ChatJoinPayload {
   content: string;
+  attachment?: {
+    url: string;
+    name: string;
+    kind: "image" | "file";
+  };
 }
 
 function isChatChannel(value: unknown): value is CommunityChatChannelId {
@@ -40,9 +47,20 @@ function parseJoinPayload(payload: unknown): ChatJoinPayload | null {
 function parseSendPayload(payload: unknown): ChatSendPayload | null {
   const join = parseJoinPayload(payload);
   if (!join) return null;
-  const content = (payload as Record<string, unknown>).content;
-  if (typeof content !== "string") return null;
-  return { ...join, content };
+
+  const data = payload as Record<string, unknown>;
+  const parsed = communityChatSendSchema.safeParse({
+    content: typeof data.content === "string" ? data.content : "",
+    attachment: data.attachment,
+  });
+
+  if (!parsed.success) return null;
+
+  return {
+    ...join,
+    content: parsed.data.content,
+    attachment: parsed.data.attachment,
+  };
 }
 
 async function authenticateSocket(socket: Socket): Promise<string | null> {
@@ -79,6 +97,8 @@ export function attachSocketServer(httpServer: HttpServer) {
     socket.data.userId = userId;
     next();
   });
+
+  setSocketServer(io);
 
   io.on("connection", (socket) => {
     const userId = socket.data.userId as string;
@@ -128,7 +148,10 @@ export function attachSocketServer(httpServer: HttpServer) {
           userId,
           parsed.communitySlug,
           chatChannelToPrisma(parsed.channel),
-          parsed.content,
+          {
+            content: parsed.content,
+            attachment: parsed.attachment,
+          },
         );
 
         io.to(roomId).emit("chat:message", message);

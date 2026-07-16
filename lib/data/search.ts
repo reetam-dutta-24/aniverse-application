@@ -20,6 +20,7 @@ import {
   searchCatalogContent,
   searchCatalogMusic,
 } from "@/lib/services/feed.service";
+import { searchUserProfiles } from "@/lib/services/user-profile.service";
 import {
   bestFieldScore,
   normalizeSearchQuery,
@@ -33,17 +34,12 @@ import type {
   SearchResultType,
 } from "@/lib/search/types";
 
-const profileCatalog: ProfileSearchItem[] = [
-  {
-    id: "reetam-dutta",
-    name: "Reetam Dutta",
-    handle: "Reetam_Dutta_2423",
-    avatarColor: "#ffd000",
-    portraitUrl: "/images/hero-1.png",
-    followerCount: 125,
-    bio: "Anime lover · K-pop enthusiast · Building AniVerse.",
-  },
-];
+const profileCatalog: ProfileSearchItem[] = [];
+
+async function searchProfiles(query: string, limit = 8): Promise<ProfileSearchItem[]> {
+  const profiles = await searchUserProfiles(query, limit);
+  return profiles.length > 0 ? profiles : profileCatalog;
+}
 
 async function allContentItems(): Promise<ContentItem[]> {
   const [content, artists] = await Promise.all([
@@ -114,10 +110,11 @@ export async function searchAutocomplete(
   const q = normalizeSearchQuery(query);
   if (q.length < 2) return [];
 
-  const [content, songs, artists, collections, communities] = await Promise.all([
+  const [content, songs, artists, profiles, collections, communities] = await Promise.all([
     searchCatalogContent(q, 16),
     searchCatalogMusic(q, 16),
     searchCatalogArtists(q, 8),
+    searchProfiles(q, 8),
     getGlobalPublicCollections(),
     getGlobalCommunities(),
   ]);
@@ -178,7 +175,7 @@ export async function searchAutocomplete(
     );
   }
 
-  for (const profile of profileCatalog) {
+  for (const profile of profiles) {
     const score = bestFieldScore([profile.name, profile.handle, profile.bio], q);
     if (score < 50) continue;
     results.push(
@@ -236,11 +233,12 @@ export async function getSearchPageData(query: string): Promise<SearchPageData |
   const suggestions = await searchAutocomplete(q, 24);
   const primaryType = detectPrimaryType(q, suggestions);
 
-  const [contentPool, songPool, artistPool, collections, communities] =
+  const [contentPool, songPool, artistPool, profiles, collections, communities] =
     await Promise.all([
       allContentItems(),
       allMusicTracks(),
       listArtistSearchItems(50),
+      searchProfiles(q, 12),
       getGlobalPublicCollections(),
       getGlobalCommunities(),
     ]);
@@ -284,11 +282,11 @@ export async function getSearchPageData(query: string): Promise<SearchPageData |
   const topArtist = topArtistMatches[0];
 
   const topProfile =
-    profileCatalog.find(
+    profiles.find(
       (p) =>
         scoreSearchMatch(p.name, q) >= 60 ||
         scoreSearchMatch(p.handle, q) >= 60,
-    ) ?? profileCatalog[0];
+    ) ?? profiles[0];
 
   const topContentIds = new Set(topContentMatches.map((item) => item.id));
   const topSongIds = new Set(topSongMatches.map((track) => track.id));
@@ -307,7 +305,7 @@ export async function getSearchPageData(query: string): Promise<SearchPageData |
     .slice(0, 8);
   const artistSongs = artistDetail?.allSongs.slice(0, 18) ?? [];
 
-  const similarProfiles = profileCatalog
+  const similarProfiles = profiles
     .filter((p) => p.id !== topProfile?.id)
     .slice(0, 4);
 

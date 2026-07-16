@@ -32,6 +32,7 @@ model User {
   avatarColor           String       @default("#ff00cc")
   avatarUrl             String?
   portraitUrl           String?
+  profileAccent         String?      @default("pink")
   bio                   String       @default("")
   location              String       @default("")
   aiTasteScore          Int          @default(0)
@@ -577,13 +578,22 @@ enum CommunityChatChannel {
   ANIME
 }
 
+enum CommunityChatAttachmentKind {
+  IMAGE
+  FILE
+}
+
 model CommunityChatMessage {
-  id          String               @id @default(cuid())
-  communityId String
-  authorId    String
-  channel     CommunityChatChannel
-  content     String               @db.Text
-  createdAt   DateTime             @default(now())
+  id             String                        @id @default(cuid())
+  communityId    String
+  authorId       String
+  channel        CommunityChatChannel
+  content        String                        @db.Text
+  attachmentUrl  String?
+  attachmentName String?
+  attachmentKind CommunityChatAttachmentKind?
+  createdAt      DateTime                      @default(now())
+  updatedAt      DateTime                      @updatedAt
 
   community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
   author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)

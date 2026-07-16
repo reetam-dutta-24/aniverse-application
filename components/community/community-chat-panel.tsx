@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import type { CommunityChatChannelId } from "@/lib/community-chat";
 import { getCommunityChatTheme } from "@/lib/community-chat-theme";
 import { useCommunityChat } from "@/hooks/use-community-chat";
-import { ChatMessage } from "@/components/community/chat-message";
+import { ChatMessageRow } from "@/components/community/chat-message-row";
 import { ChatInput } from "@/components/community/chat-input";
 import type { AccentColor } from "@/lib/catalog-enums";
 
@@ -68,7 +68,8 @@ export function CommunityChatPanel({
   const enabled = Boolean(viewerUserId && isMember);
   const theme = useMemo(() => getCommunityChatTheme(accent), [accent]);
 
-  const { messages, loading, connected, error, sendMessage } = useCommunityChat({
+  const { messages, loading, connected, error, sendMessage, updateMessage, deleteMessage } =
+    useCommunityChat({
     communitySlug,
     channel,
     viewerUserId,
@@ -111,7 +112,13 @@ export function CommunityChatPanel({
           </EmptyState>
         ) : (
           messages.map((message) => (
-            <ChatMessage key={message.id} message={message} theme={theme} />
+            <ChatMessageRow
+              key={message.id}
+              message={message}
+              theme={theme}
+              onUpdate={updateMessage}
+              onDelete={deleteMessage}
+            />
           ))
         )}
         <div ref={bottomRef} />

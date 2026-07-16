@@ -1,17 +1,8 @@
 /**
- * Data layer for the Settings page.
- * Async accessors — swap bodies when backend is wired.
+ * Data layer for the Settings page — loads from PostgreSQL.
  */
 
-export interface SettingsProfile {
-  name: string;
-  handle: string;
-  email: string;
-  bio: string;
-  location: string;
-  avatarColor: string;
-  profilePath: string;
-}
+import { getSettingsForUser } from "@/lib/services/user-settings.service";
 
 export interface NotificationPreferences {
   newEpisodes: boolean;
@@ -38,7 +29,9 @@ export interface AppPreferences {
 }
 
 export interface SettingsData {
-  profile: SettingsProfile;
+  email: string;
+  handle: string;
+  profilePath: string;
   notifications: NotificationPreferences;
   privacy: PrivacyPreferences;
   preferences: AppPreferences;
@@ -46,43 +39,8 @@ export interface SettingsData {
   memberSince: string;
 }
 
-const settingsData: SettingsData = {
-  profile: {
-    name: "Reetam Dutta",
-    handle: "Reetam_Dutta_2423",
-    email: "reetam.dutta@aniverse.app",
-    bio: "Anime, music, K-drama and product design lover. Curating my own entertainment universe through collections, communities and AI-powered discovery.",
-    location: "Kolkata, India",
-    avatarColor: "#ff00cc",
-    profilePath: "/profile/reetam-dutta",
-  },
-  notifications: {
-    newEpisodes: true,
-    watchParties: true,
-    musicDrops: true,
-    communityPosts: false,
-    weeklyRecap: true,
-    emailDigest: false,
-  },
-  privacy: {
-    publicProfile: true,
-    showActivity: true,
-    showWatchHistory: false,
-    allowMessages: true,
-  },
-  preferences: {
-    language: "English",
-    autoplayPreviews: true,
-    spoilerWarnings: true,
-    matureContent: false,
-    reducedMotion: false,
-  },
-  tasteScore: 91,
-  memberSince: "23rd Aug, 2025",
-};
-
-export async function getSettingsData(): Promise<SettingsData> {
-  return settingsData;
+export async function getSettingsData(userId: string): Promise<SettingsData> {
+  return getSettingsForUser(userId);
 }
 
 export const languageOptions = ["English", "Japanese", "Korean", "Hindi"] as const;

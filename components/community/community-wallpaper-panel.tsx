@@ -1,12 +1,13 @@
 "use client";
 
-import { Pencil, Share2 } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   detailHeroBtnBase,
   DETAIL_HERO_BTN_GROUP,
   DETAIL_HERO_BTN_PAIR,
 } from "@/lib/detail-route-ui";
+import { ShareUrlButton } from "@/components/ui/share-url-button";
 import { AvatarStack } from "@/components/ui/avatar-stack";
 import { Chip } from "@/components/ui/chip";
 import type { UserSummary } from "@/types";
@@ -70,15 +71,11 @@ export function CommunityWallpaperPanel({
               <Pencil className="size-3.5 shrink-0" />
               <span className="truncate">Edit Wallpaper</span>
             </button>
-            <button
-              type="button"
-              className={detailHeroBtnBase(
-                "border-2 border-brand-magenta bg-black text-white",
-              )}
-            >
-              <Share2 className="size-3.5 shrink-0 text-brand-magenta" />
-              <span className="truncate">Share Community</span>
-            </button>
+            <ShareUrlButton
+              label="Share Community"
+              title={communityName}
+              text={`Join ${communityName} on AniVerse`}
+            />
           </div>
 
           {members.length > 0 ? (

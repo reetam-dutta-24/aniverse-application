@@ -397,6 +397,14 @@ export interface ChatMessage {
   sentAt?: string;
   /** True when the message belongs to the current user. */
   own?: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  edited?: boolean;
+  attachment?: {
+    url: string;
+    name: string;
+    kind: "image" | "file";
+  };
 }
 
 export interface AppNotification {
@@ -535,6 +543,8 @@ export interface UserProfileDetail {
   bio: string;
   avatarColor: string;
   avatarUrl?: string;
+  /** Catalog accent — drives avatar color and hero theme */
+  profileAccent?: AccentColor;
   /** Large hero panel portrait */
   portraitUrl: string;
   location: string;

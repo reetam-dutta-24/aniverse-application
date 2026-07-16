@@ -1,6 +1,6 @@
 /** Normalize user IDs to a stable profile detail slug (public handle). */
 export function normalizeProfileSlug(id: string): string {
-  return id;
+  return id.trim().toLowerCase().replace(/-/g, "_");
 }
 
 /** Build the public profile URL from a user's handle. */

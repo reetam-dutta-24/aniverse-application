@@ -13,16 +13,14 @@ import {
   MusicCarouselSection,
 } from "@/components/dashboard";
 import { GradientButton } from "@/components/ui/gradient-button";
-import { getAllUserIds, getUserDetail } from "@/lib/data/user-detail";
 import { getCommunityMemberPreview } from "@/lib/data/community";
+import { getOptionalUser } from "@/lib/data/user";
+import { getUserDetail } from "@/lib/data/user-detail";
+
+export const dynamic = "force-dynamic";
 
 interface ProfilePageProps {
   params: Promise<{ userid: string }>;
-}
-
-export async function generateStaticParams() {
-  const ids = await getAllUserIds();
-  return ids.map((userid) => ({ userid }));
 }
 
 export async function generateMetadata({
@@ -39,18 +37,21 @@ export async function generateMetadata({
 
 export default async function ProfileDetailPage({ params }: ProfilePageProps) {
   const { userid } = await params;
+  const viewer = await getOptionalUser();
   const [profile, members] = await Promise.all([
-    getUserDetail(userid),
+    getUserDetail(userid, viewer?.id),
     getCommunityMemberPreview(),
   ]);
 
   if (!profile) notFound();
 
+  const isOwner = viewer?.handle === profile.handle;
+
   const firstName = profile.name.split(" ")[0];
 
   return (
     <div className="flex w-full flex-col">
-      <ProfileDetailHero profile={profile} />
+      <ProfileDetailHero profile={profile} isOwner={isOwner} />
       <ArtistKpiSection stats={profile.engagementStats} />
 
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-10 px-4 pt-10 sm:gap-12 sm:px-8 lg:gap-14 lg:px-12">

@@ -68,6 +68,7 @@ export async function createUser(input: RegisterInput) {
       name: input.fullName.trim(),
       passwordHash,
       avatarColor: pickAvatarColor(email),
+      profileAccent: "pink",
       preferences: {
         create: {},
       },
@@ -98,6 +99,7 @@ export async function findUserForLogin(identifier: string) {
       passwordHash: true,
       avatarColor: true,
       avatarUrl: true,
+      profileAccent: true,
       onboardingCompletedAt: true,
       role: true,
     },
