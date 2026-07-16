@@ -4,5 +4,5 @@ export {
   NotificationPanel,
   type NotificationPanelProps,
 } from "./notification-panel";
-export { NotificationsView } from "./notifications-view";
+export { NotificationsView, type NotificationsViewProps } from "./notifications-view";
 export { useNotifications } from "./use-notifications";

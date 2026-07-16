@@ -14,6 +14,10 @@ import {
   getArtistRecordBySlug,
   listAllArtistSlugs,
 } from "@/lib/services/artist.service";
+import {
+  getUserReviewsForTarget,
+  mergeDisplayedReviews,
+} from "@/lib/services/review.service";
 
 const g = (id: string, label: string) => ({ id, label });
 const poster = (slug: string) => `/images/posters/${slug}.jpg`;
@@ -349,6 +353,11 @@ export async function getArtistDetail(
 ): Promise<ArtistDetail | null> {
   const slug = normalizeArtistSlug(artistid);
   const record = await getArtistRecordBySlug(slug);
-  if (record) return mapArtistRecordToDetail(record);
+  if (record) {
+    const detail = mapArtistRecordToDetail(record);
+    const userReviews = await getUserReviewsForTarget("artist", slug);
+    detail.reviews = mergeDisplayedReviews(userReviews, detail.reviews);
+    return detail;
+  }
   return curatedById[slug] ?? null;
 }

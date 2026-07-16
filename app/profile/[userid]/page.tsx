@@ -1,18 +1,16 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Plus } from "lucide-react";
 import { CollectionCard, CommunityCard, PosterCard } from "@/components/cards";
 import { ArtistKpiSection } from "@/components/artist";
 import { ProfileDetailHero } from "@/components/profile";
 import {
   ContentPageSection,
-  ContentReviewSection,
+  InteractiveReviewSection,
 } from "@/components/content";
 import {
   ContentCarouselSection,
   MusicCarouselSection,
 } from "@/components/dashboard";
-import { GradientButton } from "@/components/ui/gradient-button";
 import { getCommunityMemberPreview } from "@/lib/data/community";
 import { getOptionalUser } from "@/lib/data/user";
 import { getUserDetail } from "@/lib/data/user-detail";
@@ -124,15 +122,11 @@ export default async function ProfileDetailPage({ params }: ProfilePageProps) {
           }))}
         />
 
-        <ContentReviewSection
+        <InteractiveReviewSection
           title={`✍️ Recent Posts & Reviews By ${firstName}`}
-          action={
-            <GradientButton size="sm" className="gap-1.5 rounded-full px-5">
-              <Plus className="size-4" />
-              Add Post
-            </GradientButton>
-          }
           reviews={profile.reviews}
+          viewerUserId={isOwner ? viewer?.id : undefined}
+          allowCreate={false}
         />
       </div>
     </div>

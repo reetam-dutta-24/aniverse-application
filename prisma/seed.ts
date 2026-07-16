@@ -14,12 +14,14 @@ import {
   type ContentSeedBase,
 } from "../lib/seed/helpers";
 import { MUSIC_ITEMS } from "../lib/seed/music";
+import { NOTIFICATION_SEEDS } from "../lib/seed/notifications";
 import {
   DEMO_COLLECTIONS,
   DEMO_COMMUNITIES,
   DEMO_USER,
   DEMO_WATCHLIST,
 } from "../lib/seed/user-library";
+import { syncNotificationsForUser } from "../lib/services/notification.service";
 
 const prisma = new PrismaClient();
 const BCRYPT_ROUNDS = 12;
@@ -595,6 +597,19 @@ async function seedDemoUserLibrary(
       data: { memberCount, postCount },
     });
   }
+
+  await syncNotificationsForUser(
+    user.id,
+    NOTIFICATION_SEEDS.map((seed) => ({
+      title: seed.title,
+      category: seed.category,
+      description: seed.description,
+      imageUrl: seed.imageUrl,
+      href: seed.href,
+      read: seed.read,
+      createdAt: new Date(Date.now() - seed.minutesAgo * 60_000),
+    })),
+  );
 
   console.log(`Demo user ready: ${DEMO_USER.email} / ${DEMO_USER.password}`);
   console.log(

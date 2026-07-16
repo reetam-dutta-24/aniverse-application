@@ -81,7 +81,7 @@ export function NotificationItem({
       <Link
         href="/dashboard/notifications"
         onClick={() => {
-          markNotificationRead(notification.id);
+          void markNotificationRead(notification.id);
           onNavigate?.();
         }}
         className={containerClass}
@@ -110,7 +110,7 @@ export function NotificationItem({
 
   return (
     <div
-      onClick={() => markNotificationRead(notification.id)}
+      onClick={() => void markNotificationRead(notification.id)}
       className={cn(containerClass, unread && "cursor-pointer")}
     >
       <div className="flex min-w-0 flex-1 flex-col gap-1.5 p-4 sm:p-5">
@@ -140,7 +140,7 @@ export function NotificationItem({
           {notification.href ? (
             <Link
               href={notification.href}
-              onClick={() => markNotificationRead(notification.id)}
+              onClick={() => void markNotificationRead(notification.id)}
               className="flex items-center gap-1 rounded-full border border-brand-magenta px-3 py-1 text-[11px] font-semibold text-white transition-colors hover:bg-brand-magenta/15"
             >
               Open Content

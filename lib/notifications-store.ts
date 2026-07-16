@@ -1,36 +1,139 @@
-import { mockNotifications } from "@/lib/data/notifications";
 import type { AppNotification } from "@/types";
 
-/**
- * Tiny client-side store so the bell badge, dropdown panel, and the full
- * notifications page share one read/unread state. In-memory only for now —
- * swap `markNotificationRead` internals for an API call later.
- */
+const POLL_MS = 30_000;
 
-let snapshot: AppNotification[] = mockNotifications.map((n) => ({ ...n }));
+let snapshot: AppNotification[] = [];
 const listeners = new Set<() => void>();
+let subscriberCount = 0;
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+let fetching = false;
 
 function emit() {
   for (const listener of listeners) listener();
 }
 
+function onVisibilityChange() {
+  if (document.visibilityState === "visible") {
+    void refreshNotifications();
+  }
+}
+
+async function refreshNotifications() {
+  if (fetching) return;
+  fetching = true;
+
+  try {
+    const response = await fetch("/api/notifications", { cache: "no-store" });
+    if (response.status === 401) {
+      snapshot = [];
+      emit();
+      return;
+    }
+    if (!response.ok) return;
+
+    const data = (await response.json()) as {
+      notifications?: AppNotification[];
+    };
+    if (Array.isArray(data.notifications)) {
+      snapshot = data.notifications;
+      emit();
+    }
+  } catch {
+    // Keep the last good snapshot on transient network errors.
+  } finally {
+    fetching = false;
+  }
+}
+
+function startLiveSync() {
+  if (pollTimer) return;
+  void refreshNotifications();
+  pollTimer = setInterval(() => void refreshNotifications(), POLL_MS);
+  if (typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", onVisibilityChange);
+  }
+}
+
+function stopLiveSync() {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+  if (typeof document !== "undefined") {
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+  }
+}
+
 export function subscribeNotifications(listener: () => void): () => void {
   listeners.add(listener);
-  return () => listeners.delete(listener);
+  subscriberCount += 1;
+  if (subscriberCount === 1) startLiveSync();
+
+  return () => {
+    listeners.delete(listener);
+    subscriberCount = Math.max(0, subscriberCount - 1);
+    if (subscriberCount === 0) stopLiveSync();
+  };
 }
 
 export function getNotificationsSnapshot(): AppNotification[] {
   return snapshot;
 }
 
-export function markNotificationRead(id: string) {
-  if (!snapshot.some((n) => n.id === id && !n.read)) return;
-  snapshot = snapshot.map((n) => (n.id === id ? { ...n, read: true } : n));
+/** Hydrate from server-rendered data before the first client poll. */
+export function hydrateNotifications(notifications: AppNotification[]) {
+  snapshot = notifications;
   emit();
 }
 
-export function markAllNotificationsRead() {
-  if (!snapshot.some((n) => !n.read)) return;
-  snapshot = snapshot.map((n) => (n.read ? n : { ...n, read: true }));
+export async function markNotificationRead(id: string) {
+  if (!snapshot.some((entry) => entry.id === id && !entry.read)) return;
+
+  const previous = snapshot;
+  snapshot = snapshot.map((entry) =>
+    entry.id === id ? { ...entry, read: true } : entry,
+  );
   emit();
+
+  try {
+    const response = await fetch(`/api/notifications/${id}`, {
+      method: "PATCH",
+    });
+    if (!response.ok) {
+      snapshot = previous;
+      emit();
+    }
+  } catch {
+    snapshot = previous;
+    emit();
+  }
+}
+
+export async function markAllNotificationsRead() {
+  if (!snapshot.some((entry) => !entry.read)) return;
+
+  const previous = snapshot;
+  snapshot = snapshot.map((entry) =>
+    entry.read ? entry : { ...entry, read: true },
+  );
+  emit();
+
+  try {
+    const response = await fetch("/api/notifications", { method: "POST" });
+    if (!response.ok) {
+      snapshot = previous;
+      emit();
+      return;
+    }
+    const data = (await response.json()) as {
+      notifications?: AppNotification[];
+    };
+    if (Array.isArray(data.notifications)) {
+      snapshot = data.notifications;
+      emit();
+    }
+  } catch {
+    snapshot = previous;
+    emit();
+  }
 }

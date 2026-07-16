@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Plus } from "lucide-react";
 import { CollectionCard, CommunityCard, MusicCard } from "@/components/cards";
 import {
   ContentCharacterCard,
   ContentDetailHero,
   ContentPageSection,
-  ContentReviewSection,
+  InteractiveReviewSection,
 } from "@/components/content";
-import { GradientButton } from "@/components/ui/gradient-button";
 import { getCommunityMemberPreview } from "@/lib/data/community";
 import { getOptionalUser } from "@/lib/data/user";
 import { getAllSongIds, getSongDetail } from "@/lib/data/song-detail";
@@ -103,15 +101,12 @@ export default async function SongDetailPage({ params }: SongPageProps) {
         }))}
       />
 
-      <ContentReviewSection
+      <InteractiveReviewSection
         title={`✍️ Reviews Of ${song.title}`}
-        action={
-          <GradientButton size="sm" className="gap-1.5 rounded-full px-5">
-            <Plus className="size-4" />
-            Add Review
-          </GradientButton>
-        }
         reviews={song.reviews}
+        targetType="song"
+        targetSlug={song.id}
+        viewerUserId={viewer?.id}
       />
     </div>
   );

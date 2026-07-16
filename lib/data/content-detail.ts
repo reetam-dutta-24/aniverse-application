@@ -19,6 +19,10 @@ import {
 } from "@/lib/services/content.service";
 import { mapContentRecordToDetail } from "@/lib/mappers/content-detail.mapper";
 import { getRecommendedContent } from "@/lib/services/feed.service";
+import {
+  getUserReviewsForTarget,
+  mergeDisplayedReviews,
+} from "@/lib/services/review.service";
 
 /**
  * Mock data layer — individual content detail (`/content/[contentid]`).
@@ -710,7 +714,10 @@ export async function getContentDetail(
       (item) => item.id !== slug,
     );
     const engagement = await getContentEngagementStats(record.id);
-    return mapContentRecordToDetail(record, engagement, related);
+    const detail = mapContentRecordToDetail(record, engagement, related);
+    const userReviews = await getUserReviewsForTarget("content", slug);
+    detail.reviews = mergeDisplayedReviews(userReviews, detail.reviews);
+    return detail;
   }
 
   if (slug === "jujutsu-kaisen") {

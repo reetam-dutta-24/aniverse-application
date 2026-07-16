@@ -18,6 +18,10 @@ import {
 } from "@/lib/services/music.service";
 import { prisma } from "@/lib/prisma";
 import { listAllCatalogMusicTracks } from "@/lib/services/feed.service";
+import {
+  getUserReviewsForTarget,
+  mergeDisplayedReviews,
+} from "@/lib/services/review.service";
 
 const g = (id: string, label: string) => ({ id, label });
 const poster = (slug: string) => `/images/posters/${slug}.jpg`;
@@ -304,7 +308,10 @@ export async function getSongDetail(
       orderBy: { updatedAt: "desc" },
     });
     const similar = similarRows.map((t) => mapTrackToMusicTrack(t));
-    return mapTrackRecordToSongDetail(record, engagement, similar);
+    const detail = mapTrackRecordToSongDetail(record, engagement, similar);
+    const userReviews = await getUserReviewsForTarget("song", slug);
+    detail.reviews = mergeDisplayedReviews(userReviews, detail.reviews);
+    return detail;
   }
 
   if (slug === "gurenge") {

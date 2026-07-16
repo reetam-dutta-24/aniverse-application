@@ -1,17 +1,16 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Plus } from "lucide-react";
 import { ArtistCard, CollectionCard, CommunityCard } from "@/components/cards";
 import { ArtistDetailHero, ArtistKpiSection } from "@/components/artist";
 import {
   ContentCharacterCard,
   ContentPageSection,
-  ContentReviewSection,
+  InteractiveReviewSection,
 } from "@/components/content";
 import { MusicCarouselSection, MusicGridSection } from "@/components/dashboard";
-import { GradientButton } from "@/components/ui/gradient-button";
 import { getAllArtistIds, getArtistDetail } from "@/lib/data/artist-detail";
 import { getCommunityMemberPreview } from "@/lib/data/community";
+import { getOptionalUser } from "@/lib/data/user";
 
 interface ArtistPageProps {
   params: Promise<{ artistid: string }>;
@@ -36,6 +35,7 @@ export async function generateMetadata({
 
 export default async function ArtistDetailPage({ params }: ArtistPageProps) {
   const { artistid } = await params;
+  const viewer = await getOptionalUser();
   const [artist, members] = await Promise.all([
     getArtistDetail(artistid),
     getCommunityMemberPreview(),
@@ -123,15 +123,12 @@ export default async function ArtistDetailPage({ params }: ArtistPageProps) {
           }))}
         />
 
-        <ContentReviewSection
+        <InteractiveReviewSection
           title={`✍️ Reviews Of ${artist.title}`}
-          action={
-            <GradientButton size="sm" className="gap-1.5 rounded-full px-5">
-              <Plus className="size-4" />
-              Add Review
-            </GradientButton>
-          }
           reviews={artist.reviews}
+          targetType="artist"
+          targetSlug={artist.id}
+          viewerUserId={viewer?.id}
         />
       </div>
     </div>

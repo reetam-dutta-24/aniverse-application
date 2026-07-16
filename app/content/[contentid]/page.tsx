@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Plus } from "lucide-react";
 import {
   CollectionCard,
   CommunityCard,
@@ -13,9 +12,8 @@ import {
   ContentEpisodeSection,
   ContentMovieSection,
   ContentPageSection,
-  ContentReviewSection,
+  InteractiveReviewSection,
 } from "@/components/content";
-import { GradientButton } from "@/components/ui/gradient-button";
 import { isMovieContentType } from "@/lib/content-media";
 import { getCommunityMemberPreview } from "@/lib/data/community";
 import { getOptionalUser } from "@/lib/data/user";
@@ -144,15 +142,12 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
         }))}
       />
 
-      <ContentReviewSection
+      <InteractiveReviewSection
         title={`✍️ Reviews Of ${content.title}`}
-        action={
-          <GradientButton size="sm" className="gap-1.5 rounded-full px-5">
-            <Plus className="size-4" />
-            Add Review
-          </GradientButton>
-        }
         reviews={content.reviews}
+        targetType="content"
+        targetSlug={content.id}
+        viewerUserId={viewer?.id}
       />
     </div>
   );

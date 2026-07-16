@@ -27,6 +27,10 @@ export {
   type ContentPageSectionProps,
 } from "./content-page-section";
 export {
+  InteractiveReviewSection,
+  type InteractiveReviewSectionProps,
+} from "./interactive-review-section";
+export {
   ContentReviewSection,
   type ContentReviewSectionProps,
 } from "./content-review-section";

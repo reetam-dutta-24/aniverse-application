@@ -1,13 +1,31 @@
 "use client";
 
+import { useEffect } from "react";
 import { CheckCheck } from "lucide-react";
 import { NotificationItem } from "@/components/notifications/notification-item";
 import { useNotifications } from "@/components/notifications/use-notifications";
-import { markAllNotificationsRead } from "@/lib/notifications-store";
+import {
+  hydrateNotifications,
+  markAllNotificationsRead,
+} from "@/lib/notifications-store";
+import type { AppNotification } from "@/types";
+
+export interface NotificationsViewProps {
+  initialNotifications?: AppNotification[];
+}
 
 /** Full notifications page — expanded cards grouped by read state. */
-export function NotificationsView() {
+export function NotificationsView({
+  initialNotifications = [],
+}: NotificationsViewProps) {
   const notifications = useNotifications();
+
+  useEffect(() => {
+    if (initialNotifications.length > 0) {
+      hydrateNotifications(initialNotifications);
+    }
+  }, [initialNotifications]);
+
   const unread = notifications.filter((n) => !n.read);
   const read = notifications.filter((n) => n.read);
 
@@ -28,7 +46,7 @@ export function NotificationsView() {
           {unread.length > 0 ? (
             <button
               type="button"
-              onClick={markAllNotificationsRead}
+              onClick={() => void markAllNotificationsRead()}
               className="flex w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-white/60 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-white/15 sm:w-auto"
             >
               <CheckCheck className="size-4" />

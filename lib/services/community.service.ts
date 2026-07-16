@@ -21,6 +21,7 @@ import {
   getTrendingContent,
   getTrendingMusic,
 } from "@/lib/services/feed.service";
+import { notifyCommunityPost } from "@/lib/services/notification.service";
 import {
   listCommunityVoiceChannels,
   listCommunityWatchChannels,
@@ -319,10 +320,26 @@ export async function createCommunityPost(
       author: {
         select: { id: true, name: true, avatarColor: true, avatarUrl: true },
       },
+      community: {
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          imageUrl: true,
+        },
+      },
     },
   });
 
   await syncCommunityPostCount(membership.communityId);
+
+  await notifyCommunityPost(post.community, {
+    id: post.id,
+    title: post.title,
+    authorId: post.authorId,
+    authorName: post.author.name,
+  });
+
   return post;
 }
 
