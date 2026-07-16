@@ -15,6 +15,7 @@ import {
 } from "../lib/seed/helpers";
 import { MUSIC_ITEMS } from "../lib/seed/music";
 import { NOTIFICATION_SEEDS } from "../lib/seed/notifications";
+import { seedAnalyticsEventsForUser } from "../lib/seed/analytics-events";
 import {
   DEMO_COLLECTIONS,
   DEMO_COMMUNITIES,
@@ -610,6 +611,8 @@ async function seedDemoUserLibrary(
       createdAt: new Date(Date.now() - seed.minutesAgo * 60_000),
     })),
   );
+
+  await seedAnalyticsEventsForUser(user.id, contentSlugToId, trackSlugToId);
 
   console.log(`Demo user ready: ${DEMO_USER.email} / ${DEMO_USER.password}`);
   console.log(

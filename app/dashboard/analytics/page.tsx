@@ -23,8 +23,11 @@ export const metadata: Metadata = {
     "Track your watching, listening, genres, community activity, and taste patterns.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function AnalyticsPage() {
-  const [user, data] = await Promise.all([getCurrentUser(), getAnalyticsData()]);
+  const user = await getCurrentUser();
+  const data = await getAnalyticsData(user.id);
 
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-6 sm:gap-8">
@@ -55,7 +58,7 @@ export default async function AnalyticsPage() {
         </ChartPanel>
         <ChartPanel
           title="📋 Watchlist Progress"
-          subtitle="Where your 185 saved titles stand"
+          subtitle={`Where your ${data.summary.watchlistTotal} saved titles stand`}
         >
           <AniPieChart data={data.watchlistStatus} innerRadius={60} height={300} />
         </ChartPanel>
@@ -124,7 +127,7 @@ export default async function AnalyticsPage() {
         </ChartPanel>
         <ChartPanel
           title="🗓️ This Month vs Last"
-          subtitle="July compared with June"
+          subtitle={`${data.summary.currentMonthLabel} compared with ${data.summary.previousMonthLabel}`}
         >
           <MonthComparisonPanel rows={data.monthComparison} />
         </ChartPanel>

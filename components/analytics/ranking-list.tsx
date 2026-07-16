@@ -6,6 +6,14 @@ export interface RankingListProps {
 
 /** Ranked list with neon progress bars — top titles / top artists. */
 export function RankingList({ items }: RankingListProps) {
+  if (items.length === 0) {
+    return (
+      <p className="py-6 text-center text-sm text-muted">
+        No activity logged yet.
+      </p>
+    );
+  }
+
   return (
     <ol className="flex flex-col gap-4">
       {items.map((item, index) => (
