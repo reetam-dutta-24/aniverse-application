@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { ArtistFormInput } from "@/lib/validators/admin/artist";
+import { roundRating } from "@/lib/format-rating";
 
 const artistInclude = {
   members: { orderBy: { position: "asc" as const } },
@@ -30,7 +31,7 @@ function toArtistData(input: ArtistFormInput): Prisma.ArtistCreateInput {
     synopsis: emptyToNull(input.synopsis),
     imageUrl: emptyToNull(input.imageUrl),
     accent: input.accent ?? null,
-    rating: input.rating ?? null,
+    rating: roundRating(input.rating),
     rankLeft: emptyToNull(input.rankLeft),
     rankRight: emptyToNull(input.rankRight),
     primaryTags: input.primaryTags,
@@ -55,6 +56,7 @@ async function syncArtistNested(artistId: string, input: ArtistFormInput) {
           artistId,
           name: member.name,
           role: emptyToNull(member.role),
+          imageUrl: emptyToNull(member.imageUrl),
           position: index,
         },
       });
@@ -67,7 +69,7 @@ async function syncArtistNested(artistId: string, input: ArtistFormInput) {
         artistId,
         authorName: review.authorName,
         authorAvatarColor: emptyToNull(review.authorAvatarColor) ?? "#ff00cc",
-        rating: review.rating,
+        rating: roundRating(review.rating) ?? 0,
         headline: emptyToNull(review.headline),
         body: review.body,
         accent: review.accent ?? null,
@@ -175,7 +177,7 @@ export function artistRecordToFormInput(row: ArtistRecordFull): ArtistFormInput 
     synopsis: row.synopsis ?? "",
     imageUrl: row.imageUrl ?? "",
     accent: (row.accent as ArtistFormInput["accent"]) ?? undefined,
-    rating: row.rating ?? undefined,
+    rating: roundRating(row.rating) ?? undefined,
     rankLeft: row.rankLeft ?? "",
     rankRight: row.rankRight ?? "",
     primaryTags: Array.isArray(row.primaryTags) ? (row.primaryTags as string[]) : [],
@@ -186,12 +188,13 @@ export function artistRecordToFormInput(row: ArtistRecordFull): ArtistFormInput 
     members: row.members.map((m) => ({
       name: m.name,
       role: m.role ?? "",
+      imageUrl: m.imageUrl ?? "",
     })),
     genreLabels: asStringArray((row as { genres?: unknown }).genres) as ArtistFormInput["genreLabels"],
     catalogReviews: row.catalogReviews.map((r) => ({
       authorName: r.authorName,
       authorAvatarColor: r.authorAvatarColor ?? "",
-      rating: r.rating,
+      rating: roundRating(r.rating) ?? 0,
       headline: r.headline ?? "",
       body: r.body,
       accent: (r.accent as ArtistFormInput["catalogReviews"][number]["accent"]) ?? undefined,

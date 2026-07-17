@@ -1,5 +1,6 @@
 import type { MusicTrack as PrismaTrack } from "@prisma/client";
 import { labelForLanguage, labelForSongGenre } from "@/lib/catalog-enums";
+import { roundRating } from "@/lib/format-rating";
 import type { ContentItem, MusicTrack } from "@/types";
 
 function asStringArray(value: unknown): string[] {
@@ -39,7 +40,7 @@ export function mapTrackToContentItem(row: PrismaTrack): ContentItem {
     description: row.description ?? undefined,
     imageUrl: row.imageUrl ?? poster(row.slug),
     genres: mapTrackGenres(row),
-    rating: row.rating ?? undefined,
+    rating: roundRating(row.rating) ?? undefined,
     meta: row.kind.toUpperCase(),
     year: row.year ?? undefined,
     accent: (row.accent as ContentItem["accent"]) ?? undefined,
@@ -55,7 +56,7 @@ export function mapTrackToMusicTrack(row: PrismaTrack): MusicTrack {
     kind: row.kind as MusicTrack["kind"],
     source: row.source ?? undefined,
     language: row.language ?? undefined,
-    rating: row.rating ?? undefined,
+    rating: roundRating(row.rating) ?? undefined,
     imageUrl: row.imageUrl ?? poster(row.slug),
   };
 }

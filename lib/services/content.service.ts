@@ -6,6 +6,7 @@ import {
   prismaMediaTypeToApp,
 } from "@/lib/mappers/content.mapper";
 import type { ContentFormInput } from "@/lib/validators/admin/content";
+import { roundRating } from "@/lib/format-rating";
 import type { ContentItem, MediaType } from "@/types";
 
 const contentInclude = {
@@ -58,7 +59,7 @@ function toContentData(input: ContentFormInput): Prisma.ContentCreateInput {
     synopsis: emptyToNull(input.synopsis),
     imageUrl: emptyToNull(input.imageUrl),
     backdropUrl: emptyToNull(input.backdropUrl),
-    rating: input.rating ?? null,
+    rating: roundRating(input.rating),
     year: input.year ?? null,
     meta: emptyToNull(input.meta),
     accent: input.accent ?? null,
@@ -75,8 +76,8 @@ function toContentData(input: ContentFormInput): Prisma.ContentCreateInput {
     composer: emptyToNull(input.composer),
     status: emptyToNull(input.status),
     ageRating: emptyToNull(input.ageRating),
-    imdbRating: input.imdbRating ?? null,
-    malScore: input.malScore ?? null,
+    imdbRating: roundRating(input.imdbRating),
+    malScore: roundRating(input.malScore),
     airedFrom: emptyToNull(input.airedFrom),
     airedTo: emptyToNull(input.airedTo),
     broadcast: emptyToNull(input.broadcast),
@@ -130,7 +131,7 @@ async function syncNestedContentRelations(
         thumbnailUrl: emptyToNull(episode.thumbnailUrl),
         releaseDate: emptyToNull(episode.releaseDate),
         language: emptyToNull(episode.language),
-        rating: episode.rating ?? null,
+        rating: roundRating(episode.rating),
         position: index,
       },
     });
@@ -186,7 +187,7 @@ async function syncNestedContentRelations(
         contentId,
         authorName: review.authorName,
         authorAvatarColor: emptyToNull(review.authorAvatarColor) ?? "#ff00cc",
-        rating: review.rating,
+        rating: roundRating(review.rating) ?? 0,
         headline: emptyToNull(review.headline),
         body: review.body,
         accent: review.accent ?? null,
@@ -379,7 +380,7 @@ export function contentRecordToFormInput(row: ContentRecordFull): ContentFormInp
     synopsis: row.synopsis ?? "",
     imageUrl: row.imageUrl ?? "",
     backdropUrl: row.backdropUrl ?? "",
-    rating: row.rating ?? undefined,
+    rating: roundRating(row.rating) ?? undefined,
     year: row.year ?? undefined,
     meta: row.meta ?? "",
     accent: (row.accent as ContentFormInput["accent"]) ?? undefined,
@@ -396,8 +397,8 @@ export function contentRecordToFormInput(row: ContentRecordFull): ContentFormInp
     composer: row.composer ?? "",
     status: row.status ?? "",
     ageRating: row.ageRating ?? "",
-    imdbRating: row.imdbRating ?? undefined,
-    malScore: row.malScore ?? undefined,
+    imdbRating: roundRating(row.imdbRating) ?? undefined,
+    malScore: roundRating(row.malScore) ?? undefined,
     airedFrom: row.airedFrom ?? "",
     airedTo: row.airedTo ?? "",
     broadcast: row.broadcast ?? "",
@@ -424,7 +425,7 @@ export function contentRecordToFormInput(row: ContentRecordFull): ContentFormInp
       thumbnailUrl: e.thumbnailUrl ?? "",
       releaseDate: e.releaseDate ?? "",
       language: e.language ?? "",
-      rating: e.rating ?? undefined,
+      rating: roundRating(e.rating) ?? undefined,
     })),
     characters: row.characters.map((c) => ({
       name: c.name,
@@ -438,7 +439,7 @@ export function contentRecordToFormInput(row: ContentRecordFull): ContentFormInp
     catalogReviews: row.catalogReviews.map((r) => ({
       authorName: r.authorName,
       authorAvatarColor: r.authorAvatarColor ?? "",
-      rating: r.rating,
+      rating: roundRating(r.rating) ?? 0,
       headline: r.headline ?? "",
       body: r.body,
       accent: (r.accent as ContentFormInput["catalogReviews"][number]["accent"]) ?? undefined,

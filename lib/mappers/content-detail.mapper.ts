@@ -13,6 +13,7 @@ import type {
 } from "@/types";
 import { isMovieContentType } from "@/lib/content-media";
 import { formatDetailSynopsis } from "@/lib/format-detail-synopsis";
+import { roundRating } from "@/lib/format-rating";
 import {
   formatEngagementCount,
   type getContentEngagementStats,
@@ -61,8 +62,8 @@ function buildMetadata(row: ContentRecordFull): ContentMetadata {
     languages: asStringArray(row.languages),
     seasonLabel: row.seasonLabel ?? undefined,
     lastUpdate: row.lastUpdate ?? undefined,
-    imdbRating: row.imdbRating ?? row.rating ?? undefined,
-    malScore: row.malScore ?? undefined,
+    imdbRating: roundRating(row.imdbRating) ?? roundRating(row.rating) ?? undefined,
+    malScore: roundRating(row.malScore) ?? undefined,
     ageRating: row.ageRating ?? undefined,
     composer: row.composer ?? undefined,
     director: row.director ?? undefined,
@@ -111,7 +112,7 @@ function mapEpisodes(row: ContentRecordFull): Episode[] {
     thumbnailUrl: e.thumbnailUrl ?? undefined,
     releaseDate: e.releaseDate ?? undefined,
     language: e.language ?? undefined,
-    rating: e.rating ?? undefined,
+    rating: roundRating(e.rating) ?? undefined,
   }));
 }
 
@@ -142,7 +143,7 @@ function mapCatalogReviews(row: ContentRecordFull): Review[] {
       name: r.authorName,
       avatarColor: r.authorAvatarColor ?? "#ff00cc",
     },
-    rating: r.rating,
+    rating: roundRating(r.rating) ?? 0,
     headline: r.headline ?? undefined,
     content: r.body,
     likeCount: r.likeCount,
@@ -176,7 +177,7 @@ export function mapContentRecordToDetail(
     title: row.title,
     nativeTitle: row.nativeTitle ?? undefined,
     type: prismaMediaTypeToApp(row.type),
-    rating: row.rating ?? 0,
+    rating: roundRating(row.rating) ?? 0,
     trendingLabel:
       row.trendingLabel ??
       `Trending on AniVerse · ${prismaMediaTypeToApp(row.type).toUpperCase()}`,

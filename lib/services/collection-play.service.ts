@@ -3,6 +3,7 @@ import { labelForLanguage, labelForSongGenre } from "@/lib/catalog-enums";
 import { prisma } from "@/lib/prisma";
 import {
   formatTrackDuration,
+  getTrackCoverUrl,
   getTrackPreviewUrl,
 } from "@/lib/music-preview";
 import type {
@@ -88,8 +89,8 @@ export async function getCollectionPlayQueue(
             track.durationSeconds,
             track.durationLabel,
           ),
-          imageUrl: track.imageUrl ?? undefined,
-          backdropUrl: track.backdropUrl ?? track.imageUrl ?? undefined,
+          imageUrl: getTrackCoverUrl(track.slug, track.imageUrl, track.backdropUrl),
+          backdropUrl: getTrackCoverUrl(track.slug, track.backdropUrl, track.imageUrl),
           previewUrl: getTrackPreviewUrl(track.slug),
           lyrics: track.lyrics ?? undefined,
           language: track.language ?? undefined,

@@ -1,6 +1,7 @@
 import type { Review as PrismaReview, User } from "@prisma/client";
 import type { AccentColor } from "@/lib/catalog-enums";
 import { formatCardDate } from "@/lib/format-dates";
+import { roundRating } from "@/lib/format-rating";
 import {
   accentToAvatarColor,
   resolveProfileAccent,
@@ -28,7 +29,7 @@ export function mapReviewRow(
   return {
     id: row.id,
     author: mapUserSummary(row.author),
-    rating: row.rating,
+    rating: roundRating(row.rating) ?? 0,
     headline: row.headline ?? undefined,
     content: row.body,
     likeCount: row.likeCount,

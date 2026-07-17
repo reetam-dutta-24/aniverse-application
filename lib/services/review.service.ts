@@ -1,6 +1,7 @@
 import type { Prisma, Review } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { mapReviewRow } from "@/lib/mappers/user-profile.mapper";
+import { roundRating } from "@/lib/format-rating";
 import { getLikedReviewIds } from "@/lib/services/like.service";
 import { notifyReviewPublished } from "@/lib/services/notification.service";
 import type { ReviewTargetType } from "@/lib/review-routes";
@@ -233,7 +234,7 @@ export async function createReview(
   const row = await prisma.review.create({
     data: {
       author: { connect: { id: userId } },
-      rating: input.rating,
+      rating: roundRating(input.rating) ?? 0,
       headline: input.headline?.trim() || null,
       body: input.body.trim(),
       ...targetData(target, targetId),
@@ -312,7 +313,7 @@ export async function updateReview(
   if (existing.authorId !== userId) throw new ReviewForbiddenError();
 
   const data: Prisma.ReviewUpdateInput = {};
-  if (input.rating !== undefined) data.rating = input.rating;
+  if (input.rating !== undefined) data.rating = roundRating(input.rating) ?? 0;
   if (input.headline !== undefined) {
     data.headline = input.headline.trim() || null;
   }

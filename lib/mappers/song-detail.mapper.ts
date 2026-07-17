@@ -9,6 +9,7 @@ import type {
   Review,
 } from "@/types";
 import { formatDetailSynopsis } from "@/lib/format-detail-synopsis";
+import { roundRating } from "@/lib/format-rating";
 import { formatEngagementCount } from "@/lib/services/content.service";
 import { mapTrackToMusicTrack } from "./music.mapper";
 
@@ -25,7 +26,7 @@ function mapCatalogReviews(row: TrackRecordFull): Review[] {
       name: r.authorName,
       avatarColor: r.authorAvatarColor ?? "#ff00cc",
     },
-    rating: r.rating,
+    rating: roundRating(r.rating) ?? 0,
     headline: r.headline ?? undefined,
     content: r.body,
     likeCount: r.likeCount,
@@ -92,7 +93,7 @@ export function mapTrackRecordToSongDetail(
     title: row.title,
     nativeTitle: row.nativeTitle ?? undefined,
     type: "song",
-    rating: row.rating ?? 0,
+    rating: roundRating(row.rating) ?? 0,
     creditLabel: row.creditLabel ?? `By ${row.artist}`,
     trendingLabel:
       row.trendingLabel ?? `Trending on AniVerse · ${row.kind.toUpperCase()}`,

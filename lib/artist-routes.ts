@@ -11,3 +11,8 @@ export function getArtistDetailPath(artistId: string): string {
   const slug = normalizeArtistSlug(artistId);
   return `/artist/${ARTIST_ALIASES[slug] ?? slug}`;
 }
+
+export function getArtistPlayPath(artistId: string): string {
+  const slug = normalizeArtistSlug(artistId);
+  return `/artist/${ARTIST_ALIASES[slug] ?? slug}/play`;
+}

@@ -9,6 +9,7 @@ import {
   mapTrackToMusicTrack,
 } from "@/lib/mappers/music.mapper";
 import { mapArtistToContentItem } from "@/lib/mappers/artist.mapper";
+import { roundRating } from "@/lib/format-rating";
 import type { ContentItem, MediaType, MusicTrack } from "@/types";
 
 const contentInclude = {
@@ -319,7 +320,7 @@ export async function getFeaturedCatalogReviews(limit = 6) {
       name: row.authorName,
       avatarColor: row.authorAvatarColor ?? "#ff00cc",
     },
-    rating: row.rating,
+    rating: roundRating(row.rating) ?? 0,
     headline: row.headline ?? undefined,
     content: row.body,
     likeCount: row.likeCount,

@@ -508,15 +508,21 @@ export function BandMembersEditor({
   members,
   onChange,
 }: {
-  members: { name: string; role?: string }[];
-  onChange: (members: { name: string; role?: string }[]) => void;
+  members: { name: string; role?: string; imageUrl?: string }[];
+  onChange: (members: { name: string; role?: string; imageUrl?: string }[]) => void;
 }) {
-  function update(index: number, patch: Partial<{ name: string; role?: string }>) {
+  function update(
+    index: number,
+    patch: Partial<{ name: string; role?: string; imageUrl?: string }>,
+  ) {
     onChange(members.map((m, i) => (i === index ? { ...m, ...patch } : m)));
   }
 
   return (
-    <Section title="Band members" description="For groups with multiple members (e.g. TWICE).">
+    <Section
+      title="Band members"
+      description="Add each member with a portrait photo — shown on the artist detail page (hero member row and band section)."
+    >
       {members.map((member, index) => (
         <div key={index} className="grid gap-3 rounded-xl border border-white/10 p-4 sm:grid-cols-2">
           <Field label="Member name">
@@ -534,6 +540,16 @@ export function BandMembersEditor({
               placeholder="Vocalist, Rapper…"
             />
           </Field>
+          <Field
+            label="Member photo"
+            hint="HD portrait — appears on the artist page member cards"
+          >
+            <ImageUploadInput
+              value={member.imageUrl ?? ""}
+              onChange={(value) => update(index, { imageUrl: value })}
+              inputClassName={inputClass}
+            />
+          </Field>
           <button
             type="button"
             onClick={() => onChange(members.filter((_, i) => i !== index))}
@@ -545,7 +561,7 @@ export function BandMembersEditor({
       ))}
       <button
         type="button"
-        onClick={() => onChange([...members, { name: "", role: "" }])}
+        onClick={() => onChange([...members, { name: "", role: "", imageUrl: "" }])}
         className="cursor-pointer self-start rounded-xl border border-white/20 px-4 py-2 text-sm text-white hover:bg-white/10"
       >
         + Add member

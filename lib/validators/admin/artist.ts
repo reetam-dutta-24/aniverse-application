@@ -12,6 +12,7 @@ const optionalLongString = z.string().trim().max(5000).optional().or(z.literal("
 const memberSchema = z.object({
   name: z.string().trim().min(1, "Member name is required").max(120),
   role: optionalString,
+  imageUrl: optionalString,
 });
 
 /**

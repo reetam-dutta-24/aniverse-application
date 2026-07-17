@@ -1,5 +1,6 @@
 import { Heart, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatRating } from "@/lib/format-rating";
 import type { Review } from "@/types";
 import { AvatarStack } from "@/components/ui/avatar-stack";
 import { Chip } from "@/components/ui/chip";
@@ -30,7 +31,7 @@ export function ReviewCard({ review, className, ...props }: ReviewCardProps) {
         </div>
         <Chip variant="brand" className="ms-auto gap-1">
           <Star className="size-3.5 fill-current" />
-          {review.rating}/10
+          {formatRating(review.rating)}/10
         </Chip>
       </div>
       <p className="flex-1 text-sm leading-relaxed text-white">

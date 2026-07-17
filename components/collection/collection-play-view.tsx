@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCollectionDetailPath } from "@/lib/collection-routes";
+import { getArtistDetailPath } from "@/lib/artist-routes";
 import { getContentDetailPath } from "@/lib/content-routes";
 import { getSongDetailPath } from "@/lib/song-routes";
 import {
@@ -21,6 +22,14 @@ import {
   parseLyricsText,
 } from "@/lib/lyrics-display";
 import { getPlayAccentTheme, type PlayAccentTheme } from "@/lib/play-ambient";
+import { getTrackCoverUrl } from "@/lib/music-preview";
+import {
+  PLAY_HEADER_COVER,
+  PLAY_NOW_PLAYING_COVER,
+  PLAY_QUEUE_COVER_LG,
+  PLAY_QUEUE_COVER_MD,
+  PLAY_QUEUE_COVER_SM,
+} from "@/lib/play-layout";
 import { moveToPlayNext, removeQueueItem } from "@/lib/play-queue-utils";
 import { PlayAmbientBackground } from "@/components/collection/play-ambient-background";
 import { PlayQueueRowActions } from "@/components/collection/play-queue-row-actions";
@@ -32,9 +41,12 @@ import type {
 } from "@/types";
 
 interface CollectionPlayViewProps {
-  collectionSlug: string;
+  collectionSlug?: string;
+  artistSlug?: string;
   initialQueue?: CollectionPlayQueue;
 }
+
+type PlaySource = "collection" | "artist";
 
 const PLAY_MIN_H = "min-h-[calc(100dvh-3.5rem)] sm:min-h-[calc(100dvh-4.5rem)]";
 const PLAY_STICKY_TOP = "lg:sticky lg:top-[4.5rem]";
@@ -65,17 +77,21 @@ function QueueCover({
   theme?: PlayAccentTheme;
 }) {
   const sizeClass =
-    size === "sm" ? "size-10" : size === "lg" ? "size-16" : "size-12";
+    size === "sm"
+      ? PLAY_QUEUE_COVER_SM
+      : size === "lg"
+        ? PLAY_QUEUE_COVER_LG
+        : PLAY_QUEUE_COVER_MD;
+
   return (
-    <span
-      className={cn(
-        "relative shrink-0 overflow-hidden rounded-md bg-black/40 shadow-md ring-1 ring-white/10",
-        sizeClass,
-      )}
-    >
+    <span className={sizeClass}>
       {imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={imageUrl} alt="" className="size-full object-cover" />
+        <img
+          src={imageUrl}
+          alt=""
+          className="block size-full object-cover object-center"
+        />
       ) : (
         <span
           className="flex size-full items-center justify-center text-xs font-bold text-white/70"
@@ -85,6 +101,50 @@ function QueueCover({
         </span>
       )}
     </span>
+  );
+}
+
+function PlayNowPlayingCover({
+  imageUrl,
+  title,
+  subtitle,
+  fallbackChar,
+  theme,
+}: {
+  imageUrl?: string;
+  title: string;
+  subtitle?: string;
+  fallbackChar: string;
+  theme: PlayAccentTheme;
+}) {
+  return (
+    <div
+      className={PLAY_NOW_PLAYING_COVER}
+      style={{ borderColor: theme.border }}
+    >
+      {imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={imageUrl}
+          alt=""
+          className="block size-full object-cover object-center"
+        />
+      ) : (
+        <div
+          className="flex size-full items-center justify-center text-3xl font-bold text-white/60"
+          style={{ background: theme.gradientSoft }}
+        >
+          {fallbackChar}
+        </div>
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 p-4">
+        <p className="truncate text-lg font-bold text-white">{title}</p>
+        {subtitle ? (
+          <p className="truncate text-sm capitalize text-white/70">{subtitle}</p>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
@@ -106,14 +166,15 @@ function CollectionPlayHeader({
   action?: ReactNode;
 }) {
   return (
-    <header className="mb-6 flex items-stretch gap-5 sm:mb-7 sm:gap-6 lg:gap-7">
-      <div
-        className="relative aspect-[5/4] self-stretch overflow-hidden rounded-md bg-black/40 ring-1 ring-white/10"
-        style={{ borderColor: theme.border }}
-      >
+    <header className="mb-6 flex items-start gap-5 sm:mb-7 sm:gap-6 lg:gap-7">
+      <div className={PLAY_HEADER_COVER} style={{ borderColor: theme.border }}>
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt="" className="size-full object-cover" />
+          <img
+            src={imageUrl}
+            alt=""
+            className="block size-full object-cover object-center"
+          />
         ) : (
           <div
             className="flex size-full items-center justify-center text-2xl font-bold text-white/60 sm:text-3xl"
@@ -250,10 +311,12 @@ function SynopsisPanel({
 
 function MusicPlayQueue({
   queue,
-  collectionSlug,
+  entitySlug,
+  playSource,
 }: {
   queue: CollectionPlayQueue & { tracks: CollectionPlayTrack[] };
-  collectionSlug: string;
+  entitySlug: string;
+  playSource: PlaySource;
 }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [tracks, setTracks] = useState(queue.tracks);
@@ -385,10 +448,11 @@ function MusicPlayQueue({
 
   const handleRemove = useCallback(
     async (itemId: string, index: number): Promise<boolean> => {
+      if (playSource !== "collection") return false;
       setDeleteLoadingId(itemId);
       try {
         const response = await fetch(
-          `/api/collections/${encodeURIComponent(collectionSlug)}/items/${encodeURIComponent(itemId)}`,
+          `/api/collections/${encodeURIComponent(entitySlug)}/items/${encodeURIComponent(itemId)}`,
           { method: "DELETE" },
         );
         if (!response.ok) {
@@ -441,12 +505,17 @@ function MusicPlayQueue({
         setDeleteLoadingId(null);
       }
     },
-    [collectionSlug, tracks, currentIndex, isPlaying],
+    [entitySlug, playSource, tracks, currentIndex, isPlaying],
   );
 
   const progressMax = duration || currentTrack?.durationSeconds || 1;
-  const bannerUrl =
-    currentTrack?.backdropUrl ?? currentTrack?.imageUrl ?? queue.imageUrl;
+  const nowPlayingCoverUrl = currentTrack
+    ? getTrackCoverUrl(
+        currentTrack.id,
+        currentTrack.imageUrl,
+        currentTrack.backdropUrl,
+      )
+    : undefined;
   const theme = useMemo(
     () => getPlayAccentTheme(currentTrack?.accent),
     [currentTrack?.accent],
@@ -456,7 +525,7 @@ function MusicPlayQueue({
     <div className={cn("relative w-full", PLAY_MIN_H)}>
       <PlayAmbientBackground
         accent={currentTrack?.accent}
-        imageUrl={bannerUrl}
+        imageUrl={nowPlayingCoverUrl}
       />
 
       <div className={cn("relative z-10 grid lg:grid-cols-[7fr_3fr]", PLAY_MIN_H)}>
@@ -465,10 +534,14 @@ function MusicPlayQueue({
       {/* Left 70% — queue */}
       <div className="overflow-y-auto border-b border-white/[0.08] px-4 py-4 sm:px-6 sm:py-5 lg:border-b-0 lg:border-r">
         <CollectionPlayHeader
-          label="Music playlist"
+          label={playSource === "artist" ? "Artist playlist" : "Music playlist"}
           name={queue.name}
           description={queue.description}
-          meta={`${queue.ownerName} · ${tracks.length} songs`}
+          meta={
+            playSource === "artist"
+              ? `${tracks.length} songs`
+              : `${queue.ownerName} · ${tracks.length} songs`
+          }
           imageUrl={queue.imageUrl}
           theme={theme}
           action={
@@ -484,7 +557,7 @@ function MusicPlayQueue({
           }
         />
 
-        <div className="mb-2 hidden grid-cols-[40px_52px_minmax(0,1fr)_72px_80px] gap-3 border-b border-white/[0.08] px-2 pb-2 text-[10px] font-medium uppercase tracking-wide text-white/40 sm:grid">
+        <div className="mb-2 hidden grid-cols-[40px_60px_minmax(0,1fr)_72px_80px] gap-3 border-b border-white/[0.08] px-2 pb-2 text-[10px] font-medium uppercase tracking-wide text-white/40 sm:grid">
           <span>#</span>
           <span>Cover</span>
           <span>Title</span>
@@ -499,7 +572,7 @@ function MusicPlayQueue({
               <li key={track.itemId}>
                 <div
                   className={cn(
-                    "group grid w-full grid-cols-[32px_48px_minmax(0,1fr)_56px_72px] items-center gap-3 rounded-lg px-2 py-2.5 sm:grid-cols-[40px_52px_minmax(0,1fr)_72px_80px]",
+                    "group grid w-full grid-cols-[32px_60px_minmax(0,1fr)_56px_72px] items-center gap-3 rounded-lg px-2 py-2.5 sm:grid-cols-[40px_60px_minmax(0,1fr)_72px_80px]",
                     !active && "hover:bg-white/[0.05]",
                   )}
                   style={
@@ -593,35 +666,13 @@ function MusicPlayQueue({
       >
         {currentTrack ? (
           <>
-            <div
-              className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-black/40 shadow-2xl ring-1"
-              style={{ borderColor: theme.border }}
-            >
-              {bannerUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={bannerUrl}
-                  alt=""
-                  className="size-full object-cover"
-                />
-              ) : (
-                <div
-                  className="flex size-full items-center justify-center text-3xl font-bold text-white/60"
-                  style={{ background: theme.gradientSoft }}
-                >
-                  {currentTrack.title.charAt(0)}
-                </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-4">
-                <p className="truncate text-lg font-bold text-white">
-                  {currentTrack.title}
-                </p>
-                <p className="truncate text-sm text-white/70">
-                  {currentTrack.artist}
-                </p>
-              </div>
-            </div>
+            <PlayNowPlayingCover
+              imageUrl={nowPlayingCoverUrl}
+              title={currentTrack.title}
+              subtitle={currentTrack.artist}
+              fallbackChar={currentTrack.title.charAt(0)}
+              theme={theme}
+            />
 
             <div className="mt-4 flex flex-wrap gap-1.5">
               <Chip musicKind={currentTrack.kind}>
@@ -831,7 +882,7 @@ function ContentPlayQueue({
           theme={theme}
         />
 
-        <div className="mb-2 hidden grid-cols-[40px_52px_minmax(0,1fr)_120px] gap-3 border-b border-white/[0.08] px-2 pb-2 text-[10px] font-medium uppercase tracking-wide text-white/40 sm:grid">
+        <div className="mb-2 hidden grid-cols-[40px_60px_minmax(0,1fr)_120px] gap-3 border-b border-white/[0.08] px-2 pb-2 text-[10px] font-medium uppercase tracking-wide text-white/40 sm:grid">
           <span>#</span>
           <span>Cover</span>
           <span>Title</span>
@@ -845,7 +896,7 @@ function ContentPlayQueue({
               <li key={item.itemId}>
                 <div
                   className={cn(
-                    "group grid grid-cols-[40px_48px_minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-2 py-2.5 sm:grid-cols-[40px_52px_minmax(0,1fr)_120px]",
+                    "group grid grid-cols-[40px_60px_minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-2 py-2.5 sm:grid-cols-[40px_60px_minmax(0,1fr)_120px]",
                     !active && "hover:bg-white/[0.05]",
                   )}
                   style={
@@ -935,36 +986,13 @@ function ContentPlayQueue({
       >
         {activeItem ? (
           <>
-            <div
-              className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-black/40 shadow-2xl ring-1"
-              style={{ borderColor: theme.border }}
-            >
-              {bannerUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={bannerUrl}
-                  alt=""
-                  className="size-full object-cover"
-                />
-              ) : (
-                <div
-                  className="flex size-full items-center justify-center text-3xl font-bold text-white/60"
-                  style={{ background: theme.gradientSoft }}
-                >
-                  {activeItem.title.charAt(0)}
-                </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-4">
-                <p className="truncate text-lg font-bold text-white">
-                  {activeItem.title}
-                </p>
-                <p className="truncate text-sm capitalize text-white/70">
-                  {activeItem.type}
-                  {activeItem.year ? ` · ${activeItem.year}` : ""}
-                </p>
-              </div>
-            </div>
+            <PlayNowPlayingCover
+              imageUrl={bannerUrl}
+              title={activeItem.title}
+              subtitle={`${activeItem.type}${activeItem.year ? ` · ${activeItem.year}` : ""}`}
+              fallbackChar={activeItem.title.charAt(0)}
+              theme={theme}
+            />
 
             <div className="mt-4 flex flex-wrap gap-1.5">
               <Chip mediaType={activeItem.type}>{activeItem.type}</Chip>
@@ -1046,8 +1074,11 @@ function ContentPlayQueue({
 
 export function CollectionPlayView({
   collectionSlug,
+  artistSlug,
   initialQueue,
 }: CollectionPlayViewProps) {
+  const playSource: PlaySource = artistSlug ? "artist" : "collection";
+  const entitySlug = artistSlug ?? collectionSlug ?? "";
   const [queue, setQueue] = useState<CollectionPlayQueue | null>(
     initialQueue ?? null,
   );
@@ -1065,7 +1096,11 @@ export function CollectionPlayView({
     setLoading(true);
     setError(undefined);
 
-    fetch(`/api/collections/${encodeURIComponent(collectionSlug)}/play`)
+    fetch(
+      playSource === "artist"
+        ? `/api/artist/${encodeURIComponent(entitySlug)}/play`
+        : `/api/collections/${encodeURIComponent(entitySlug)}/play`,
+    )
       .then(async (response) => {
         if (!response.ok) {
           const data = await response.json().catch(() => ({}));
@@ -1080,7 +1115,7 @@ export function CollectionPlayView({
       .then((data) => setQueue(data.queue))
       .catch((fetchError: Error) => setError(fetchError.message))
       .finally(() => setLoading(false));
-  }, [collectionSlug, initialQueue]);
+  }, [entitySlug, initialQueue, playSource]);
 
   const isEmpty = useMemo(() => {
     if (!queue) return false;
@@ -1098,25 +1133,31 @@ export function CollectionPlayView({
       ) : isEmpty ? (
         <div className="relative z-10 px-6 py-8">
           <p className="text-sm text-white/55">
-            This collection has no items yet. Add songs or titles from the
-            collection page first.
+            {playSource === "artist"
+              ? "This artist has no songs to play yet."
+              : "This collection has no items yet. Add songs or titles from the collection page first."}
           </p>
           <Link
-            href={getCollectionDetailPath(collectionSlug)}
+            href={
+              playSource === "artist"
+                ? getArtistDetailPath(entitySlug)
+                : getCollectionDetailPath(entitySlug)
+            }
             className="mt-4 inline-block text-sm font-semibold text-brand-magenta hover:underline"
           >
-            Go to collection
+            {playSource === "artist" ? "Go to artist" : "Go to collection"}
           </Link>
         </div>
       ) : queue.collectionKind === "music" && queue.tracks?.length ? (
         <MusicPlayQueue
           queue={{ ...queue, tracks: queue.tracks }}
-          collectionSlug={collectionSlug}
+          entitySlug={entitySlug}
+          playSource={playSource}
         />
       ) : queue.items?.length ? (
         <ContentPlayQueue
           queue={{ ...queue, items: queue.items }}
-          collectionSlug={collectionSlug}
+          collectionSlug={entitySlug}
         />
       ) : (
         <p className="relative z-10 px-6 py-8 text-sm text-white/55">Nothing to play.</p>

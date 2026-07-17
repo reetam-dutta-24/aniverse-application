@@ -4,6 +4,7 @@ import {
   getCardTint,
   getDetailHeroBoundaryGlow,
 } from "@/lib/card-theme";
+import { formatRating } from "@/lib/format-rating";
 import { Chip, MatchChip } from "@/components/ui/chip";
 import { CollectionHeroSpotlightSlider } from "@/components/collection/collection-hero-spotlight-slider";
 import { CommunityHeroActions } from "@/components/community/community-hero-actions";
@@ -52,7 +53,7 @@ export function CommunityDetailHero({
                 className={cn("inline-flex items-center gap-2", TITLE_CLASS)}
               >
                 <Star className="size-6 shrink-0 fill-yellow-400 text-yellow-400 sm:size-7" />
-                {community.rating}
+                {formatRating(community.rating)}
               </span>
               <h1 className={TITLE_CLASS}>{community.name}</h1>
             </div>

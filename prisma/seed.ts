@@ -8,6 +8,7 @@ import {
   ARTIST_ITEMS,
   MUSIC_ITEMS,
   USER_SEEDS,
+  VOICE_ACTORS,
 } from "../lib/seed/generate-catalog";
 import { CONTENT_NESTED } from "../lib/seed/content-nested";
 import {
@@ -15,7 +16,6 @@ import {
   generateSeriesNested,
   isMovieType,
   normalizeContentGenre,
-  poster,
   type CatalogReviewSeed,
   type ContentNestedSeed,
   type ContentSeedBase,
@@ -23,6 +23,7 @@ import {
 import { NOTIFICATION_SEEDS } from "../lib/seed/notifications";
 import { seedAnalyticsEventsForUser } from "../lib/seed/analytics-events";
 import { wipeDatabase } from "../lib/seed/wipe-database";
+import { roundRating } from "../lib/format-rating";
 import { syncNotificationsForUser } from "../lib/services/notification.service";
 
 const prisma = new PrismaClient();
@@ -83,7 +84,7 @@ async function upsertGenres(slugs: string[]) {
   );
 }
 
-function resolveNested(item: ContentSeedBase): ContentNestedSeed {
+function resolveNested(item: ContentSeedBase, index: number): ContentNestedSeed {
   const custom = CONTENT_NESTED[item.slug as keyof typeof CONTENT_NESTED];
   let nested: ContentNestedSeed;
 
@@ -99,31 +100,40 @@ function resolveNested(item: ContentSeedBase): ContentNestedSeed {
     nested = {
       ...generateSeriesNested(item.slug, { seasonCount, episodesPerSeason }),
       characters: [
-        { name: `${item.title} Lead`, role: "Main", accent: item.accent ?? "blue" },
-        { name: `${item.title} Rival`, role: "Supporting", accent: "purple" },
+        { name: `${item.title} Lead`, role: "Protagonist", voiceActor: pick(VOICE_ACTORS, index), accent: item.accent ?? "blue" },
+        { name: `${item.title} Rival`, role: "Supporting", voiceActor: pick(VOICE_ACTORS, index + 3), accent: "purple" },
+        { name: `${item.title} Mentor`, role: "Supporting", voiceActor: pick(VOICE_ACTORS, index + 5), accent: "cyan" },
       ],
-      relatedSlugs: CONTENT_ITEMS.filter((c) => c.slug !== item.slug)
-        .slice(0, 4)
+      relatedSlugs: CONTENT_ITEMS.filter((c) => c.slug !== item.slug && c.type === item.type)
+        .slice(index % 10, (index % 10) + 4)
         .map((c) => c.slug),
       catalogReviews: [
         {
           authorName: "AniVerse Curator",
           authorAvatarColor: "#ff00cc",
-          rating: item.rating ?? 8,
-          body: `${item.title} is a standout pick on AniVerse — add it to your watchlist today.`,
+          rating: roundRating(item.rating) ?? 8,
+          body: `${item.title} is a standout pick on AniVerse — rich storytelling, memorable characters, and production that holds up on every rewatch. The ${item.genreLabels[0]} tone is handled with confidence, and the pacing gives major moments room to breathe. Easily one of the strongest entries in its category on the platform.`,
           accent: item.accent,
           likeCount: 12,
+          headline: `Why ${item.title} belongs on your list`,
+        },
+        {
+          authorName: USER_SEEDS[index % USER_SEEDS.length]!.name,
+          authorAvatarColor: "#00d4ff",
+          rating: roundRating((item.rating ?? 8) - 0.3) ?? 7.7,
+          body: `Finished ${item.title} last week and still thinking about the finale. The ${item.genreLabels[0]} beats hit different when you know where the story is heading. Already recommended it in two communities and added it to my top-priority watchlist.`,
+          accent: item.accent ?? "pink",
+          likeCount: 8,
         },
       ],
     };
   }
 
-  const image = item.imageUrl ?? poster(item.slug);
-  return {
-    ...nested,
-    episodes: nested.episodes?.map((ep) => ({ ...ep, thumbnailUrl: image })),
-    characters: nested.characters?.map((c) => ({ ...c, imageUrl: image })),
-  };
+  return nested;
+}
+
+function pick<T>(arr: T[], index: number): T {
+  return arr[index % arr.length]!;
 }
 
 async function syncCatalogReviews(
@@ -143,7 +153,7 @@ async function syncCatalogReviews(
         ...link,
         authorName: review.authorName,
         authorAvatarColor: review.authorAvatarColor ?? "#ff00cc",
-        rating: review.rating,
+        rating: roundRating(review.rating) ?? 0,
         headline: review.headline ?? null,
         body: review.body,
         accent: review.accent ?? null,
@@ -189,9 +199,9 @@ async function syncContentNested(contentId: string, slug: string, nested: Conten
         title: ep.title,
         duration: ep.duration ?? null,
         description: ep.description ?? null,
-        thumbnailUrl: ep.thumbnailUrl ?? poster(slug),
+        thumbnailUrl: ep.thumbnailUrl ?? null,
         language: ep.language ?? null,
-        rating: ep.rating ?? null,
+        rating: roundRating(ep.rating),
         position: index,
       },
     });
@@ -204,7 +214,7 @@ async function syncContentNested(contentId: string, slug: string, nested: Conten
         name: character.name,
         role: character.role ?? null,
         voiceActor: character.voiceActor ?? null,
-        imageUrl: character.imageUrl ?? poster(slug),
+        imageUrl: character.imageUrl ?? null,
         accent: character.accent ?? null,
         position: index,
       },
@@ -248,9 +258,9 @@ async function seedContent() {
   let created = 0;
   const slugToId = new Map<string, string>();
 
-  for (const item of CONTENT_ITEMS) {
+  for (const [index, item] of CONTENT_ITEMS.entries()) {
     const genreRows = await upsertGenres(item.genreLabels);
-    const nested = resolveNested(item);
+    const nested = resolveNested(item, index);
     const isMovie = isMovieType(item.type);
 
     const data = {
@@ -259,9 +269,9 @@ async function seedContent() {
       type: MEDIA_MAP[item.type],
       description: item.description ?? null,
       synopsis: item.synopsis ?? item.description ?? null,
-      imageUrl: item.imageUrl ?? poster(item.slug),
-      backdropUrl: item.backdropUrl ?? item.imageUrl ?? poster(item.slug),
-      rating: item.rating ?? null,
+      imageUrl: null,
+      backdropUrl: null,
+      rating: roundRating(item.rating),
       year: item.year ?? null,
       meta: item.meta ?? null,
       accent: item.accent ?? null,
@@ -270,14 +280,21 @@ async function seedContent() {
       highlightTags: item.highlightTags ?? [],
       studio: item.studio ?? null,
       director: item.director ?? null,
+      composer: item.composer ?? null,
       originalAuthor: item.originalAuthor ?? null,
       sourceMaterial: item.sourceMaterial ?? null,
+      producers: item.producers ?? null,
+      network: item.network ?? null,
+      country: item.country ?? null,
       status: item.status ?? null,
       ageRating: item.ageRating ?? null,
-      imdbRating: item.imdbRating ?? null,
-      malScore: item.malScore ?? null,
+      imdbRating: roundRating(item.imdbRating),
+      malScore: roundRating(item.malScore),
       airedFrom: item.airedFrom ?? null,
       airedTo: item.airedTo ?? null,
+      broadcast: item.broadcast ?? null,
+      airingDay: item.airingDay ?? null,
+      lastUpdate: item.lastUpdate ?? null,
       episodeDuration: item.episodeDuration ?? (isMovie ? "Full Movie" : "24 Min"),
       languages: item.languages ?? ["japanese"],
       seasonCount: isMovie ? null : (item.seasonCount ?? nested.seasons?.length ?? null),
@@ -315,9 +332,9 @@ async function seedArtists() {
       title: item.title,
       nativeTitle: item.nativeTitle ?? null,
       synopsis: item.synopsis ?? null,
-      imageUrl: item.imageUrl ?? poster(item.slug),
+      imageUrl: null,
       accent: item.accent ?? null,
-      rating: item.rating ?? null,
+      rating: roundRating(item.rating),
       rankLeft: item.rankLeft ?? null,
       rankRight: item.rankRight ?? null,
       primaryTags: item.primaryTags ?? [],
@@ -376,12 +393,12 @@ async function seedMusic(
       album: item.album ?? null,
       language: item.language ?? null,
       genres: item.genreLabels,
-      rating: item.rating ?? null,
+      rating: roundRating(item.rating),
       year: item.year ?? null,
       durationLabel: item.durationLabel ?? null,
       durationSeconds: item.durationSeconds ?? null,
-      imageUrl: item.imageUrl ?? poster(item.slug),
-      backdropUrl: item.imageUrl ?? poster(item.slug),
+      imageUrl: null,
+      backdropUrl: null,
       accent: item.accent ?? null,
       trendingLabel: item.trendingLabel ?? `Trending on AniVerse · ${item.kind.toUpperCase()}`,
       creditLabel: item.creditLabel ?? `By ${item.artist}`,
@@ -411,11 +428,21 @@ async function linkAllContentRelations(
   contentSlugToId: Map<string, string>,
   trackSlugToId: Map<string, string>,
 ) {
-  for (const item of CONTENT_ITEMS) {
+  for (const [index, item] of CONTENT_ITEMS.entries()) {
     const contentId = contentSlugToId.get(item.slug);
     if (!contentId) continue;
-    const nested = resolveNested(item);
-    await linkContentRelations(contentId, item.slug, nested, contentSlugToId, trackSlugToId);
+    const nested = resolveNested(item, index);
+    const featuredTrackSlugs = MUSIC_ITEMS
+      .filter((track) => track.contentSlug === item.slug)
+      .slice(0, 5)
+      .map((track) => track.slug);
+    await linkContentRelations(
+      contentId,
+      item.slug,
+      { ...nested, featuredTrackSlugs },
+      contentSlugToId,
+      trackSlugToId,
+    );
   }
   console.log("Content relations linked (related titles + featured OSTs).");
 }
@@ -435,8 +462,6 @@ async function seedAllUsersAndSocial(
         name: userSeed.name,
         passwordHash,
         avatarColor: userSeed.avatarColor,
-        avatarUrl: userSeed.avatarUrl,
-        portraitUrl: userSeed.portraitUrl,
         bio: userSeed.bio,
         location: userSeed.location,
         aiTasteScore: userSeed.aiTasteScore,
@@ -504,7 +529,7 @@ async function seedAllUsersAndSocial(
         kind: collectionSeed.kind,
         visibility: collectionSeed.visibility,
         accent: collectionSeed.accent,
-        imageUrl: collectionSeed.imageUrl,
+        imageUrl: null,
         favoriteCount: collectionSeed.favoriteCount,
       },
     });
@@ -543,13 +568,14 @@ async function seedAllUsersAndSocial(
         visibility: communitySeed.visibility,
         activityLevel: communitySeed.activityLevel,
         accent: communitySeed.accent,
-        imageUrl: communitySeed.imageUrl,
-        wallpaperUrl: communitySeed.wallpaperUrl,
+        imageUrl: null,
+        wallpaperUrl: null,
       },
     });
 
-    const memberEmails = USER_SEEDS.slice(cIndex % 5, (cIndex % 5) + 4).map(
-      (u) => u.email.toLowerCase(),
+    const memberEmails = Array.from(
+      { length: USER_SEEDS.length },
+      (_, i) => USER_SEEDS[(cIndex + i) % USER_SEEDS.length]!.email.toLowerCase(),
     );
     for (const [mIndex, email] of memberEmails.entries()) {
       const userId = emailToUserId.get(email);
@@ -572,7 +598,7 @@ async function seedAllUsersAndSocial(
           authorId,
           title: postSeed.title,
           content: postSeed.content,
-          imageUrl: postSeed.imageUrl,
+          imageUrl: null,
           kind: postSeed.kind ?? "POST",
           likeCount: postSeed.likeCount,
           commentCount: postSeed.commentCount,

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Clock, Eye, Heart, PlayCircle, Plus, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatRating } from "@/lib/format-rating";
 import { getAccentTint, getCardTint, getTintOuterGlow } from "@/lib/card-theme";
 import type { AccentColor, Episode } from "@/types";
 import { Chip } from "@/components/ui/chip";
@@ -101,7 +102,7 @@ export function ContentEpisodeCard({
               {episode.rating != null ? (
                 <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-white">
                   <Star className="size-3 fill-yellow-400 text-yellow-400" />
-                  {episode.rating}
+                  {formatRating(episode.rating)}
                 </span>
               ) : null}
               <GradientButton

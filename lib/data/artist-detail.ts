@@ -14,6 +14,8 @@ import {
   getArtistRecordBySlug,
   listAllArtistSlugs,
 } from "@/lib/services/artist.service";
+import { isArtistFollowed, getArtistFollowerPreview } from "@/lib/services/artist-follow.service";
+import { isArtistFavorited } from "@/lib/services/favorite.service";
 import {
   getUserReviewsForTarget,
   mergeDisplayedReviews,
@@ -308,6 +310,7 @@ const twiceDetail: ArtistDetail = {
   ],
   connectionSummary:
     "Rahul_89, Lk45_89, reetam_2308 and 3 more connections follow TWICE.",
+  followerCount: 6,
   nowPlaying: {
     title: "FANCY",
     album: "FANCY YOU",
@@ -358,6 +361,21 @@ export async function getArtistDetail(
     const detail = mapArtistRecordToDetail(record);
     const userReviews = await getUserReviewsForTarget("artist", slug, viewerUserId);
     detail.reviews = mergeDisplayedReviews(userReviews, detail.reviews);
+
+    if (viewerUserId) {
+      const [viewerFavorited, viewerFollowing] = await Promise.all([
+        isArtistFavorited(viewerUserId, slug),
+        isArtistFollowed(viewerUserId, slug),
+      ]);
+      detail.viewerFavorited = viewerFavorited;
+      detail.viewerFollowing = viewerFollowing;
+    }
+
+    const followerPreview = await getArtistFollowerPreview(slug);
+    detail.followerCount = followerPreview.followerCount;
+    detail.connections = followerPreview.followers;
+    detail.connectionSummary = followerPreview.summary;
+
     return detail;
   }
   return curatedById[slug] ?? null;

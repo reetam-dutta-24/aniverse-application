@@ -1,5 +1,6 @@
 import { Heart, Star } from "lucide-react";
 import { getHexOuterGlow } from "@/lib/card-theme";
+import { formatRating } from "@/lib/format-rating";
 import type { Review } from "@/types";
 import { AvatarStack } from "@/components/ui/avatar-stack";
 import { Chip } from "@/components/ui/chip";
@@ -39,7 +40,7 @@ export function ContentReviewCard({ review }: ContentReviewCardProps) {
         </div>
         <Chip variant="brand" className="h-5 shrink-0 gap-0.5 text-[10px]">
           <Star className="size-3 fill-current" />
-          {review.rating}/10
+          {formatRating(review.rating)}/10
         </Chip>
       </div>
       {review.likeCount != null && !review.canLike ? (

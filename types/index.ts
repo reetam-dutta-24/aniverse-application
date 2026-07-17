@@ -504,6 +504,7 @@ export interface ArtistDetail {
   /** Social followers shown in the right hero panel. */
   connections: UserSummary[];
   connectionSummary?: string;
+  followerCount?: number;
   trendingSongs: MusicTrack[];
   allSongs: MusicTrack[];
   mostPlayed: MusicTrack[];
@@ -513,6 +514,9 @@ export interface ArtistDetail {
   collections: Collection[];
   communities: Community[];
   reviews: Review[];
+  /** Viewer-specific state when logged in. */
+  viewerFavorited?: boolean;
+  viewerFollowing?: boolean;
 }
 
 /** Mini player state shown in the profile hero right panel. */

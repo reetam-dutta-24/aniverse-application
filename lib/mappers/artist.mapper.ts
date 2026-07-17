@@ -1,5 +1,6 @@
 import type { Artist } from "@prisma/client";
 import { labelForArtistGenre } from "@/lib/catalog-enums";
+import { roundRating } from "@/lib/format-rating";
 import type { ContentItem, Genre } from "@/types";
 
 function asStringArray(value: unknown): string[] {
@@ -28,10 +29,10 @@ export function mapArtistToContentItem(row: Artist): ContentItem {
     type: "artist",
     imageUrl: row.imageUrl ?? undefined,
     genres: mapArtistGenres(row),
-    rating: row.rating ?? undefined,
+    rating: roundRating(row.rating) ?? undefined,
     year: row.debutYear ?? undefined,
     meta: row.isGroup ? "Group" : "Solo Artist",
-    matchScore: row.rating ? Math.round(row.rating * 10) : undefined,
+    matchScore: row.rating ? Math.round((roundRating(row.rating) ?? 0) * 10) : undefined,
     accent: (row.accent as ContentItem["accent"]) ?? undefined,
   };
 }

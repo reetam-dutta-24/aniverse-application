@@ -31,10 +31,44 @@ function kindLabel(kind: MusicTrack["kind"]) {
   return "Song";
 }
 
+function isPlaceholderSource(source?: string) {
+  if (!source?.trim()) return true;
+  return /studio album/i.test(source);
+}
+
+function shortLanguageLabel(language?: string) {
+  if (!language) return null;
+  const lower = language.toLowerCase();
+  if (lower === "japanese") return "Japanese";
+  if (lower === "english" || lower === "english pop") return "English";
+  if (lower === "korean") return "Korean";
+  if (language.length <= 12) return language;
+  return language.slice(0, 10);
+}
+
+/** Compact top-left badge — avoids long "Artist — Studio Album" placeholders. */
+function trackTopLeftBadge(track: MusicTrack) {
+  if (track.source && !isPlaceholderSource(track.source)) {
+    return { kind: "source" as const, label: track.source };
+  }
+  if (track.rating != null) {
+    return { kind: "rating" as const, rating: track.rating };
+  }
+  const language = shortLanguageLabel(track.language);
+  if (language) {
+    return { kind: "language" as const, label: language };
+  }
+  return { kind: "type" as const, label: kindLabel(track.kind) };
+}
+
 function trackDescription(track: MusicTrack) {
-  return track.source
-    ? `Soundtrack from ${track.source} · performed by ${track.artist}.`
-    : `${track.artist} — matched to your listening taste on AniVerse.`;
+  if (track.source && !isPlaceholderSource(track.source)) {
+    return `Soundtrack from ${track.source} · performed by ${track.artist}.`;
+  }
+  if (track.language) {
+    return `${track.artist} · ${shortLanguageLabel(track.language) ?? track.language} track on AniVerse.`;
+  }
+  return `${track.artist} · ${kindLabel(track.kind)} on AniVerse.`;
 }
 
 const layerTransition =
@@ -107,15 +141,31 @@ export function MusicCard({
             )}
           >
             <div className="flex shrink-0 items-center justify-between px-2 pt-2">
-              {track.source ? (
-                <Chip chipKey="show" className="max-w-[90px] truncate">
-                  {track.source}
-                </Chip>
-              ) : track.rating != null ? (
-                <RatingChip rating={track.rating} />
-              ) : (
-                <span className="h-5" />
-              )}
+              {(() => {
+                const badge = trackTopLeftBadge(track);
+                if (badge.kind === "rating") {
+                  return <RatingChip rating={badge.rating} />;
+                }
+                if (badge.kind === "source") {
+                  return (
+                    <Chip chipKey="show" className="max-w-[90px] truncate">
+                      {badge.label}
+                    </Chip>
+                  );
+                }
+                if (badge.kind === "language") {
+                  return (
+                    <Chip language={badge.label} className="max-w-[90px] truncate">
+                      {badge.label}
+                    </Chip>
+                  );
+                }
+                return (
+                  <Chip musicKind={track.kind} className="max-w-[90px] truncate">
+                    {badge.label}
+                  </Chip>
+                );
+              })()}
               <Chip musicKind={track.kind}>{kindLabel(track.kind)}</Chip>
             </div>
 

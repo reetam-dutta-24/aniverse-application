@@ -5,8 +5,7 @@ import type {
   ContentGenre,
   SongGenre,
 } from "@/lib/catalog-enums";
-
-export const poster = (slug: string) => `/images/posters/${slug}.jpg`;
+import { roundRating } from "@/lib/format-rating";
 
 const GENRE_ALIASES: Record<string, ContentGenre> = {
   action: "action",
@@ -85,14 +84,21 @@ export interface ContentSeedBase {
   languages?: CatalogLanguage[];
   studio?: string;
   director?: string;
+  composer?: string;
   originalAuthor?: string;
   sourceMaterial?: string;
+  producers?: string;
+  network?: string;
+  country?: string;
   status?: string;
   ageRating?: string;
   imdbRating?: number;
   malScore?: number;
   airedFrom?: string;
   airedTo?: string;
+  broadcast?: string;
+  airingDay?: string;
+  lastUpdate?: string;
   episodeDuration?: string;
   seasonCount?: number;
   episodeCount?: number;
@@ -143,10 +149,9 @@ export function generateSeriesNested(
         number: e,
         title: customTitle ?? `${prefix} ${e}`,
         duration: "24 Min",
-        description: `${customTitle ?? `${prefix} ${e}`} — watch on AniVerse.`,
-        thumbnailUrl: poster(slug),
+        description: `${customTitle ?? `${prefix} ${e}`} advances the season with sharper stakes and stronger character choices. Watch on AniVerse to follow how each scene feeds the larger story. The episode balances momentum with quieter moments that make the payoff land harder.`,
         language: "japanese",
-        rating: 8.2 + (e % 6) * 0.1,
+        rating: roundRating(8.2 + (e % 6) * 0.1) ?? 8.2,
       });
       titleIndex += 1;
     }
@@ -168,8 +173,7 @@ export function generateMovieNested(
         number: 1,
         title,
         duration: runtime,
-        description: `Watch ${title} in full on AniVerse.`,
-        thumbnailUrl: poster(slug),
+        description: `Watch ${title} in full on AniVerse. This complete viewing packages the film's key emotional turns, visual highlights, and finale in one uninterrupted session. Ideal for first-time viewers and rewatchers who want the full experience without breaking the mood.`,
         language: "japanese",
         rating: 8.5,
       },

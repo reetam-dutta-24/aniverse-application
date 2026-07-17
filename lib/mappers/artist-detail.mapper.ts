@@ -10,6 +10,7 @@ import type {
   Review,
 } from "@/types";
 import { formatEngagementCount } from "@/lib/services/content.service";
+import { roundRating } from "@/lib/format-rating";
 import { mapTrackToMusicTrack } from "./music.mapper";
 
 function asStringArray(value: unknown): string[] {
@@ -36,6 +37,7 @@ function mapMembers(row: ArtistRecordFull): Character[] {
     id: m.id,
     name: m.name,
     role: m.role ?? "Member",
+    imageUrl: m.imageUrl ?? undefined,
   }));
 }
 
@@ -51,7 +53,7 @@ function mapReviews(row: ArtistRecordFull): Review[] {
       name: r.authorName,
       avatarColor: r.authorAvatarColor ?? "#ff00cc",
     },
-    rating: r.rating,
+    rating: roundRating(r.rating) ?? 0,
     headline: r.headline ?? undefined,
     content: r.body,
     likeCount: r.likeCount,
@@ -76,7 +78,12 @@ export function mapArtistRecordToDetail(row: ArtistRecordFull): ArtistDetail {
   const fallbackTrending = allSongs.slice(0, 6);
   const albums = allSongs.filter((t) => t.kind === "album");
   const languages = asStringArray(row.languages);
-  const primaryTags = asStringArray(row.primaryTags);
+  const primaryTags = asStringArray(row.primaryTags).map((tag) => {
+    if (tag === "pop" || tag === "rock" || tag === "kpop") {
+      return labelForArtistGenre(tag);
+    }
+    return tag.charAt(0).toUpperCase() + tag.slice(1);
+  });
   if (row.debutYear && !primaryTags.some((t) => t.startsWith("Since"))) {
     primaryTags.push(`Since ${row.debutYear}`);
   }
@@ -95,7 +102,7 @@ export function mapArtistRecordToDetail(row: ArtistRecordFull): ArtistDetail {
     id: slug,
     title: row.title,
     nativeTitle: row.nativeTitle ?? undefined,
-    rating: row.rating ?? 0,
+    rating: roundRating(row.rating) ?? 0,
     rankLeft: row.rankLeft ?? undefined,
     rankRight: row.rankRight ?? undefined,
     genres: mapGenres(row),

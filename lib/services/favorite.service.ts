@@ -108,3 +108,45 @@ export async function toggleContentFavorite(userId: string, contentSlug: string)
   `;
   return { favorited: true };
 }
+
+export async function isArtistFavorited(
+  userId: string,
+  artistSlug: string,
+): Promise<boolean> {
+  const rows = await prisma.$queryRaw<{ id: string }[]>`
+    SELECT af.id
+    FROM "ArtistFavorite" af
+    INNER JOIN "Artist" a ON a.id = af."artistId"
+    WHERE af."userId" = ${userId} AND a.slug = ${artistSlug}
+    LIMIT 1
+  `;
+  return rows.length > 0;
+}
+
+export async function toggleArtistFavorite(userId: string, artistSlug: string) {
+  const artist = await prisma.artist.findUnique({
+    where: { slug: artistSlug },
+    select: { id: true },
+  });
+  if (!artist) throw new FavoriteNotFoundError("Artist not found.");
+
+  const existing = await prisma.$queryRaw<{ id: string }[]>`
+    SELECT id FROM "ArtistFavorite"
+    WHERE "userId" = ${userId} AND "artistId" = ${artist.id}
+    LIMIT 1
+  `;
+
+  if (existing.length > 0) {
+    await prisma.$executeRaw`
+      DELETE FROM "ArtistFavorite" WHERE id = ${existing[0].id}
+    `;
+    return { favorited: false };
+  }
+
+  const favoriteId = crypto.randomUUID();
+  await prisma.$executeRaw`
+    INSERT INTO "ArtistFavorite" (id, "userId", "artistId", "createdAt")
+    VALUES (${favoriteId}, ${userId}, ${artist.id}, NOW())
+  `;
+  return { favorited: true };
+}

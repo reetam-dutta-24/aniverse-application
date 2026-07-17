@@ -46,6 +46,8 @@ model User {
   watchlistItems        WatchlistItem[]
   collectionFavorites   CollectionFavorite[]
   contentFavorites      ContentFavorite[]
+  artistFavorites       ArtistFavorite[]
+  artistFollows         ArtistFollow[]
   collections           Collection[]
   reviews               Review[]
   notifications         Notification[]
@@ -394,17 +396,20 @@ model Artist {
   tracks         MusicTrack[]
   reviews        Review[]
   catalogReviews CatalogReview[]
+  favorites      ArtistFavorite[]
+  followers      ArtistFollow[]
 
   @@index([slug])
 }
 
 /// Band / group members when `Artist.isGroup` is true (e.g. TWICE).
 model ArtistMember {
-  id       String @id @default(cuid())
+  id       String  @id @default(cuid())
   artistId String
   name     String
   role     String?
-  position Int    @default(0)
+  imageUrl String?
+  position Int     @default(0)
 
   artist Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
 
@@ -507,6 +512,34 @@ model ContentFavorite {
   @@unique([userId, contentId])
   @@index([userId])
   @@index([contentId])
+}
+
+model ArtistFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  artistId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  artist Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, artistId])
+  @@index([userId])
+  @@index([artistId])
+}
+
+model ArtistFollow {
+  id        String   @id @default(cuid())
+  userId    String
+  artistId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  artist Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, artistId])
+  @@index([userId])
+  @@index([artistId])
 }
 
 // ─── Communities & social ────────────────────────────────────────────────────

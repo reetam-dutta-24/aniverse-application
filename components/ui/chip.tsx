@@ -1,4 +1,7 @@
 import { cn } from "@/lib/utils";
+import { formatRating } from "@/lib/format-rating";
+import type { AccentColor } from "@/lib/catalog-enums";
+import { getAccentStatBackground } from "@/lib/card-theme";
 import {
   chipClassFor,
   resolveGenreChip,
@@ -25,9 +28,16 @@ export interface ChipProps extends React.HTMLAttributes<HTMLSpanElement> {
   mediaType?: Parameters<typeof resolveTypeChip>[0];
   language?: string;
   musicKind?: string;
+  /** Catalog accent gradient — e.g. artist hero stat/genre chips. */
+  accent?: AccentColor | string;
+  /** Main AniVerse brand gradient. */
+  brand?: boolean;
   /** @deprecated Use chipKey/genreId/mediaType instead. */
   variant?: keyof typeof legacyVariantMap;
 }
+
+const chipBase =
+  "inline-flex h-5 items-center justify-center whitespace-nowrap rounded-chip px-2 text-[10px] font-normal";
 
 /** Small pill — genre-colored gradients, 10px regular weight per Figma. */
 export function Chip({
@@ -38,10 +48,37 @@ export function Chip({
   mediaType,
   language,
   musicKind,
+  accent,
+  brand,
   variant,
   children,
+  style,
   ...props
 }: ChipProps) {
+  if (accent) {
+    return (
+      <span
+        className={cn(chipBase, "text-white", className)}
+        style={{ background: getAccentStatBackground(accent), ...style }}
+        {...props}
+      >
+        {children}
+      </span>
+    );
+  }
+
+  if (brand) {
+    return (
+      <span
+        className={cn(chipBase, "bg-gradient-brand text-white", className)}
+        style={style}
+        {...props}
+      >
+        {children}
+      </span>
+    );
+  }
+
   let key: ChipKey = chipKey ?? "default";
   if (variant) key = legacyVariantMap[variant] ?? "default";
   else if (genreId) key = resolveGenreChip(genreId, genreLabel);
@@ -51,11 +88,8 @@ export function Chip({
 
   return (
     <span
-      className={cn(
-        "inline-flex h-5 items-center justify-center whitespace-nowrap rounded-chip px-2 text-[10px] font-normal",
-        chipClassFor(key),
-        className,
-      )}
+      className={cn(chipBase, chipClassFor(key), className)}
+      style={style}
       {...props}
     >
       {children}
@@ -72,7 +106,7 @@ export function RatingChip({
 }) {
   return (
     <Chip chipKey="rating" className={cn("min-w-[52px]", className)}>
-      ⭐ {rating}
+      ⭐ {formatRating(rating)}
     </Chip>
   );
 }
@@ -85,7 +119,7 @@ export function MatchChip({
   className?: string;
 }) {
   return (
-    <Chip chipKey="aimatch" className={className}>
+    <Chip brand className={className}>
       AI Match {score}%
     </Chip>
   );

@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { mapTrackToMusicTrack } from "@/lib/mappers/music.mapper";
 import type { MusicFormInput } from "@/lib/validators/admin/music";
+import { roundRating } from "@/lib/format-rating";
 
 const trackInclude = {
   artistRef: true,
@@ -49,7 +50,7 @@ async function syncTrackReviews(trackId: string, input: MusicFormInput) {
         trackId,
         authorName: review.authorName,
         authorAvatarColor: emptyToNull(review.authorAvatarColor) ?? "#ff00cc",
-        rating: review.rating,
+        rating: roundRating(review.rating) ?? 0,
         headline: emptyToNull(review.headline),
         body: review.body,
         accent: review.accent ?? null,
@@ -76,7 +77,7 @@ async function toTrackData(input: MusicFormInput): Promise<Prisma.MusicTrackCrea
     album: emptyToNull(input.album),
     language: emptyToNull(input.language),
     genres: input.genreLabels,
-    rating: input.rating ?? null,
+    rating: roundRating(input.rating),
     year: input.year ?? null,
     durationLabel: emptyToNull(input.durationLabel),
     durationSeconds: input.durationSeconds ?? null,
@@ -208,7 +209,7 @@ export function trackRecordToFormInput(row: TrackRecordFull): MusicFormInput {
     album: row.album ?? "",
     language: (row.language ?? "") as MusicFormInput["language"],
     genreLabels: asGenreArray((row as { genres?: unknown }).genres) as MusicFormInput["genreLabels"],
-    rating: row.rating ?? undefined,
+    rating: roundRating(row.rating) ?? undefined,
     year: row.year ?? undefined,
     durationLabel: row.durationLabel ?? "",
     durationSeconds: row.durationSeconds ?? undefined,
@@ -222,7 +223,7 @@ export function trackRecordToFormInput(row: TrackRecordFull): MusicFormInput {
     catalogReviews: row.catalogReviews.map((r) => ({
       authorName: r.authorName,
       authorAvatarColor: r.authorAvatarColor ?? "",
-      rating: r.rating,
+      rating: roundRating(r.rating) ?? 0,
       headline: r.headline ?? "",
       body: r.body,
       accent: (r.accent as MusicFormInput["catalogReviews"][number]["accent"]) ?? undefined,

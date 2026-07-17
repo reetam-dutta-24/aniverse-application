@@ -8,6 +8,7 @@ import { CONTENT_GENRE_OPTIONS } from "@/lib/catalog-enums";
 import { mapContentToItem } from "@/lib/mappers/content.mapper";
 import { mapTrackToContentItem, mapTrackToMusicTrack } from "@/lib/mappers/music.mapper";
 import { formatCardDate, formatRelativeTime } from "@/lib/format-dates";
+import { roundRating } from "@/lib/format-rating";
 import { formatEngagementCount } from "@/lib/services/content.service";
 import type {
   AccentColor,
@@ -113,7 +114,7 @@ function resolveCollectionGenres(
 function averageRating(items: ContentItem[]): number {
   const ratings = items.map((item) => item.rating).filter((r): r is number => r != null);
   if (ratings.length === 0) return 8.5;
-  return Math.round((ratings.reduce((sum, r) => sum + r, 0) / ratings.length) * 10) / 10;
+  return roundRating(ratings.reduce((sum, r) => sum + r, 0) / ratings.length) ?? 8.5;
 }
 
 function mapOwnerSummary(user: CollectionWithItems["user"]): UserSummary {

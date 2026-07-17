@@ -48,7 +48,7 @@ export default async function ArtistDetailPage({ params }: ArtistPageProps) {
       <ArtistDetailHero artist={artist} />
       <ArtistKpiSection stats={artist.engagementStats} />
 
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-10 px-4 pt-10 sm:gap-12 sm:px-8 lg:gap-14 lg:px-12">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-10 px-4 pt-6 sm:gap-12 sm:px-8 sm:pt-8 lg:gap-14 lg:px-12">
         <MusicGridSection
           title={`🎵 All ${artist.title} Songs`}
           searchPlaceholder="Search tracks…"

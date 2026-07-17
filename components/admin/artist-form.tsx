@@ -115,7 +115,7 @@ export function ArtistForm({ mode, recordId, initial }: ArtistFormProps) {
         <Field label="Bio / synopsis">
           <textarea className={`${inputClass} min-h-32 py-2`} value={form.synopsis ?? ""} onChange={(e) => update("synopsis", e.target.value)} />
         </Field>
-        <Field label="Hero image" hint="Use high-resolution images for sharp detail pages">
+        <Field label="Hero image" hint="Group banner or solo artist photo — shown in the right hero panel">
           <ImageUploadInput
             value={form.imageUrl ?? ""}
             onChange={(value) => update("imageUrl", value)}

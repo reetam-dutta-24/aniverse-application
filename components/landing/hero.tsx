@@ -10,7 +10,10 @@ import { cn } from "@/lib/utils";
  */
 export function Hero() {
   return (
-    <section className="relative min-h-[60dvh] w-full overflow-hidden bg-background sm:min-h-[720px] lg:h-[935px]">
+    <section
+      id="home"
+      className="relative min-h-[60dvh] w-full scroll-mt-[72px] overflow-hidden bg-background sm:min-h-[720px] lg:h-[935px]"
+    >
       {/* Background collage (Figma: 4 panels, blur 3px, heavy inset vignettes) */}
       <div className="absolute inset-0 flex" aria-hidden>
         <div className="relative h-full w-[43%]">

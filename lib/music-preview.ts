@@ -12,6 +12,15 @@ export function getTrackPreviewUrl(slug: string): string {
   return DEMO_PREVIEW_URLS[hash % DEMO_PREVIEW_URLS.length]!;
 }
 
+/** Resolve a track's display cover — never falls back to artist/playlist art. */
+export function getTrackCoverUrl(
+  slug: string,
+  imageUrl?: string | null,
+  backdropUrl?: string | null,
+): string {
+  return imageUrl ?? backdropUrl ?? `/images/posters/${slug}.jpg`;
+}
+
 export function formatTrackDuration(
   durationSeconds?: number | null,
   durationLabel?: string | null,

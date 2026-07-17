@@ -1,5 +1,6 @@
 import type { MediaType as PrismaMediaType, Content, Genre } from "@prisma/client";
 import { labelForContentGenre } from "@/lib/catalog-enums";
+import { roundRating } from "@/lib/format-rating";
 import type { ContentItem, Genre as AppGenre, MediaType } from "@/types";
 
 type ContentWithGenres = Content & {
@@ -54,7 +55,7 @@ export function mapContentToItem(row: ContentWithGenres): ContentItem {
     description: row.description ?? undefined,
     imageUrl: row.imageUrl ?? `/images/posters/${row.slug}.jpg`,
     genres: (row.genres ?? []).map((g) => mapGenre(g.genre)),
-    rating: row.rating ?? undefined,
+    rating: roundRating(row.rating) ?? undefined,
     meta: row.meta ?? undefined,
     year: row.year ?? undefined,
     accent: (row.accent as ContentItem["accent"]) ?? undefined,

@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatRating } from "@/lib/format-rating";
 import { labelForLanguage } from "@/lib/catalog-enums";
 import { isMovieContentType } from "@/lib/content-media";
 import {
@@ -143,10 +144,10 @@ function buildMetadataRows(
 
   return [
     metadata.imdbRating != null
-      ? { label: "IMDB", value: String(metadata.imdbRating) }
+      ? { label: "IMDB", value: formatRating(metadata.imdbRating) }
       : null,
     metadata.malScore != null
-      ? { label: "MyAnimeList", value: String(metadata.malScore) }
+      ? { label: "MyAnimeList", value: formatRating(metadata.malScore) }
       : null,
     metadata.director ? { label: "Director", value: metadata.director } : null,
     metadata.originalAuthor
@@ -192,7 +193,7 @@ export function ContentDetailHero({
               className={cn("inline-flex items-center gap-2", TITLE_CLASS)}
             >
               <Star className="size-6 shrink-0 fill-yellow-400 text-yellow-400 sm:size-7" />
-              {content.rating}
+              {formatRating(content.rating)}
             </span>
             <h1 className={TITLE_CLASS}>{titleLine}</h1>
           </div>
