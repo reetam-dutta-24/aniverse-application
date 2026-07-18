@@ -12,7 +12,13 @@ export interface AdminArtistRow {
   isGroup: boolean;
 }
 
-export function AdminArtistTable({ rows }: { rows: AdminArtistRow[] }) {
+export function AdminArtistTable({
+  rows,
+  searchQuery,
+}: {
+  rows: AdminArtistRow[];
+  searchQuery?: string;
+}) {
   const router = useRouter();
 
   async function handleDelete(recordId: string, title: string) {
@@ -25,7 +31,9 @@ export function AdminArtistTable({ rows }: { rows: AdminArtistRow[] }) {
   if (rows.length === 0) {
     return (
       <p className="rounded-2xl border border-white/10 bg-white/5 px-4 py-8 text-center text-sm text-white/60">
-        No artists yet. Create your first artist profile.
+        {searchQuery
+          ? `No artists match “${searchQuery}”. Try a different name or slug.`
+          : "No artists yet. Create your first artist profile."}
       </p>
     );
   }

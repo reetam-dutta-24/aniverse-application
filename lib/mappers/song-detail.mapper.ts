@@ -8,9 +8,11 @@ import type {
   MusicTrack,
   Review,
 } from "@/types";
-import { formatDetailSynopsis } from "@/lib/format-detail-synopsis";
+import { buildSongReferenceUrl } from "@/lib/content-reference-url";
 import { roundRating } from "@/lib/format-rating";
 import { formatEngagementCount } from "@/lib/services/content.service";
+import { mapArtistToContentItem } from "@/lib/mappers/artist.mapper";
+import { mapContentToItem } from "@/lib/mappers/content.mapper";
 import { mapTrackToMusicTrack } from "./music.mapper";
 
 function asStringArray(value: unknown): string[] {
@@ -88,6 +90,9 @@ export function mapTrackRecordToSongDetail(
     { id: "collections", label: "Included in Collections", value: formatEngagementCount(engagement.collections) },
   ];
 
+  const description =
+    row.description ?? `${row.title} by ${row.artist} on AniVerse.`;
+
   return {
     id: slug,
     title: row.title,
@@ -98,9 +103,9 @@ export function mapTrackRecordToSongDetail(
     trendingLabel:
       row.trendingLabel ?? `Trending on AniVerse · ${row.kind.toUpperCase()}`,
     genres,
-    synopsis: formatDetailSynopsis(
-      row.description ?? `${row.title} by ${row.artist} on AniVerse.`,
-    ),
+    description,
+    synopsis: description,
+    referenceUrl: buildSongReferenceUrl(row.title, row.artist),
     highlightTags: [
       row.kind === "ost" ? "OST" : "Song",
       ...(row.year ? [String(row.year)] : []),
@@ -121,11 +126,19 @@ export function mapTrackRecordToSongDetail(
     imageUrl: row.imageUrl ?? poster(slug),
     backdropUrl: row.backdropUrl ?? row.imageUrl ?? poster(slug),
     accent: (row.accent as AccentColor) ?? undefined,
+    sourceContentSlug: row.sourceContent?.slug,
+    durationSeconds: row.durationSeconds ?? undefined,
     matchScore: undefined,
     engagementStats,
     seasons: [],
     episodes: [],
     characters: buildCharacters(row),
+    linkedArtist: row.artistRef
+      ? mapArtistToContentItem(row.artistRef)
+      : undefined,
+    linkedSourceContent: row.sourceContent
+      ? mapContentToItem(row.sourceContent)
+      : undefined,
     featuredOsts: similarTracks.filter((t) => t.id !== slug).slice(0, 6),
     relatedContent: [],
     collections: [],

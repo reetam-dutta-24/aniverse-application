@@ -328,7 +328,11 @@ export interface ContentDetail {
   rating: number;
   trendingLabel?: string;
   genres: Genre[];
+  /** Full plot summary for the detail hero (may be clamped with an external read-more link). */
+  description: string;
   synopsis: string;
+  /** IMDb / MyAnimeList search URL for the full plot on an external reference site. */
+  referenceUrl: string;
   /** e.g. "AI Match 98%", "All Seasons". */
   highlightTags: string[];
   metadata: ContentMetadata;
@@ -341,6 +345,10 @@ export interface ContentDetail {
   seasons: ContentSeason[];
   episodes: Episode[];
   characters: Character[];
+  /** Song detail — linked artist profile for catalog cards. */
+  linkedArtist?: ContentItem;
+  /** Song detail — linked show/movie/anime for catalog cards. */
+  linkedSourceContent?: ContentItem;
   featuredOsts: MusicTrack[];
   relatedContent: ContentItem[];
   collections: Collection[];
@@ -356,6 +364,10 @@ export interface ContentDetail {
   creditLabel?: string;
   /** Audio resume position label, e.g. "1:24". */
   resumeLabel?: string;
+  /** Linked show/movie — song watchlist CTA. */
+  sourceContentSlug?: string;
+  /** Playback length in seconds (songs). */
+  durationSeconds?: number;
 }
 
 export type MemberRole = "owner" | "admin" | "moderator" | "member";
@@ -488,7 +500,11 @@ export interface ArtistDetail {
   /** e.g. "#1 in your favourite artist" */
   rankRight?: string;
   genres: Genre[];
+  /** Full artist bio for the detail hero (may be clamped with an external read-more link). */
+  description: string;
   synopsis: string;
+  /** Last.fm search URL for the full biography on an external reference site. */
+  referenceUrl: string;
   /** Row-one hero chips — Dance Pop, K-pop, Since 2015, etc. */
   primaryTags: string[];
   metadata: ContentMetadata;

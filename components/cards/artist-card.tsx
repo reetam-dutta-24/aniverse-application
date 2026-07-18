@@ -10,6 +10,7 @@ import { getCardTint } from "@/lib/card-theme";
 import { SLOT_H, SLOT_W } from "@/lib/card-dimensions";
 import type { ContentItem } from "@/types";
 import { Chip, MatchChip, RatingChip } from "@/components/ui/chip";
+import { HdImage } from "@/components/ui/hd-image";
 
 const CARD_W = 160;
 const CARD_H = 252;
@@ -104,8 +105,7 @@ export function ArtistCard({
 
             <div className="mx-auto mt-2 size-[112px] shrink-0 overflow-hidden rounded-full border-2 border-white/15">
               {item.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <HdImage
                   src={item.imageUrl}
                   alt={item.title}
                   className="size-full object-cover"
@@ -152,8 +152,7 @@ export function ArtistCard({
           >
             <div className="relative h-[82px] w-full shrink-0 overflow-hidden">
               {item.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <HdImage
                   src={item.imageUrl}
                   alt={item.title}
                   className="size-full object-cover"

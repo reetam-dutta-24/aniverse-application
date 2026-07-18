@@ -11,6 +11,7 @@ import { SLOT_H, SLOT_W } from "@/lib/card-dimensions";
 import { CardAddToCollectionButton } from "@/components/forms/add-to-collection-dialog";
 import type { MusicTrack } from "@/types";
 import { Chip, MatchChip, RatingChip } from "@/components/ui/chip";
+import { HdImage } from "@/components/ui/hd-image";
 
 const CARD_W = 160;
 const CARD_H = 252;
@@ -171,8 +172,7 @@ export function MusicCard({
 
             <div className="mx-auto mt-1 h-[118px] w-[136px] shrink-0 overflow-hidden rounded-[14px]">
               {track.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <HdImage
                   src={track.imageUrl}
                   alt={track.title}
                   className="size-full object-cover"
@@ -211,8 +211,7 @@ export function MusicCard({
           >
             <div className="relative h-[82px] w-full shrink-0 overflow-hidden">
               {track.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <HdImage
                   src={track.imageUrl}
                   alt={track.title}
                   className="size-full object-cover"

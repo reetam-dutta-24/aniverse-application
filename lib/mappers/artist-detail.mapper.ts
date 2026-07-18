@@ -9,6 +9,7 @@ import type {
   MusicTrack,
   Review,
 } from "@/types";
+import { buildArtistReferenceUrl } from "@/lib/content-reference-url";
 import { formatEngagementCount } from "@/lib/services/content.service";
 import { roundRating } from "@/lib/format-rating";
 import { mapTrackToMusicTrack } from "./music.mapper";
@@ -98,6 +99,8 @@ export function mapArtistRecordToDetail(row: ArtistRecordFull): ArtistDetail {
     { id: "debut", label: "Debut", value: row.debutYear ? String(row.debutYear) : "—" },
   ];
 
+  const description = row.synopsis?.trim() || `${row.title} on AniVerse.`;
+
   return {
     id: slug,
     title: row.title,
@@ -106,7 +109,9 @@ export function mapArtistRecordToDetail(row: ArtistRecordFull): ArtistDetail {
     rankLeft: row.rankLeft ?? undefined,
     rankRight: row.rankRight ?? undefined,
     genres: mapGenres(row),
-    synopsis: row.synopsis ?? `${row.title} on AniVerse.`,
+    description,
+    synopsis: description,
+    referenceUrl: buildArtistReferenceUrl(row.title),
     primaryTags,
     metadata: {
       studio: row.label ?? undefined,

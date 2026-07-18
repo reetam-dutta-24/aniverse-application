@@ -15,6 +15,7 @@ import {
   DETAIL_HERO_BTN_ACCENT_SOLID,
 } from "@/lib/detail-route-ui";
 import { AvatarStack } from "@/components/ui/avatar-stack";
+import { HdImage } from "@/components/ui/hd-image";
 import { ToggleCollectionFavoriteButton } from "@/components/forms/toggle-collection-favorite-button";
 import { AddCollectionCollaboratorButton } from "@/components/forms/add-collection-collaborator-button";
 import type { CollectionCurrentActivity, UserSummary } from "@/types";
@@ -53,8 +54,7 @@ export function CollectionActivityPanel({
     <aside className="flex h-full min-h-0 max-h-[calc(100dvh-4.5rem)] flex-col overflow-hidden bg-black">
       <div className="relative min-h-0 flex-1 overflow-hidden">
         {wallpaperImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <HdImage
             src={wallpaperImageUrl}
             alt={title}
             className="size-full object-cover object-top"

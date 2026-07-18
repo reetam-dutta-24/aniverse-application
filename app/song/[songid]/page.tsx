@@ -2,15 +2,16 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CollectionCard, CommunityCard, MusicCard } from "@/components/cards";
 import {
-  ContentCharacterCard,
   ContentDetailHero,
   ContentPageSection,
   InteractiveReviewSection,
 } from "@/components/content";
+import { SongRelatedCatalogSection } from "@/components/song/song-related-catalog-section";
 import { getCommunityMemberPreview } from "@/lib/data/community";
 import { getOptionalUser } from "@/lib/data/user";
 import { getAllSongIds, getSongDetail } from "@/lib/data/song-detail";
-import { isContentFavorited } from "@/lib/services/favorite.service";
+import { isTrackFavorited } from "@/lib/services/favorite.service";
+import { isContentOnWatchlist } from "@/lib/services/watchlist.service";
 
 interface SongPageProps {
   params: Promise<{ songid: string }>;
@@ -44,28 +45,25 @@ export default async function SongDetailPage({ params }: SongPageProps) {
   if (!song) notFound();
 
   const initialFavorited = viewer?.id
-    ? await isContentFavorited(viewer.id, song.id)
+    ? await isTrackFavorited(viewer.id, song.id)
     : false;
+
+  const initialOnWatchlist =
+    viewer?.id && song.sourceContentSlug
+      ? await isContentOnWatchlist(viewer.id, song.sourceContentSlug)
+      : false;
 
   return (
     <div className="flex w-full flex-col gap-10 sm:gap-12 lg:gap-14">
-      <ContentDetailHero content={song} initialFavorited={initialFavorited} />
+      <ContentDetailHero
+        content={song}
+        initialFavorited={initialFavorited}
+        initialOnWatchlist={initialOnWatchlist}
+      />
 
-      <ContentPageSection
-        title="🎤 Artists, Album And Show/Anime/Movie"
-        variant="content"
-        rowHover={false}
-        slides={song.characters.map((character) => ({
-          id: character.id,
-          node: (
-            <ContentCharacterCard
-              character={character}
-              contentId={song.id}
-              contentAccent={song.accent}
-              interactive={false}
-            />
-          ),
-        }))}
+      <SongRelatedCatalogSection
+        linkedArtist={song.linkedArtist}
+        linkedSourceContent={song.linkedSourceContent}
       />
 
       <ContentPageSection

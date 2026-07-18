@@ -12,6 +12,7 @@ import { SLOT_H, SLOT_W } from "@/lib/card-dimensions";
 import { CardAddToCollectionButton } from "@/components/forms/add-to-collection-dialog";
 import type { ContentItem } from "@/types";
 import { Chip, MatchChip, RatingChip } from "@/components/ui/chip";
+import { HdImage } from "@/components/ui/hd-image";
 
 const typeLabels: Record<ContentItem["type"], string> = {
   anime: "Anime",
@@ -145,8 +146,7 @@ export function PosterCard({
 
             <div className="mx-auto mt-1 h-[118px] w-[136px] shrink-0 overflow-hidden rounded-[14px]">
               {item.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <HdImage
                   src={item.imageUrl}
                   alt={item.title}
                   className="size-full object-cover"
@@ -188,8 +188,7 @@ export function PosterCard({
           >
             <div className="relative h-[82px] w-full shrink-0 overflow-hidden">
               {item.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <HdImage
                   src={item.imageUrl}
                   alt={item.title}
                   className="size-full object-cover"

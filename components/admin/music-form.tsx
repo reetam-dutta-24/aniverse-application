@@ -139,6 +139,8 @@ export function MusicForm({ mode, recordId, initial }: MusicFormProps) {
                 if (selection?.title) update("artist", selection.title);
               }}
               placeholder="Search artists…"
+              adminSearch
+              resultLimit={40}
             />
           </Field>
           <Field label="Rating">
@@ -182,6 +184,8 @@ export function MusicForm({ mode, recordId, initial }: MusicFormProps) {
                 if (selection?.title) update("source", selection.title);
               }}
               placeholder="Search anime, movies, shows…"
+              adminSearch
+              resultLimit={40}
             />
           </Field>
           <Field label="Trending label">

@@ -78,6 +78,8 @@ export function SlugListEditor({
         values={items}
         onChange={onChange}
         placeholder={placeholder}
+        adminSearch
+        resultLimit={40}
       />
     </Field>
   );

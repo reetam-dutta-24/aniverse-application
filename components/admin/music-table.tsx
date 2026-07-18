@@ -13,7 +13,13 @@ export interface AdminMusicRow {
   kind: string;
 }
 
-export function AdminMusicTable({ rows }: { rows: AdminMusicRow[] }) {
+export function AdminMusicTable({
+  rows,
+  searchQuery,
+}: {
+  rows: AdminMusicRow[];
+  searchQuery?: string;
+}) {
   const router = useRouter();
 
   async function handleDelete(recordId: string, title: string) {
@@ -26,7 +32,9 @@ export function AdminMusicTable({ rows }: { rows: AdminMusicRow[] }) {
   if (rows.length === 0) {
     return (
       <p className="rounded-2xl border border-white/10 bg-white/5 px-4 py-8 text-center text-sm text-white/60">
-        No tracks yet. Create your first song or OST.
+        {searchQuery
+          ? `No tracks match “${searchQuery}”. Try a different title, artist, or slug.`
+          : "No tracks yet. Create your first song or OST."}
       </p>
     );
   }

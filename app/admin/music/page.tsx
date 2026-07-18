@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
+import { AdminCatalogPagination } from "@/components/admin/admin-catalog-pagination";
+import { AdminCatalogSearchBar } from "@/components/admin/admin-catalog-search-bar";
 import { AdminMusicTable } from "@/components/admin/music-table";
 import { requireMusicAdmin } from "@/lib/auth-guards";
 import { listCatalogTracks } from "@/lib/services/music.service";
@@ -9,9 +12,17 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function AdminMusicPage() {
+interface AdminMusicPageProps {
+  searchParams: Promise<{ q?: string; page?: string }>;
+}
+
+export default async function AdminMusicPage({ searchParams }: AdminMusicPageProps) {
   await requireMusicAdmin();
-  const result = await listCatalogTracks({ pageSize: 100 });
+  const { q, page: pageParam } = await searchParams;
+  const page = Math.max(1, Number(pageParam) || 1);
+  const search = q?.trim() || undefined;
+
+  const result = await listCatalogTracks({ search, page, pageSize: 50 });
 
   const rows = result.items.map(({ recordId, track }) => ({
     recordId,
@@ -26,7 +37,11 @@ export default async function AdminMusicPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Music catalog</h1>
-          <p className="mt-1 text-sm text-white/60">{result.total} tracks</p>
+          <p className="mt-1 text-sm text-white/60">
+            {search
+              ? `${result.total} match${result.total === 1 ? "" : "es"} for “${search}”`
+              : `${result.total} tracks`}
+          </p>
         </div>
         <Link
           href="/admin/music/new"
@@ -35,7 +50,24 @@ export default async function AdminMusicPage() {
           + New track
         </Link>
       </div>
-      <AdminMusicTable rows={rows} />
+
+      <Suspense fallback={null}>
+        <AdminCatalogSearchBar
+          defaultQuery={search ?? ""}
+          placeholder="Search tracks, artists, slugs…"
+        />
+      </Suspense>
+
+      <AdminMusicTable rows={rows} searchQuery={search} />
+
+      <Suspense fallback={null}>
+        <AdminCatalogPagination
+          page={result.page}
+          totalPages={result.totalPages}
+          total={result.total}
+          pageSize={result.pageSize}
+        />
+      </Suspense>
     </div>
   );
 }

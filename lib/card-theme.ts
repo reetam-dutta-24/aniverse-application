@@ -129,7 +129,7 @@ export function getHexGlass(hex: string, alpha = 0.2): string {
 export function getDetailHeroBoundaryGlow(glass: string) {
   const [r, g, b] = getTintRgb(glass);
   return {
-    boxShadow: `inset 0 0 72px 14px rgba(${r},${g},${b},0.2), inset 0 28px 48px rgba(${r},${g},${b},0.11), inset 0 -28px 48px rgba(${r},${g},${b},0.09), inset 28px 0 48px rgba(${r},${g},${b},0.1), inset -28px 0 48px rgba(${r},${g},${b},0.13)`,
-    radialBackground: `radial-gradient(ellipse 100% 80% at 0% 0%, rgba(${r},${g},${b},0.07) 0%, transparent 55%), radial-gradient(ellipse 70% 90% at 100% 50%, rgba(${r},${g},${b},0.05) 0%, transparent 60%)`,
+    boxShadow: `inset 0 0 96px 4px rgba(${r},${g},${b},0.09), inset 0 14px 56px rgba(${r},${g},${b},0.055), inset 0 -14px 56px rgba(${r},${g},${b},0.045), inset 14px 0 56px rgba(${r},${g},${b},0.05), inset -14px 0 56px rgba(${r},${g},${b},0.065)`,
+    radialBackground: `radial-gradient(ellipse 100% 80% at 0% 0%, rgba(${r},${g},${b},0.038) 0%, transparent 55%), radial-gradient(ellipse 70% 90% at 100% 50%, rgba(${r},${g},${b},0.026) 0%, transparent 60%)`,
   };
 }

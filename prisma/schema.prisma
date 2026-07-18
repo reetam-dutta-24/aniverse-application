@@ -47,6 +47,7 @@ model User {
   collectionFavorites   CollectionFavorite[]
   contentFavorites      ContentFavorite[]
   artistFavorites       ArtistFavorite[]
+  trackFavorites        TrackFavorite[]
   artistFollows         ArtistFollow[]
   collections           Collection[]
   reviews               Review[]
@@ -366,6 +367,7 @@ model MusicTrack {
   reviews         Review[]
   catalogReviews  CatalogReview[]
   watchChannels   CommunityWatchChannel[]
+  favorites       TrackFavorite[]
 
   @@index([slug])
   @@index([artistId])
@@ -540,6 +542,20 @@ model ArtistFollow {
   @@unique([userId, artistId])
   @@index([userId])
   @@index([artistId])
+}
+
+model TrackFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  trackId   String
+  createdAt DateTime @default(now())
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track MusicTrack @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, trackId])
+  @@index([userId])
+  @@index([trackId])
 }
 
 // ─── Communities & social ────────────────────────────────────────────────────

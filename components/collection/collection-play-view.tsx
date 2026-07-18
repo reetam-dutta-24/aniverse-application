@@ -34,6 +34,7 @@ import { moveToPlayNext, removeQueueItem } from "@/lib/play-queue-utils";
 import { PlayAmbientBackground } from "@/components/collection/play-ambient-background";
 import { PlayQueueRowActions } from "@/components/collection/play-queue-row-actions";
 import { Chip, RatingChip } from "@/components/ui/chip";
+import { HdImage } from "@/components/ui/hd-image";
 import type {
   CollectionPlayContentItem,
   CollectionPlayQueue,
@@ -86,8 +87,7 @@ function QueueCover({
   return (
     <span className={sizeClass}>
       {imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <HdImage
           src={imageUrl}
           alt=""
           className="block size-full object-cover object-center"
@@ -123,8 +123,7 @@ function PlayNowPlayingCover({
       style={{ borderColor: theme.border }}
     >
       {imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <HdImage
           src={imageUrl}
           alt=""
           className="block size-full object-cover object-center"
@@ -169,8 +168,7 @@ function CollectionPlayHeader({
     <header className="mb-6 flex items-start gap-5 sm:mb-7 sm:gap-6 lg:gap-7">
       <div className={PLAY_HEADER_COVER} style={{ borderColor: theme.border }}>
         {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <HdImage
             src={imageUrl}
             alt=""
             className="block size-full object-cover object-center"
@@ -523,10 +521,7 @@ function MusicPlayQueue({
 
   return (
     <div className={cn("relative w-full", PLAY_MIN_H)}>
-      <PlayAmbientBackground
-        accent={currentTrack?.accent}
-        imageUrl={nowPlayingCoverUrl}
-      />
+      <PlayAmbientBackground accent={currentTrack?.accent} />
 
       <div className={cn("relative z-10 grid lg:grid-cols-[7fr_3fr]", PLAY_MIN_H)}>
       <audio ref={audioRef} preload="metadata" className="hidden" />
@@ -661,7 +656,7 @@ function MusicPlayQueue({
         )}
         style={{
           borderLeft: `1px solid ${theme.border}`,
-          backgroundColor: "rgba(12,10,20,0.72)",
+          backgroundColor: theme.panelBg,
         }}
       >
         {currentTrack ? (
@@ -868,7 +863,7 @@ function ContentPlayQueue({
 
   return (
     <div className={cn("relative w-full", PLAY_MIN_H)}>
-      <PlayAmbientBackground accent={activeItem?.accent} imageUrl={bannerUrl} />
+      <PlayAmbientBackground accent={activeItem?.accent} />
 
       <div className={cn("relative z-10 grid lg:grid-cols-[7fr_3fr]", PLAY_MIN_H)}>
       {/* Left 70% — binge queue */}
@@ -981,7 +976,7 @@ function ContentPlayQueue({
         )}
         style={{
           borderLeft: `1px solid ${theme.border}`,
-          backgroundColor: "rgba(12,10,20,0.72)",
+          backgroundColor: theme.panelBg,
         }}
       >
         {activeItem ? (

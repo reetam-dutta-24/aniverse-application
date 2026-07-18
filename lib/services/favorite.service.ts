@@ -109,6 +109,48 @@ export async function toggleContentFavorite(userId: string, contentSlug: string)
   return { favorited: true };
 }
 
+export async function isTrackFavorited(
+  userId: string,
+  trackSlug: string,
+): Promise<boolean> {
+  const rows = await prisma.$queryRaw<{ id: string }[]>`
+    SELECT tf.id
+    FROM "TrackFavorite" tf
+    INNER JOIN "MusicTrack" t ON t.id = tf."trackId"
+    WHERE tf."userId" = ${userId} AND t.slug = ${trackSlug}
+    LIMIT 1
+  `;
+  return rows.length > 0;
+}
+
+export async function toggleTrackFavorite(userId: string, trackSlug: string) {
+  const track = await prisma.musicTrack.findUnique({
+    where: { slug: trackSlug },
+    select: { id: true },
+  });
+  if (!track) throw new FavoriteNotFoundError("Track not found.");
+
+  const existing = await prisma.$queryRaw<{ id: string }[]>`
+    SELECT id FROM "TrackFavorite"
+    WHERE "userId" = ${userId} AND "trackId" = ${track.id}
+    LIMIT 1
+  `;
+
+  if (existing.length > 0) {
+    await prisma.$executeRaw`
+      DELETE FROM "TrackFavorite" WHERE id = ${existing[0].id}
+    `;
+    return { favorited: false };
+  }
+
+  const favoriteId = crypto.randomUUID();
+  await prisma.$executeRaw`
+    INSERT INTO "TrackFavorite" (id, "userId", "trackId", "createdAt")
+    VALUES (${favoriteId}, ${userId}, ${track.id}, NOW())
+  `;
+  return { favorited: true };
+}
+
 export async function isArtistFavorited(
   userId: string,
   artistSlug: string,

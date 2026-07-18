@@ -12,7 +12,7 @@ import type {
   Review,
 } from "@/types";
 import { isMovieContentType } from "@/lib/content-media";
-import { formatDetailSynopsis } from "@/lib/format-detail-synopsis";
+import { buildContentReferenceUrl } from "@/lib/content-reference-url";
 import { roundRating } from "@/lib/format-rating";
 import {
   formatEngagementCount,
@@ -165,8 +165,11 @@ export function mapContentRecordToDetail(
   fallbackRelated: ContentItem[] = [],
 ): ContentDetail {
   const slug = row.slug;
-  const synopsisSource =
-    row.synopsis ?? row.description ?? `${row.title} on AniVerse.`;
+  const type = prismaMediaTypeToApp(row.type);
+  const description =
+    row.description?.trim() ||
+    row.synopsis?.trim() ||
+    `${row.title} on AniVerse.`;
   const related =
     row.relatedFrom.length > 0
       ? mapRelated(row)
@@ -182,7 +185,9 @@ export function mapContentRecordToDetail(
       row.trendingLabel ??
       `Trending on AniVerse · ${prismaMediaTypeToApp(row.type).toUpperCase()}`,
     genres: row.genres.map((g) => mapGenre(g.genre)),
-    synopsis: formatDetailSynopsis(synopsisSource),
+    description,
+    synopsis: description,
+    referenceUrl: buildContentReferenceUrl(type, row.title, row.year),
     highlightTags: buildHighlightTags(row),
     metadata: buildMetadata(row),
     imageUrl: row.imageUrl ?? poster(slug),

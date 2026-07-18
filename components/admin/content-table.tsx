@@ -6,7 +6,13 @@ import { Pencil, Trash2 } from "lucide-react";
 import type { AdminContentRow } from "@/components/admin/types";
 import { getContentDetailPath } from "@/lib/content-routes";
 
-export function AdminContentTable({ rows }: { rows: AdminContentRow[] }) {
+export function AdminContentTable({
+  rows,
+  searchQuery,
+}: {
+  rows: AdminContentRow[];
+  searchQuery?: string;
+}) {
   const router = useRouter();
 
   async function handleDelete(recordId: string, title: string) {
@@ -27,7 +33,9 @@ export function AdminContentTable({ rows }: { rows: AdminContentRow[] }) {
   if (rows.length === 0) {
     return (
       <p className="rounded-2xl border border-white/10 bg-white/5 px-4 py-8 text-center text-sm text-white/60">
-        No catalog content yet. Create your first title to replace mock data.
+        {searchQuery
+          ? `No content matches “${searchQuery}”. Try a different title or slug.`
+          : "No catalog content yet. Create your first title to replace mock data."}
       </p>
     );
   }

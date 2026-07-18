@@ -220,6 +220,7 @@ export interface MusicSeed {
   durationLabel?: string;
   durationSeconds?: number;
   imageUrl?: string;
+  backdropUrl?: string;
   accent?: AccentColor;
   trendingLabel?: string;
   creditLabel?: string;

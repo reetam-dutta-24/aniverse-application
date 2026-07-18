@@ -7,6 +7,7 @@ import {
   getDetailHeroBoundaryGlow,
 } from "@/lib/card-theme";
 import { Chip, MatchChip } from "@/components/ui/chip";
+import { ContentDescription } from "@/components/content/content-description";
 import { ArtistHeroTrendingSlider } from "@/components/artist/artist-hero-trending-slider";
 import { ArtistNowPlayingPanel } from "@/components/artist/artist-now-playing-panel";
 import type { ArtistDetail } from "@/types";
@@ -96,9 +97,11 @@ export function ArtistDetailHero({ artist }: ArtistDetailHeroProps) {
               ))}
           </div>
 
-          <p className="max-w-3xl shrink-0 text-sm leading-relaxed text-white/85 sm:text-[15px] sm:leading-7">
-            {artist.synopsis}
-          </p>
+          <ContentDescription
+            text={artist.description}
+            referenceUrl={artist.referenceUrl}
+            className="max-w-3xl shrink-0"
+          />
 
           <div className={CHIP_ROW}>
             {artist.matchScore != null ? (

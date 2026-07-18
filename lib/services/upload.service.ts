@@ -6,7 +6,7 @@ import {
   type ChatAttachmentKind,
 } from "@/lib/chat-emojis";
 
-const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+const IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 const FILE_MAX_BYTES = 10 * 1024 * 1024;
 
 const IMAGE_MIME = new Set([
@@ -95,7 +95,7 @@ function validateUpload(file: File) {
   if (file.size > maxBytes) {
     throw new UploadValidationError(
       isImage
-        ? "Image must be 5 MB or smaller."
+        ? "Image must be 10 MB or smaller."
         : "File must be 10 MB or smaller.",
     );
   }
@@ -147,7 +147,7 @@ export async function saveUploadedImage(
   }
 
   if (file.size > IMAGE_MAX_BYTES) {
-    throw new UploadValidationError("Image must be 5 MB or smaller.");
+    throw new UploadValidationError("Image must be 10 MB or smaller.");
   }
 
   return persistUpload(file, userId, "images");

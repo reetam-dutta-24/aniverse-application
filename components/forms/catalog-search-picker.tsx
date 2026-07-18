@@ -38,6 +38,9 @@ interface CatalogSearchInputProps {
   placeholder?: string;
   onSelect: (selection: CatalogPickerSelection) => void;
   autoFocus?: boolean;
+  /** Use admin CMS search API (DB-backed, higher limits). */
+  adminSearch?: boolean;
+  resultLimit?: number;
 }
 
 function CatalogSearchInput({
@@ -46,6 +49,8 @@ function CatalogSearchInput({
   placeholder = "Search titles, artists, anime…",
   onSelect,
   autoFocus = false,
+  adminSearch = false,
+  resultLimit = 12,
 }: CatalogSearchInputProps) {
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -62,7 +67,8 @@ function CatalogSearchInput({
 
   useEffect(() => {
     const q = query.trim();
-    if (q.length < 2) {
+    const minLength = adminSearch ? 1 : 2;
+    if (q.length < minLength) {
       setResults([]);
       setLoading(false);
       return;
@@ -71,9 +77,11 @@ function CatalogSearchInput({
     setLoading(true);
     const timer = window.setTimeout(async () => {
       try {
-        const response = await fetch(
-          `/api/search?q=${encodeURIComponent(q)}&limit=12`,
-        );
+        const limit = adminSearch ? Math.max(resultLimit, 24) : resultLimit;
+        const endpoint = adminSearch
+          ? `/api/admin/catalog-search?q=${encodeURIComponent(q)}&limit=${limit}&types=${allowedTypes.join(",")}`
+          : `/api/search?q=${encodeURIComponent(q)}&limit=${limit}`;
+        const response = await fetch(endpoint);
         if (!response.ok) return;
         const data = (await response.json()) as { results: SearchResult[] };
         const exclude = new Set(excludeIds);
@@ -90,7 +98,7 @@ function CatalogSearchInput({
     }, 250);
 
     return () => window.clearTimeout(timer);
-  }, [query, allowedTypes, excludeIds]);
+  }, [query, allowedTypes, excludeIds, adminSearch, resultLimit]);
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
@@ -111,7 +119,7 @@ function CatalogSearchInput({
     requestAnimationFrame(() => inputRef.current?.focus());
   }
 
-  const showPanel = open && query.trim().length >= 2;
+  const showPanel = open && query.trim().length >= (adminSearch ? 1 : 2);
 
   return (
     <div ref={rootRef} className="relative">
@@ -155,7 +163,7 @@ function CatalogSearchInput({
         <div
           id={listId}
           role="listbox"
-          className="absolute top-[calc(100%+8px)] z-[70] max-h-64 w-full overflow-y-auto rounded-xl border border-white/10 bg-[#12091f] p-1.5 shadow-2xl"
+          className="absolute top-[calc(100%+8px)] z-[70] max-h-80 w-full overflow-y-auto rounded-xl border border-white/10 bg-[#12091f] p-1.5 shadow-2xl"
         >
           {loading ? (
             <p className="px-3 py-4 text-sm text-white/55">Searching…</p>
@@ -222,6 +230,8 @@ interface CatalogSearchPickerProps {
   placeholder?: string;
   hint?: string;
   showHint?: boolean;
+  adminSearch?: boolean;
+  resultLimit?: number;
 }
 
 interface CatalogMultiSearchPickerProps {
@@ -234,6 +244,8 @@ interface CatalogMultiSearchPickerProps {
   maxItems?: number;
   /** Slugs already in the target collection — hidden from search and blocked on add. */
   blockedIds?: string[];
+  adminSearch?: boolean;
+  resultLimit?: number;
 }
 
 function SelectionCard({
@@ -283,8 +295,10 @@ export function CatalogSearchPicker({
   value,
   onChange,
   placeholder = "Search titles, artists, anime…",
-  hint = "Type at least 2 characters to search the catalog.",
+  hint = "Type to search the catalog.",
   showHint = true,
+  adminSearch = false,
+  resultLimit = 12,
 }: CatalogSearchPickerProps) {
   return (
     <div className="flex flex-col gap-2">
@@ -296,11 +310,17 @@ export function CatalogSearchPicker({
           placeholder={placeholder}
           onSelect={onChange}
           autoFocus
+          adminSearch={adminSearch}
+          resultLimit={resultLimit}
         />
       )}
 
       {showHint && !value ? (
-        <p className="text-xs text-white/40">{hint}</p>
+        <p className="text-xs text-white/40">
+          {adminSearch
+            ? "Admin search scans the full database — title, slug, artist, and more."
+            : hint}
+        </p>
       ) : null}
     </div>
   );
@@ -315,6 +335,8 @@ export function CatalogMultiSearchPicker({
   hint = "Search, pick an item, then keep searching to add more — all in one go.",
   maxItems = 24,
   blockedIds = [],
+  adminSearch = false,
+  resultLimit = 12,
 }: CatalogMultiSearchPickerProps) {
   const [labels, setLabels] = useState<Record<string, CatalogPickerSelection>>({});
   const [duplicateNotice, setDuplicateNotice] = useState<string>();
@@ -410,6 +432,8 @@ export function CatalogMultiSearchPicker({
           placeholder={placeholder}
           onSelect={addSelection}
           autoFocus={values.length === 0}
+          adminSearch={adminSearch}
+          resultLimit={resultLimit}
         />
       )}
 

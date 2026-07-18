@@ -26,12 +26,16 @@ import { Button } from "@/components/ui/button";
 import { Chip, MatchChip } from "@/components/ui/chip";
 import { DetailImage } from "@/components/ui/detail-image";
 import { ContentHeroActions } from "@/components/content/content-hero-actions";
+import { ContentDescription } from "@/components/content/content-description";
 import { ContentHeroPosterActions } from "@/components/content/content-hero-poster-actions";
+import { SongHeroPosterPanel } from "@/components/song/song-hero-poster-panel";
+import { SongHeroWatchlistButton } from "@/components/song/song-hero-watchlist-button";
 import type { ContentDetail, ContentEngagementStat, ContentMetadata, Episode, MediaType } from "@/types";
 
 export interface ContentDetailHeroProps {
   content: ContentDetail;
   initialFavorited?: boolean;
+  initialOnWatchlist?: boolean;
 }
 
 const STAT_ICONS: Record<string, LucideIcon> = {
@@ -161,6 +165,7 @@ function buildMetadataRows(
 export function ContentDetailHero({
   content,
   initialFavorited,
+  initialOnWatchlist,
 }: ContentDetailHeroProps) {
   const tint = getAccentTint(content.accent);
   const heroGlow = getDetailHeroBoundaryGlow(tint.glass);
@@ -235,9 +240,11 @@ export function ContentDetailHero({
             ))}
           </div>
 
-          <p className="line-clamp-4 max-w-3xl text-sm leading-relaxed text-white/85 sm:text-[15px] sm:leading-7">
-            {content.synopsis}
-          </p>
+          <ContentDescription
+            text={content.description}
+            referenceUrl={content.referenceUrl}
+            className="max-w-3xl"
+          />
 
           <div className={CHIP_ROW}>
             {content.matchScore != null ? (
@@ -294,15 +301,23 @@ export function ContentDetailHero({
             )}
 
             <div className={cn(DETAIL_HERO_BTN_PAIR, "shrink-0 sm:justify-end")}>
-              <Button
-                size="sm"
-                className={detailHeroBtnBase(
-                  "border-transparent bg-gradient-blue-violet hover:border-brand-magenta hover:bg-transparent hover:[background-image:none]",
-                )}
-              >
-                <Plus className="size-3.5 shrink-0" />
-                <span className="truncate">Add To Collection</span>
-              </Button>
+              {songMedia ? (
+                <SongHeroWatchlistButton
+                  sourceContentSlug={content.sourceContentSlug}
+                  sourceTitle={content.metadata.originalAuthor}
+                  initialOnWatchlist={initialOnWatchlist}
+                />
+              ) : (
+                <Button
+                  size="sm"
+                  className={detailHeroBtnBase(
+                    "border-transparent bg-gradient-blue-violet hover:border-brand-magenta hover:bg-transparent hover:[background-image:none]",
+                  )}
+                >
+                  <Plus className="size-3.5 shrink-0" />
+                  <span className="truncate">Add To Collection</span>
+                </Button>
+              )}
             </div>
           </div>
 
@@ -341,24 +356,44 @@ export function ContentDetailHero({
               aria-hidden
               className="pointer-events-none absolute inset-0"
               style={{
-                boxShadow:
-                  "inset 0 0 140px 85px rgba(0,0,0,0.94), inset -72px 0 110px rgba(0,0,0,0.88), inset 0 -110px 130px rgba(0,0,0,0.96), inset 0 48px 72px rgba(0,0,0,0.55)",
+                boxShadow: songMedia
+                  ? "inset 0 0 64px 34px rgba(0,0,0,0.48), inset -34px 0 50px rgba(0,0,0,0.36), inset 0 -50px 60px rgba(0,0,0,0.52), inset 0 20px 32px rgba(0,0,0,0.22)"
+                  : "inset 0 0 96px 58px rgba(0,0,0,0.72), inset -52px 0 76px rgba(0,0,0,0.62), inset 0 -76px 92px rgba(0,0,0,0.74), inset 0 34px 52px rgba(0,0,0,0.38)",
               }}
             />
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background/20 via-transparent to-black/75"
+              className={cn(
+                "pointer-events-none absolute inset-0 bg-gradient-to-r from-background/20 via-transparent",
+                songMedia ? "to-black/38" : "to-black/58",
+              )}
             />
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/92 via-black/15 to-black/35"
+              className={cn(
+                "pointer-events-none absolute inset-0 bg-gradient-to-t via-black/15",
+                songMedia
+                  ? "from-black/56 to-black/18"
+                  : "from-black/78 to-black/26",
+              )}
             />
 
-            <ContentHeroPosterActions
-              content={content}
-              continueEpisode={continueEpisode}
-              initialFavorited={initialFavorited}
-            />
+            {songMedia ? (
+              <SongHeroPosterPanel
+                songSlug={content.id}
+                title={content.title}
+                artist={content.metadata.studio ?? content.creditLabel ?? "Artist"}
+                resumeLabel={content.resumeLabel}
+                durationSeconds={content.durationSeconds}
+                initialFavorited={initialFavorited}
+              />
+            ) : (
+              <ContentHeroPosterActions
+                content={content}
+                continueEpisode={continueEpisode}
+                initialFavorited={initialFavorited}
+              />
+            )}
           </div>
         </div>
       </div>

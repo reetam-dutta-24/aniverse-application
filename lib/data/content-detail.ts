@@ -52,6 +52,7 @@ const jjkEpisodeThumbs = [
 const epThumb = (index: number) =>
   jjkEpisodeThumbs[index % jjkEpisodeThumbs.length];
 
+import { buildContentReferenceUrl } from "@/lib/content-reference-url";
 import { DETAIL_SYNOPSIS_WORDS, formatDetailSynopsis } from "@/lib/format-detail-synopsis";
 
 export { DETAIL_SYNOPSIS_WORDS, formatDetailSynopsis };
@@ -501,6 +502,9 @@ const jjkReviews: Review[] = [
   },
 ];
 
+const jjkSynopsis =
+  "A boy swallows a cursed talisman and becomes the vessel of a demon. He enrolls at a shaman school to find the remaining fingers and survive a war between sorcerers and curses. Alongside Megumi, Nobara, and Satoru Gojo, Yuji Itadori faces brutal missions where failure means death. Dark stylish action with MAPPA animation, cursed energy battles, and stakes that escalate from school trials to the devastation of Shibuya. Jujutsu Kaisen stands out as a thriller anime with sharp pacing, layered characters, and set pieces that fans revisit on AniVerse. Released in 2019 by MAPPA, directed by Sunghoo Park, it continues to draw new viewers alongside devoted fans who appreciate its craft and emotional payoff.";
+
 const jjkDetail: ContentDetail = {
   id: "jujutsu-kaisen",
   title: "Jujutsu Kaisen",
@@ -512,9 +516,9 @@ const jjkDetail: ContentDetail = {
     g("thriller", "Thriller"),
     g("action", "Action"),
   ],
-  synopsis: formatDetailSynopsis(
-    "A boy swallows a cursed talisman and becomes the vessel of a demon. He enrolls at a shaman school to find the remaining fingers and survive a war between sorcerers and curses. Alongside Megumi, Nobara, and Satoru Gojo, Yuji Itadori faces brutal missions where failure means death. Dark stylish action with MAPPA animation, cursed energy battles, and stakes that escalate from school trials to the devastation of Shibuya.",
-  ),
+  description: jjkSynopsis,
+  synopsis: jjkSynopsis,
+  referenceUrl: buildContentReferenceUrl("anime", "Jujutsu Kaisen", 2020),
   highlightTags: [],
   accent: "blue",
   metadata: {
@@ -630,6 +634,9 @@ function buildDetailFromItem(
   related: ContentItem[],
 ): ContentDetail {
   const slug = item.id.replace(/-t$/, "");
+  const description =
+    item.description ??
+    `${item.title} follows a gripping story of conflict and survival, as its cast faces rising stakes, sharp animation, and emotional twists across every season. Discover episodes, characters, soundtracks, and fan communities curated for your taste. Watch trailers, track your progress, and join discussions with fans who share your genres and ratings on AniVerse. ${item.title} stands out with sharp pacing, layered characters, and set pieces that fans revisit on AniVerse.`;
   return {
     id: item.id,
     title: item.title,
@@ -637,10 +644,9 @@ function buildDetailFromItem(
     rating: item.rating ?? 8.5,
     trendingLabel: `Trending on AniVerse · ${item.type}`,
     genres: item.genres,
-    synopsis: formatDetailSynopsis(
-      item.description ??
-        `${item.title} follows a gripping story of conflict and survival, as its cast faces rising stakes, sharp animation, and emotional twists across every season. Discover episodes, characters, soundtracks, and fan communities curated for your taste. Watch trailers, track your progress, and join discussions with fans who share your genres and ratings on AniVerse.`,
-    ),
+    description,
+    synopsis: description,
+    referenceUrl: buildContentReferenceUrl(item.type, item.title, item.year),
     highlightTags: [],
     metadata: {
       imdbRating: item.rating ?? 8.5,

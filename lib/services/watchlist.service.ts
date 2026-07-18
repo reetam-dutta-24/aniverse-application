@@ -22,6 +22,19 @@ async function findContentIdBySlug(slug: string) {
   return row?.id ?? null;
 }
 
+export async function isContentOnWatchlist(
+  userId: string,
+  contentSlug: string,
+): Promise<boolean> {
+  const contentId = await findContentIdBySlug(contentSlug);
+  if (!contentId) return false;
+  const row = await prisma.watchlistItem.findFirst({
+    where: { userId, contentId },
+    select: { id: true },
+  });
+  return row != null;
+}
+
 export async function listWatchlistForUser(
   userId: string,
   options: {

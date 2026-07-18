@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { AdminArtistTable } from "@/components/admin/artist-table";
+import { AdminCatalogSearchBar } from "@/components/admin/admin-catalog-search-bar";
 import { requireArtistAdmin } from "@/lib/auth-guards";
 import { listCatalogArtists } from "@/lib/services/artist.service";
 
@@ -9,9 +11,17 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function AdminArtistsPage() {
+interface AdminArtistsPageProps {
+  searchParams: Promise<{ q?: string; page?: string }>;
+}
+
+export default async function AdminArtistsPage({ searchParams }: AdminArtistsPageProps) {
   await requireArtistAdmin();
-  const result = await listCatalogArtists({ pageSize: 100 });
+  const { q, page: pageParam } = await searchParams;
+  const page = Math.max(1, Number(pageParam) || 1);
+  const search = q?.trim() || undefined;
+
+  const result = await listCatalogArtists({ search, page, pageSize: 50 });
 
   const rows = result.items.map((item) => ({
     recordId: item.recordId,
@@ -25,7 +35,11 @@ export default async function AdminArtistsPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Artist catalog</h1>
-          <p className="mt-1 text-sm text-white/60">{result.total} artists</p>
+          <p className="mt-1 text-sm text-white/60">
+            {search
+              ? `${result.total} match${result.total === 1 ? "" : "es"} for “${search}”`
+              : `${result.total} artists`}
+          </p>
         </div>
         <Link
           href="/admin/artists/new"
@@ -34,7 +48,15 @@ export default async function AdminArtistsPage() {
           + New artist
         </Link>
       </div>
-      <AdminArtistTable rows={rows} />
+
+      <Suspense fallback={null}>
+        <AdminCatalogSearchBar
+          defaultQuery={search ?? ""}
+          placeholder="Search artist names and slugs…"
+        />
+      </Suspense>
+
+      <AdminArtistTable rows={rows} searchQuery={search} />
     </div>
   );
 }

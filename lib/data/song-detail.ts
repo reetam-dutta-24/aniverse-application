@@ -7,10 +7,14 @@ import type {
   Review,
   UserSummary,
 } from "@/types";
+import { buildSongReferenceUrl } from "@/lib/content-reference-url";
 import { formatDetailSynopsis } from "@/lib/data/content-detail";
 import { normalizeSongSlug } from "@/lib/song-routes";
 import { mapTrackRecordToSongDetail } from "@/lib/mappers/song-detail.mapper";
+import { mapArtistToContentItem } from "@/lib/mappers/artist.mapper";
+import { mapContentToItem } from "@/lib/mappers/content.mapper";
 import { mapTrackToMusicTrack } from "@/lib/mappers/music.mapper";
+import type { TrackRecordFull } from "@/lib/services/music.service";
 import {
   getTrackEngagementStats,
   getTrackRecordBySlug,
@@ -102,6 +106,9 @@ const gurengeReviews: Review[] = [
   },
 ];
 
+const gurengeDescription =
+  "LiSA's breakout anthem for Demon Slayer: Kimetsu no Yaiba — a soaring J-rock track that mirrors Tanjiro's resolve. Blazing guitars, urgent drums, and a chorus built for stadium singalongs made Gurenge a global chart hit and one of the most recognizable anime openings of its generation. Gurenge stands out as a defining OST on AniVerse with sharp production, emotional lift, and replay value for both anime fans and music listeners.";
+
 const gurengeDetail: ContentDetail = {
   id: "gurenge",
   title: "Gurenge",
@@ -111,9 +118,9 @@ const gurengeDetail: ContentDetail = {
   creditLabel: "By LiSA (From Demon Slayer Anime)",
   trendingLabel: "Trending Globally At #2 In Anime OST",
   genres: [g("jpop", "J-POP"), g("energetic", "Energetic")],
-  synopsis: formatDetailSynopsis(
-    "LiSA's breakout anthem for Demon Slayer: Kimetsu no Yaiba — a soaring J-rock track that mirrors Tanjiro's resolve. Blazing guitars, urgent drums, and a chorus built for stadium singalongs made Gurenge a global chart hit and one of the most recognizable anime openings of its generation.",
-  ),
+  description: gurengeDescription,
+  synopsis: gurengeDescription,
+  referenceUrl: buildSongReferenceUrl("Gurenge", "LiSA"),
   highlightTags: [],
   accent: "pink",
   metadata: {
@@ -138,6 +145,31 @@ const gurengeDetail: ContentDetail = {
   ],
   seasons: [],
   episodes: [],
+  sourceContentSlug: "demon-slayer",
+  linkedArtist: {
+    id: "lisa",
+    title: "LiSA",
+    type: "artist",
+    genres: [g("jpop", "J-POP")],
+    rating: 9.2,
+    meta: "Solo Artist",
+    year: 2010,
+    imageUrl: hero(1),
+    accent: "pink",
+    matchScore: 92,
+  },
+  linkedSourceContent: {
+    id: "demon-slayer",
+    title: "Demon Slayer: Kimetsu no Yaiba",
+    type: "anime",
+    genres: [g("action", "Action"), g("fantasy", "Fantasy")],
+    rating: 9.4,
+    meta: "2 Seasons",
+    year: 2019,
+    imageUrl: poster("demon-slayer"),
+    accent: "red",
+    matchScore: 94,
+  },
   characters: [
     {
       id: "lisa",
@@ -226,6 +258,7 @@ function buildDetailFromTrack(
   track: MusicTrack,
   similar: MusicTrack[],
 ): ContentDetail {
+  const description = `${track.title} by ${track.artist}${track.source ? ` — featured in ${track.source}` : ""}. A standout track matched to your listening history, genres, and mood preferences on AniVerse. ${track.title} delivers memorable hooks, polished production, and the kind of replay value fans expect from top-tier catalog picks.`;
   return {
     id: track.id,
     title: track.title,
@@ -236,9 +269,9 @@ function buildDetailFromTrack(
     genres: track.language
       ? [g(track.language.toLowerCase(), track.language)]
       : [g("music", "Music")],
-    synopsis: formatDetailSynopsis(
-      `${track.title} by ${track.artist}${track.source ? ` — featured in ${track.source}` : ""}. A standout track matched to your listening history, genres, and mood preferences on AniVerse.`,
-    ),
+    description,
+    synopsis: description,
+    referenceUrl: buildSongReferenceUrl(track.title, track.artist),
     highlightTags: [],
     accent: "purple",
     metadata: {
@@ -294,6 +327,59 @@ function buildDetailFromTrack(
   };
 }
 
+const contentGenreInclude = {
+  genres: { include: { genre: true } },
+} as const;
+
+async function enrichSongCatalogLinks(
+  detail: ContentDetail,
+  row: TrackRecordFull,
+): Promise<ContentDetail> {
+  let linkedArtist = detail.linkedArtist;
+  let linkedSourceContent = detail.linkedSourceContent;
+  let sourceContentSlug = detail.sourceContentSlug;
+
+  if (!linkedArtist) {
+    if (row.artistRef) {
+      linkedArtist = mapArtistToContentItem(row.artistRef);
+    } else if (row.artist.trim()) {
+      const artist = await prisma.artist.findFirst({
+        where: { title: { equals: row.artist.trim(), mode: "insensitive" } },
+      });
+      if (artist) linkedArtist = mapArtistToContentItem(artist);
+    }
+  }
+
+  if (!linkedSourceContent) {
+    if (row.sourceContent) {
+      linkedSourceContent = mapContentToItem(row.sourceContent);
+      sourceContentSlug = row.sourceContent.slug;
+    } else if (row.kind === "ost" && row.source?.trim()) {
+      const source = row.source.trim();
+      const content = await prisma.content.findFirst({
+        where: {
+          OR: [
+            { title: { equals: source, mode: "insensitive" } },
+            { title: { contains: source, mode: "insensitive" } },
+          ],
+        },
+        include: contentGenreInclude,
+      });
+      if (content) {
+        linkedSourceContent = mapContentToItem(content);
+        sourceContentSlug = content.slug;
+      }
+    }
+  }
+
+  return {
+    ...detail,
+    linkedArtist,
+    linkedSourceContent,
+    sourceContentSlug,
+  };
+}
+
 export async function getSongDetail(
   songId: string,
   viewerUserId?: string,
@@ -312,7 +398,7 @@ export async function getSongDetail(
     const detail = mapTrackRecordToSongDetail(record, engagement, similar);
     const userReviews = await getUserReviewsForTarget("song", slug, viewerUserId);
     detail.reviews = mergeDisplayedReviews(userReviews, detail.reviews);
-    return detail;
+    return enrichSongCatalogLinks(detail, record);
   }
 
   if (slug === "gurenge") {

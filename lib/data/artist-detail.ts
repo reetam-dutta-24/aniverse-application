@@ -1,3 +1,4 @@
+import { buildArtistReferenceUrl } from "@/lib/content-reference-url";
 import type {
   ArtistDetail,
   Character,
@@ -261,6 +262,9 @@ function makeCommunities(): Community[] {
   ];
 }
 
+const twiceBio =
+  "TWICE is a South Korean girl group celebrated for bright pop anthems, polished choreography, and chart-dominating comebacks. From bubblegum hits to sleek dance-pop, their sound spans Korean, Japanese, and English releases — making them one of the most streamed K-pop acts worldwide. TWICE records under JYP Entertainment and debuted in 2015, growing into one of the most streamed names in K-POP. Known for choreography-forward singles, fan-driven comebacks, and global tours, TWICE remains a cornerstone artist for playlist builders and OST hunters on the platform.";
+
 const twiceDetail: ArtistDetail = {
   id: "twice",
   title: "TWICE",
@@ -272,8 +276,9 @@ const twiceDetail: ArtistDetail = {
     g("dance-pop", "Dance Pop"),
     g("kpop", "K-Pop"),
   ],
-  synopsis:
-    "TWICE is a South Korean girl group celebrated for bright pop anthems, polished choreography, and chart-dominating comebacks. From bubblegum hits to sleek dance-pop, their sound spans Korean, Japanese, and English releases — making them one of the most streamed K-pop acts worldwide.",
+  description: twiceBio,
+  synopsis: twiceBio,
+  referenceUrl: buildArtistReferenceUrl("TWICE"),
   primaryTags: [
     "Dance Pop",
     "K-pop",

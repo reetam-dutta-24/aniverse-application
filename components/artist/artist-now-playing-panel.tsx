@@ -11,6 +11,7 @@ import {
   DETAIL_HERO_BTN_GROUP,
 } from "@/lib/detail-route-ui";
 import { AvatarStack } from "@/components/ui/avatar-stack";
+import { HdImage } from "@/components/ui/hd-image";
 import { AddArtistTracksToCollectionDialog } from "@/components/forms/add-artist-tracks-to-collection-dialog";
 import { ToggleArtistFavoriteButton } from "@/components/forms/toggle-artist-favorite-button";
 import { ToggleArtistFollowButton } from "@/components/forms/toggle-artist-follow-button";
@@ -75,8 +76,7 @@ export function ArtistNowPlayingPanel({
   return (
     <aside className="flex h-full min-h-0 flex-col overflow-hidden border-l border-cyan-400/20 bg-black shadow-[inset_0_0_40px_rgba(0,255,230,0.08)]">
       <div className="relative min-h-0 flex-1 overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <HdImage
           src={imageUrl}
           alt={artistName}
           className="size-full object-cover object-center"

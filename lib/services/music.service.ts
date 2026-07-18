@@ -6,7 +6,11 @@ import { roundRating } from "@/lib/format-rating";
 
 const trackInclude = {
   artistRef: true,
-  sourceContent: true,
+  sourceContent: {
+    include: {
+      genres: { include: { genre: true } },
+    },
+  },
   catalogReviews: { orderBy: { position: "asc" as const } },
 } satisfies Prisma.MusicTrackInclude;
 

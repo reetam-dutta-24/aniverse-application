@@ -32,18 +32,17 @@ export function getPlayAccentTheme(accent?: AccentColor | string): PlayAccentThe
     glow: `0 4px 18px rgba(${r},${g},${b},0.28)`,
     border: `rgba(${r},${g},${b},0.28)`,
     slider: `rgb(${r},${g},${b})`,
-    panelBg: "rgba(16,13,26,0.88)",
+    panelBg: "#100d1a",
     activeRow: `rgba(${r},${g},${b},0.12)`,
   };
 }
 
-export function getPlayAmbientLayers(accent?: AccentColor | string, imageUrl?: string) {
+export function getPlayAmbientLayers(accent?: AccentColor | string) {
   const theme = getPlayAccentTheme(accent);
   const [r, g, b] = theme.rgb;
 
   return {
     theme,
-    imageUrl,
     solidGradient: `linear-gradient(180deg, rgba(${r},${g},${b},0.48) 0%, rgba(${r},${g},${b},0.2) 22%, rgba(14,10,22,0.96) 58%, rgba(9,7,15,1) 100%)`,
     baseFill: "rgba(9,7,15,0.35)",
   };
