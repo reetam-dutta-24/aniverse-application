@@ -1,15 +1,19 @@
 "use client";
 
-import Link from "next/link";
-import { PlayCircle, Plus } from "lucide-react";
+import { PlayCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isMovieContentType } from "@/lib/content-media";
+import { getContentWatchPath } from "@/lib/content-routes";
 import {
   detailHeroBtnBase,
-  DETAIL_HERO_BTN_GROUP,
   DETAIL_HERO_BTN_ACCENT_SOLID,
+  DETAIL_HERO_BTN_GROUP,
+  DETAIL_HERO_BTN_WATCH,
+  HERO_BTN_INTERACTIVE,
 } from "@/lib/detail-route-ui";
 import { ToggleContentFavoriteButton } from "@/components/forms/toggle-content-favorite-button";
+import { ContentHeroWatchlistButton } from "@/components/content/content-hero-watchlist-button";
+import { ContentWatchNowLink } from "@/components/content/content-watch-now-link";
 import type { ContentDetail, Episode, MediaType } from "@/types";
 
 function isSongMedia(type: MediaType) {
@@ -20,12 +24,14 @@ export interface ContentHeroPosterActionsProps {
   content: ContentDetail;
   continueEpisode: Episode | null;
   initialFavorited?: boolean;
+  initialOnWatchlist?: boolean;
 }
 
 export function ContentHeroPosterActions({
   content,
   continueEpisode,
   initialFavorited,
+  initialOnWatchlist,
 }: ContentHeroPosterActionsProps) {
   const songMedia = isSongMedia(content.type);
   const isMovie = isMovieContentType(content.type);
@@ -45,11 +51,10 @@ export function ContentHeroPosterActions({
 
   const watchHref = songMedia
     ? `#player`
-    : isMovie
-      ? "#watch"
-      : continueEpisode
-        ? `#episode-${continueEpisode.id}`
-        : "#episodes";
+    : getContentWatchPath(
+        content.id,
+        continueEpisode?.id ?? content.episodes[0]?.id,
+      );
 
   return (
     <div
@@ -62,25 +67,24 @@ export function ContentHeroPosterActions({
           contentSlug={content.id}
           initialFavorited={initialFavorited}
         />
-        <button
-          type="button"
-          className={detailHeroBtnBase(
-            "border-transparent bg-gradient-to-r from-blue-600 to-violet-600 text-white",
-          )}
-        >
-          <Plus className="size-3.5 shrink-0" />
-          <span className="truncate">Add To Collection</span>
-        </button>
+        <ContentHeroWatchlistButton
+          contentSlug={content.id}
+          contentTitle={content.title}
+          initialOnWatchlist={initialOnWatchlist}
+        />
       </div>
 
       <div className={DETAIL_HERO_BTN_GROUP}>
-        <Link
+        <ContentWatchNowLink
           href={watchHref}
-          className={detailHeroBtnBase(DETAIL_HERO_BTN_ACCENT_SOLID)}
+          contentSlug={content.id}
+          className={detailHeroBtnBase(
+            cn(DETAIL_HERO_BTN_ACCENT_SOLID, DETAIL_HERO_BTN_WATCH, HERO_BTN_INTERACTIVE),
+          )}
         >
           <PlayCircle className="size-4 shrink-0" />
           <span className="truncate">{watchLabel}</span>
-        </Link>
+        </ContentWatchNowLink>
       </div>
     </div>
   );

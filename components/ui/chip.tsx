@@ -18,7 +18,7 @@ const legacyVariantMap: Record<string, ChipKey> = {
   teal: "drama",
   brand: "aimatch",
   magenta: "movie",
-  outline: "default",
+  outline: "aimatch",
 };
 
 export interface ChipProps extends React.HTMLAttributes<HTMLSpanElement> {

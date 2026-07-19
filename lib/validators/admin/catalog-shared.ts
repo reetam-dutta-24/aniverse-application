@@ -49,6 +49,7 @@ export const contentEpisodeInputSchema = z.object({
   duration: optionalString,
   description: z.string().trim().max(5000).optional().or(z.literal("")),
   thumbnailUrl: optionalString,
+  videoUrl: optionalString,
   releaseDate: optionalString,
   language: languageEnum.optional(),
   rating: z.coerce.number().min(0).max(10).optional(),

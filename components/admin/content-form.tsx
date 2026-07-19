@@ -634,14 +634,27 @@ export function ContentForm({ mode, contentId, initial }: ContentFormProps) {
               </Field>
             </>
           ) : (
-            <Field label="Runtime" hint='e.g. "122 Min" or "Full Movie"'>
-              <input
-                className={inputClass}
-                value={form.episodeDuration ?? ""}
-                onChange={(e) => update("episodeDuration", e.target.value)}
-                placeholder="122 Min"
-              />
-            </Field>
+            <>
+              <Field label="Runtime" hint='e.g. "122 Min" or "Full Movie"'>
+                <input
+                  className={inputClass}
+                  value={form.episodeDuration ?? ""}
+                  onChange={(e) => update("episodeDuration", e.target.value)}
+                  placeholder="122 Min"
+                />
+              </Field>
+              <Field
+                label="Video URL (MP4)"
+                hint="Direct link to the full movie or documentary file"
+              >
+                <input
+                  className={inputClass}
+                  value={form.videoUrl ?? ""}
+                  onChange={(e) => update("videoUrl", e.target.value)}
+                  placeholder="https://example.com/movies/title.mp4"
+                />
+              </Field>
+            </>
           )}
 
           <Field label="Last update">

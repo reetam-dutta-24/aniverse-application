@@ -1,4 +1,8 @@
 export {
+  ContentDetailEngagementShell,
+  type ContentDetailEngagementShellProps,
+} from "./content-detail-engagement-shell";
+export {
   ContentMovieSection,
 } from "./content-movie-section";
 export { ContentHeroActions, type ContentHeroActionsProps } from "./content-hero-actions";

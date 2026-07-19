@@ -1,8 +1,9 @@
 import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getCardTint, getDetailHeroBoundaryGlow } from "@/lib/card-theme";
+import { getAccentTint, getDetailHeroBoundaryGlow } from "@/lib/card-theme";
 import { formatRating } from "@/lib/format-rating";
 import { CollectionFavoriteCountChip } from "@/components/collection/collection-favorite-count-chip";
+import { CollectionHeroShareButton } from "@/components/collection/collection-hero-share-button";
 import { Chip, MatchChip } from "@/components/ui/chip";
 import { CollectionActivityPanel } from "@/components/collection/collection-activity-panel";
 import { CollectionHeroSpotlightSlider } from "@/components/collection/collection-hero-spotlight-slider";
@@ -44,9 +45,8 @@ export function CollectionDetailHero({
   canManage = false,
 }: CollectionDetailHeroProps) {
   const copy = COLLECTION_MEDIA_COPY[variant];
-  const heroGlow = getDetailHeroBoundaryGlow(
-    getCardTint(collection.id, 0).glass,
-  );
+  const tint = getAccentTint(collection.accent);
+  const heroGlow = getDetailHeroBoundaryGlow(tint.glass);
 
   return (
     <section
@@ -130,6 +130,8 @@ export function CollectionDetailHero({
             items={variant === "content" ? collection.favoriteItems : undefined}
             tracks={variant === "music" ? favoriteTracks : undefined}
           />
+
+          <CollectionHeroShareButton collectionName={collection.name} />
         </div>
 
         <CollectionActivityPanel

@@ -14,7 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { getCollectionDetailPath } from "@/lib/collection-routes";
 import { getArtistDetailPath } from "@/lib/artist-routes";
-import { getContentDetailPath } from "@/lib/content-routes";
+import { getContentDetailPath, getContentWatchPathForQueueItem } from "@/lib/content-routes";
 import { getSongDetailPath } from "@/lib/song-routes";
 import {
   getLyricWindow,
@@ -811,6 +811,12 @@ function ContentPlayQueue({
 
   const activeItem = items[activeIndex];
 
+  const activeWatchHref = activeItem
+    ? getContentWatchPathForQueueItem(activeItem.id, {
+        episodeId: activeItem.defaultEpisodeId,
+      })
+    : "#";
+
   const bannerUrl =
     activeItem?.backdropUrl ?? activeItem?.imageUrl ?? queue.imageUrl;
   const theme = useMemo(
@@ -953,7 +959,9 @@ function ContentPlayQueue({
                       deleteLoading={deleteLoadingId === item.itemId}
                     />
                     <Link
-                      href={getContentDetailPath(item.id)}
+                      href={getContentWatchPathForQueueItem(item.id, {
+                        episodeId: item.defaultEpisodeId,
+                      })}
                       className="rounded-full border px-3 py-1 text-center text-xs text-white transition hover:bg-white/5"
                       style={{ borderColor: theme.border }}
                     >
@@ -1021,7 +1029,7 @@ function ContentPlayQueue({
                 <SkipBack className="size-5" />
               </button>
               <Link
-                href={getContentDetailPath(activeItem.id)}
+                href={activeWatchHref}
                 className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold text-white transition hover:scale-[1.02] hover:opacity-95"
                 style={{ background: theme.gradient, boxShadow: theme.glow }}
               >

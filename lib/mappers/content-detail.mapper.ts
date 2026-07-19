@@ -85,19 +85,20 @@ function buildEngagementStats(
   stats: Awaited<ReturnType<typeof getContentEngagementStats>>,
 ): ContentEngagementStat[] {
   return [
-    { id: "likes", label: "Liked By", value: formatEngagementCount(stats.ratings) },
+    { id: "likes", label: "Liked By", value: formatEngagementCount(stats.favorites) },
     { id: "watching", label: "Currently Watching", value: formatEngagementCount(stats.watching) },
-    { id: "views", label: "Viewed By", value: formatEngagementCount(stats.watchEvents) },
+    { id: "views", label: "Viewed By", value: formatEngagementCount(stats.views) },
     { id: "collections", label: "Included in Collections", value: formatEngagementCount(stats.collections) },
   ];
 }
 
 function mapSeasons(row: ContentRecordFull): ContentSeason[] {
   if (row.seasons.length === 0) return [];
-  return row.seasons.map((s) => ({
+  return row.seasons.map((s, index) => ({
     id: s.id,
     label: s.label,
     episodeCount: s.episodeCount,
+    seasonNumber: index + 1,
   }));
 }
 
@@ -110,6 +111,7 @@ function mapEpisodes(row: ContentRecordFull): Episode[] {
     duration: e.duration ?? undefined,
     description: e.description ?? undefined,
     thumbnailUrl: e.thumbnailUrl ?? undefined,
+    videoUrl: e.videoUrl ?? undefined,
     releaseDate: e.releaseDate ?? undefined,
     language: e.language ?? undefined,
     rating: roundRating(e.rating) ?? undefined,
@@ -192,6 +194,7 @@ export function mapContentRecordToDetail(
     metadata: buildMetadata(row),
     imageUrl: row.imageUrl ?? poster(slug),
     backdropUrl: row.backdropUrl ?? row.imageUrl ?? poster(slug),
+    videoUrl: row.videoUrl ?? undefined,
     accent: (row.accent as AccentColor) ?? undefined,
     matchScore: undefined,
     creditLabel: row.creditLabel ?? undefined,

@@ -88,6 +88,7 @@ function toContentData(input: ContentFormInput): Prisma.ContentCreateInput {
     languages: input.languages,
     seasonCount: input.seasonCount ?? null,
     episodeCount: input.episodeCount ?? null,
+    videoUrl: emptyToNull(input.videoUrl),
   };
 }
 
@@ -129,6 +130,7 @@ async function syncNestedContentRelations(
         duration: emptyToNull(episode.duration),
         description: emptyToNull(episode.description),
         thumbnailUrl: emptyToNull(episode.thumbnailUrl),
+        videoUrl: emptyToNull(episode.videoUrl),
         releaseDate: emptyToNull(episode.releaseDate),
         language: emptyToNull(episode.language),
         rating: roundRating(episode.rating),
@@ -324,21 +326,56 @@ export async function countCatalogContent() {
 
 /** Engagement KPIs — derived from user activity, never from admin POST. */
 export async function getContentEngagementStats(contentId: string) {
-  const [ratings, watching, watchEvents, collections] = await Promise.all([
-    prisma.rating.count({ where: { contentId } }),
+  const [content, favorites, watching, collections] = await Promise.all([
+    prisma.content.findUnique({
+      where: { id: contentId },
+      select: { viewCount: true },
+    }),
+    prisma.contentFavorite.count({ where: { contentId } }),
     prisma.watchlistItem.count({
       where: { contentId, status: "WATCHING" },
     }),
-    prisma.watchEvent.count({ where: { contentId } }),
     prisma.collectionItem.count({ where: { contentId } }),
   ]);
 
   return {
-    ratings,
+    favorites,
     watching,
-    watchEvents,
+    views: content?.viewCount ?? 0,
     collections,
   };
+}
+
+export async function recordContentPageView(contentSlug: string) {
+  const content = await prisma.content.findUnique({
+    where: { slug: contentSlug },
+    select: { id: true },
+  });
+  if (!content) return null;
+
+  const updated = await prisma.content.update({
+    where: { id: content.id },
+    data: { viewCount: { increment: 1 } },
+    select: { viewCount: true },
+  });
+
+  return updated.viewCount;
+}
+
+export async function recordContentWatchEvent(userId: string, contentSlug: string) {
+  const content = await prisma.content.findUnique({
+    where: { slug: contentSlug },
+    select: { id: true },
+  });
+  if (!content) return null;
+
+  return prisma.watchEvent.create({
+    data: {
+      userId,
+      contentId: content.id,
+      minutes: 1,
+    },
+  });
 }
 
 export function formatEngagementCount(value: number): string {
@@ -409,6 +446,7 @@ export function contentRecordToFormInput(row: ContentRecordFull): ContentFormInp
     languages,
     seasonCount: row.seasonCount ?? undefined,
     episodeCount: row.episodeCount ?? undefined,
+    videoUrl: row.videoUrl ?? "",
     genreLabels: row.genres.map(
       (g) => g.genre.label as ContentFormInput["genreLabels"][number],
     ),
@@ -423,6 +461,7 @@ export function contentRecordToFormInput(row: ContentRecordFull): ContentFormInp
       duration: e.duration ?? "",
       description: e.description ?? "",
       thumbnailUrl: e.thumbnailUrl ?? "",
+      videoUrl: e.videoUrl ?? "",
       releaseDate: e.releaseDate ?? "",
       language: e.language ?? "",
       rating: roundRating(e.rating) ?? undefined,

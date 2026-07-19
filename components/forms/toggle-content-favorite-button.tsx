@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { detailHeroBtnBase } from "@/lib/detail-route-ui";
+import { detailHeroBtnBase, HERO_BTN_INTERACTIVE } from "@/lib/detail-route-ui";
+import { useOptionalContentEngagement } from "@/components/content/content-engagement-context";
 
 interface ToggleContentFavoriteButtonProps {
   contentSlug: string;
@@ -16,6 +17,7 @@ export function ToggleContentFavoriteButton({
   initialFavorited = false,
   className,
 }: ToggleContentFavoriteButtonProps) {
+  const engagement = useOptionalContentEngagement();
   const [favorited, setFavorited] = useState(initialFavorited);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
@@ -36,7 +38,11 @@ export function ToggleContentFavoriteButton({
             : "Could not update favourites.",
         );
       }
-      setFavorited(Boolean(data.favorited));
+      const nextFavorited = Boolean(data.favorited);
+      setFavorited(nextFavorited);
+      if (engagement && typeof data.favoriteCount === "number") {
+        engagement.applyFavorite(data.favoriteCount, nextFavorited);
+      }
     } catch (toggleError) {
       setError(
         toggleError instanceof Error
@@ -56,7 +62,10 @@ export function ToggleContentFavoriteButton({
         onClick={() => void handleToggle()}
         className={cn(
           detailHeroBtnBase(
-            "border-transparent bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white",
+            cn(
+              "border-transparent bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white",
+              HERO_BTN_INTERACTIVE,
+            ),
           ),
           className,
         )}

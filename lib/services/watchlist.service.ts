@@ -119,6 +119,66 @@ export async function removeWatchlistItem(userId: string, itemId: string) {
   return prisma.watchlistItem.delete({ where: { id: itemId } });
 }
 
+/** Marks content as actively watching — used by Watch Now, increments global KPI when new. */
+export async function startContentWatching(userId: string, contentSlug: string) {
+  const contentId = await findContentIdBySlug(contentSlug);
+  if (!contentId) throw new WatchlistNotFoundError("Content not found.");
+
+  const existing = await prisma.watchlistItem.findFirst({
+    where: { userId, contentId },
+    select: { id: true, status: true },
+  });
+
+  if (existing) {
+    if (existing.status !== "WATCHING") {
+      await prisma.watchlistItem.update({
+        where: { id: existing.id },
+        data: { status: "WATCHING" },
+      });
+    }
+  } else {
+    await prisma.watchlistItem.create({
+      data: {
+        userId,
+        contentId,
+        priority: "NORMAL",
+        status: "WATCHING",
+      },
+    });
+  }
+
+  const watching = await prisma.watchlistItem.count({
+    where: { contentId, status: "WATCHING" },
+  });
+
+  return { onWatchlist: true, watching };
+}
+
+export async function toggleContentWatchlist(userId: string, contentSlug: string) {
+  const contentId = await findContentIdBySlug(contentSlug);
+  if (!contentId) throw new WatchlistNotFoundError("Content not found.");
+
+  const existing = await prisma.watchlistItem.findFirst({
+    where: { userId, contentId },
+    select: { id: true, status: true },
+  });
+
+  if (existing) {
+    await prisma.watchlistItem.delete({ where: { id: existing.id } });
+    return { onWatchlist: false, wasWatching: existing.status === "WATCHING" };
+  }
+
+  await prisma.watchlistItem.create({
+    data: {
+      userId,
+      contentId,
+      priority: "NORMAL",
+      status: "WATCHING",
+    },
+  });
+  return { onWatchlist: true, wasWatching: false };
+}
+
 export async function getHighPriorityWatchlist(userId: string) {
   return listWatchlistForUser(userId, { priority: "HIGH" });
 }

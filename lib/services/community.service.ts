@@ -520,6 +520,15 @@ export async function listAllCommunitySlugs() {
 
 export { mapCommunityPost };
 
+export async function listUserJoinedCommunities(userId: string) {
+  const rows = await prisma.communityMember.findMany({
+    where: { userId },
+    include: { community: true },
+    orderBy: { joinedAt: "desc" },
+  });
+  return rows.map((row) => row.community);
+}
+
 export class CommunityNotFoundError extends Error {
   constructor(message: string) {
     super(message);

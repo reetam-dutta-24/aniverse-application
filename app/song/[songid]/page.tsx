@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CollectionCard, CommunityCard, MusicCard } from "@/components/cards";
 import {
+  ContentDetailEngagementShell,
   ContentDetailHero,
   ContentPageSection,
   InteractiveReviewSection,
@@ -54,6 +55,14 @@ export default async function SongDetailPage({ params }: SongPageProps) {
       : false;
 
   return (
+    <ContentDetailEngagementShell
+      contentSlug={song.id}
+      initialStats={song.engagementStats}
+      initialFavorited={initialFavorited}
+      initialOnWatchlist={initialOnWatchlist}
+      favoriteApiPath={`/api/song/${encodeURIComponent(song.id)}/favorite`}
+      trackPageView={false}
+    >
     <div className="flex w-full flex-col gap-10 sm:gap-12 lg:gap-14">
       <ContentDetailHero
         content={song}
@@ -107,5 +116,6 @@ export default async function SongDetailPage({ params }: SongPageProps) {
         viewerUserId={viewer?.id}
       />
     </div>
+    </ContentDetailEngagementShell>
   );
 }

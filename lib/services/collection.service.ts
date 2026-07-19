@@ -8,7 +8,8 @@ import {
 import { formatRelativeTime } from "@/lib/format-dates";
 import { slugify } from "@/lib/slugify";
 import { mapTrackToMusicTrack } from "@/lib/mappers/music.mapper";
-import type { AccentColor, Collection, CollectionDetail, ContentItem } from "@/types";
+import { mapContentToItem } from "@/lib/mappers/content.mapper";
+import type { AccentColor, Collection, CollectionDetail, ContentItem, MusicTrack } from "@/types";
 import type {
   CollectionFormInput,
   CollectionItemFormInput,
@@ -302,6 +303,102 @@ export async function removeCollectionItem(
   await syncCollectionItemCount(collection.id);
 }
 
+async function findSimilarContentForCollection(
+  existingSlugs: string[],
+  genreIds: string[],
+  limit = 8,
+): Promise<ContentItem[]> {
+  const excludeSlugs = existingSlugs.filter(Boolean);
+  const rows = await prisma.content.findMany({
+    where: {
+      slug: excludeSlugs.length > 0 ? { notIn: excludeSlugs } : undefined,
+      ...(genreIds.length > 0
+        ? { genres: { some: { genreId: { in: genreIds } } } }
+        : {}),
+    },
+    include: { genres: { include: { genre: true } } },
+    orderBy: [{ rating: "desc" }, { updatedAt: "desc" }],
+    take: limit,
+  });
+
+  if (rows.length >= limit || genreIds.length === 0) {
+    return rows.map(mapContentToItem);
+  }
+
+  const foundSlugs = new Set([...excludeSlugs, ...rows.map((row) => row.slug)]);
+  const filler = await prisma.content.findMany({
+    where: { slug: { notIn: [...foundSlugs] } },
+    include: { genres: { include: { genre: true } } },
+    orderBy: [{ rating: "desc" }, { updatedAt: "desc" }],
+    take: limit - rows.length,
+  });
+
+  return [...rows, ...filler].map(mapContentToItem);
+}
+
+function trackGenreIds(genres: unknown): string[] {
+  if (!Array.isArray(genres)) return [];
+  return genres.filter((item): item is string => typeof item === "string");
+}
+
+async function findSimilarTracksForCollection(
+  existingSlugs: string[],
+  artists: string[],
+  genreLabels: string[],
+  limit = 8,
+): Promise<MusicTrack[]> {
+  const excludeSlugs = existingSlugs.filter(Boolean);
+  const uniqueArtists = [...new Set(artists.map((artist) => artist.trim()).filter(Boolean))];
+  const genreSet = new Set(genreLabels.map((genre) => genre.toLowerCase()));
+
+  const artistMatches =
+    uniqueArtists.length > 0
+      ? await prisma.musicTrack.findMany({
+          where: {
+            slug: excludeSlugs.length > 0 ? { notIn: excludeSlugs } : undefined,
+            OR: uniqueArtists.map((artist) => ({
+              artist: { equals: artist, mode: "insensitive" as const },
+            })),
+          },
+          orderBy: [{ rating: "desc" }, { updatedAt: "desc" }],
+          take: limit,
+        })
+      : [];
+
+  let rows = artistMatches;
+  const usedSlugs = new Set([...excludeSlugs, ...rows.map((row) => row.slug)]);
+
+  if (rows.length < limit && genreSet.size > 0) {
+    const genrePool = await prisma.musicTrack.findMany({
+      where: { slug: { notIn: [...usedSlugs] } },
+      orderBy: [{ rating: "desc" }, { updatedAt: "desc" }],
+      take: Math.max(limit * 4, 24),
+    });
+
+    const genreMatches = genrePool.filter((track) => {
+      const ids = trackGenreIds(track.genres);
+      return (
+        ids.some((id) => genreSet.has(id.toLowerCase())) ||
+        (track.language ? genreSet.has(track.language.toLowerCase()) : false)
+      );
+    });
+
+    rows = [...rows, ...genreMatches.slice(0, limit - rows.length)];
+    for (const row of genreMatches) usedSlugs.add(row.slug);
+  }
+
+  if (rows.length < limit) {
+    const filler = await prisma.musicTrack.findMany({
+      where: { slug: { notIn: [...usedSlugs] } },
+      orderBy: [{ rating: "desc" }, { updatedAt: "desc" }],
+      take: limit - rows.length,
+    });
+    rows = [...rows, ...filler];
+  }
+
+  return rows.map(mapTrackToMusicTrack);
+}
+
 export async function getCollectionDetailBySlug(
   slug: string,
   viewerUserId?: string,
@@ -349,7 +446,13 @@ export async function getCollectionDetailBySlug(
     );
   }
 
-  const [similarRows, publicCommunities] = await Promise.all([
+  const isMusic = row.kind === "music";
+  const collectionTracks = row.items
+    .map((item) => item.track)
+    .filter((track): track is NonNullable<typeof track> => track != null);
+
+  const [similarRows, publicCommunities, similarContentRows, similarTrackRows] =
+    await Promise.all([
     prisma.collection.findMany({
       where: {
         slug: { not: slug },
@@ -363,17 +466,37 @@ export async function getCollectionDetailBySlug(
       orderBy: { memberCount: "desc" },
       take: 4,
     }),
+    isMusic
+      ? Promise.resolve([])
+      : findSimilarContentForCollection(
+          allItems.map((item) => item.id),
+          [
+            ...new Set(
+              row.items.flatMap(
+                (item) => item.content?.genres.map((genre) => genre.genreId) ?? [],
+              ),
+            ),
+          ],
+        ),
+    isMusic
+      ? findSimilarTracksForCollection(
+          collectionTracks.map((track) => track.slug),
+          collectionTracks.map((track) => track.artist),
+          row.genreLabels ?? [],
+        )
+      : Promise.resolve([]),
   ]);
 
   const allTracks = row.items
     .filter((item) => item.track)
     .map((item) => mapTrackToMusicTrack(item.track!));
 
-  const isMusic = row.kind === "music";
   const featuredTrack = allTracks[0];
 
   return mapCollectionToDetail(row, {
     similarCollections: similarRows.map(mapCollectionToCard),
+    similarContent: isMusic ? [] : similarContentRows,
+    similarTracks: isMusic ? similarTrackRows : [],
     communities: publicCommunities.map((community) => ({
       id: community.slug,
       name: community.name,

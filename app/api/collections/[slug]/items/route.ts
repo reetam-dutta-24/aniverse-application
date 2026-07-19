@@ -6,6 +6,11 @@ import {
   CollectionNotFoundError,
   isCollectionItemDuplicate,
 } from "@/lib/services/collection.service";
+import {
+  formatEngagementCount,
+  getContentEngagementStats,
+  getContentRecordBySlug,
+} from "@/lib/services/content.service";
 import { collectionItemFormSchema } from "@/lib/validators/collection";
 
 interface RouteContext {
@@ -29,7 +34,27 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     const item = await addCollectionItem(auth.userId, slug, parsed.data);
-    return NextResponse.json({ item }, { status: 201 });
+
+    let collections: number | undefined;
+    if (parsed.data.contentSlug) {
+      const record = await getContentRecordBySlug(parsed.data.contentSlug);
+      if (record) {
+        collections = (await getContentEngagementStats(record.id)).collections;
+      }
+    }
+
+    return NextResponse.json(
+      {
+        item,
+        ...(collections != null
+          ? {
+              collections,
+              formattedCollections: formatEngagementCount(collections),
+            }
+          : {}),
+      },
+      { status: 201 },
+    );
   } catch (error) {
     if (error instanceof CollectionNotFoundError) {
       return NextResponse.json({ error: error.message }, { status: 404 });

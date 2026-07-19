@@ -81,6 +81,56 @@ export async function toggleCollectionFavorite(userId: string, collectionSlug: s
   return { favorited: true, favoriteCount: updated.favoriteCount };
 }
 
+export async function listUserFavoriteContent(userId: string) {
+  const rows = await prisma.contentFavorite.findMany({
+    where: { userId },
+    include: {
+      content: {
+        include: {
+          genres: { include: { genre: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  return rows.map((row) => row.content);
+}
+
+export async function listUserFavoriteTracks(userId: string) {
+  const rows = await prisma.trackFavorite.findMany({
+    where: { userId },
+    include: {
+      track: {
+        include: { artistRef: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  return rows.map((row) => row.track);
+}
+
+export async function listUserFavoriteArtists(userId: string) {
+  const rows = await prisma.artistFavorite.findMany({
+    where: { userId },
+    include: { artist: true },
+    orderBy: { createdAt: "desc" },
+  });
+  return rows.map((row) => row.artist);
+}
+
+export async function listUserFavoriteCollections(userId: string) {
+  const rows = await prisma.collectionFavorite.findMany({
+    where: { userId },
+    include: { collection: true },
+    orderBy: { createdAt: "desc" },
+  });
+  return rows.map((row) => row.collection);
+}
+
+export async function getContentFavoriteCount(contentId: string): Promise<number> {
+  return prisma.contentFavorite.count({ where: { contentId } });
+}
+
 export async function toggleContentFavorite(userId: string, contentSlug: string) {
   const content = await prisma.content.findUnique({
     where: { slug: contentSlug },
@@ -98,7 +148,8 @@ export async function toggleContentFavorite(userId: string, contentSlug: string)
     await prisma.$executeRaw`
       DELETE FROM "ContentFavorite" WHERE id = ${existing[0].id}
     `;
-    return { favorited: false };
+    const favoriteCount = await getContentFavoriteCount(content.id);
+    return { favorited: false, favoriteCount };
   }
 
   const favoriteId = crypto.randomUUID();
@@ -106,7 +157,8 @@ export async function toggleContentFavorite(userId: string, contentSlug: string)
     INSERT INTO "ContentFavorite" (id, "userId", "contentId", "createdAt")
     VALUES (${favoriteId}, ${userId}, ${content.id}, NOW())
   `;
-  return { favorited: true };
+  const favoriteCount = await getContentFavoriteCount(content.id);
+  return { favorited: true, favoriteCount };
 }
 
 export async function isTrackFavorited(

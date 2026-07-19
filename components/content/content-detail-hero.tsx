@@ -1,53 +1,33 @@
-import {
-  Eye,
-  FolderOpen,
-  Headphones,
-  Heart,
-  Plus,
-  Star,
-  Users,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatRating } from "@/lib/format-rating";
 import { labelForLanguage } from "@/lib/catalog-enums";
+import { resolveMetadataChip } from "@/lib/chip-styles";
 import { isMovieContentType } from "@/lib/content-media";
 import {
-  detailHeroBtnBase,
   DETAIL_HERO_BTN_GROUP,
   DETAIL_HERO_BTN_PAIR,
 } from "@/lib/detail-route-ui";
 import {
-  getAccentStatBackground,
   getAccentTint,
   getDetailHeroBoundaryGlow,
 } from "@/lib/card-theme";
-import { Button } from "@/components/ui/button";
-import { Chip, MatchChip } from "@/components/ui/chip";
 import { DetailImage } from "@/components/ui/detail-image";
+import { Chip, MatchChip } from "@/components/ui/chip";
 import { ContentHeroActions } from "@/components/content/content-hero-actions";
 import { ContentDescription } from "@/components/content/content-description";
+import { ContentHeroCollectionButton } from "@/components/content/content-hero-collection-button";
 import { ContentHeroPosterActions } from "@/components/content/content-hero-poster-actions";
+import { ContentEngagementPanel } from "@/components/content/content-engagement-panel";
 import { SongHeroPosterPanel } from "@/components/song/song-hero-poster-panel";
 import { SongHeroWatchlistButton } from "@/components/song/song-hero-watchlist-button";
-import type { ContentDetail, ContentEngagementStat, ContentMetadata, Episode, MediaType } from "@/types";
+import type { ContentDetail, ContentMetadata, Episode, MediaType } from "@/types";
 
 export interface ContentDetailHeroProps {
   content: ContentDetail;
   initialFavorited?: boolean;
   initialOnWatchlist?: boolean;
 }
-
-const STAT_ICONS: Record<string, LucideIcon> = {
-  likes: Heart,
-  watching: Users,
-  listening: Headphones,
-  views: Eye,
-  collections: FolderOpen,
-  playlists: FolderOpen,
-  ranked: FolderOpen,
-  favorite: Heart,
-};
 
 function isSongMedia(type: MediaType) {
   return type === "song" || type === "album" || type === "playlist";
@@ -61,11 +41,6 @@ const CHIP_ROW =
 
 const TITLE_CLASS =
   "text-2xl font-bold leading-tight text-white sm:text-[30px] lg:text-[34px]";
-
-function StatIcon({ stat }: { stat: ContentEngagementStat }) {
-  const Icon = STAT_ICONS[stat.id] ?? Heart;
-  return <Icon className="size-5 text-white" strokeWidth={2} />;
-}
 
 function totalEpisodes(content: ContentDetail) {
   return content.seasons
@@ -94,28 +69,28 @@ function buildMetadataChips(metadata: ContentMetadata): React.ReactNode[] {
 
   if (metadata.ageRating) {
     chips.push(
-      <Chip key="age" chipKey="movie" className={DETAIL_CHIP}>
+      <Chip key="age" chipKey={resolveMetadataChip("age-rating")} className={DETAIL_CHIP}>
         {metadata.ageRating}
       </Chip>,
     );
   }
   if (metadata.status) {
     chips.push(
-      <Chip key="status" chipKey="action" className={DETAIL_CHIP}>
+      <Chip key="status" chipKey={resolveMetadataChip("status")} className={DETAIL_CHIP}>
         {metadata.status}
       </Chip>,
     );
   }
   if (metadata.studio) {
     chips.push(
-      <Chip key="studio" chipKey="drama" className={DETAIL_CHIP}>
+      <Chip key="studio" chipKey={resolveMetadataChip("studio")} className={DETAIL_CHIP}>
         {metadata.studio}
       </Chip>,
     );
   }
   if (metadata.sourceMaterial) {
     chips.push(
-      <Chip key="source" chipKey="mystery" className={DETAIL_CHIP}>
+      <Chip key="source" chipKey={resolveMetadataChip("source")} className={DETAIL_CHIP}>
         {metadata.sourceMaterial}
       </Chip>,
     );
@@ -169,7 +144,6 @@ export function ContentDetailHero({
 }: ContentDetailHeroProps) {
   const tint = getAccentTint(content.accent);
   const heroGlow = getDetailHeroBoundaryGlow(tint.glass);
-  const statBackground = getAccentStatBackground(content.accent);
   const titleLine = content.nativeTitle
     ? `${content.title} | ${content.nativeTitle}`
     : content.title;
@@ -216,7 +190,7 @@ export function ContentDetailHero({
           ) : null}
 
           <div className={CHIP_ROW}>
-            <Chip chipKey="default" className={DETAIL_CHIP}>
+            <Chip mediaType={content.type} className={DETAIL_CHIP}>
               {songMedia && content.metadata.sourceMaterial
                 ? content.metadata.sourceMaterial
                 : content.type === "anime"
@@ -224,7 +198,7 @@ export function ContentDetailHero({
                   : content.type.charAt(0).toUpperCase() + content.type.slice(1)}
             </Chip>
             {content.metadata.releaseYear ? (
-              <Chip chipKey="movie" className={DETAIL_CHIP}>
+              <Chip chipKey={resolveMetadataChip(`year-${content.metadata.releaseYear}`)} className={DETAIL_CHIP}>
                 {content.metadata.releaseYear}
               </Chip>
             ) : null}
@@ -253,12 +227,12 @@ export function ContentDetailHero({
             {songMedia ? (
               <>
                 {content.metadata.originalAuthor ? (
-                  <Chip chipKey="action" className={DETAIL_CHIP}>
+                  <Chip chipKey={resolveMetadataChip("original-author")} className={DETAIL_CHIP}>
                     {content.metadata.originalAuthor}
                   </Chip>
                 ) : null}
                 {content.metadata.episodeDuration ? (
-                  <Chip chipKey="default" className={DETAIL_CHIP}>
+                  <Chip chipKey={resolveMetadataChip("duration")} className={DETAIL_CHIP}>
                     {content.metadata.episodeDuration}
                   </Chip>
                 ) : null}
@@ -267,10 +241,10 @@ export function ContentDetailHero({
               metadataChips
             ) : (
               <>
-                <Chip chipKey="default" className={DETAIL_CHIP}>
+                <Chip chipKey={resolveMetadataChip("season-count")} className={DETAIL_CHIP}>
                   {seasonCount(content)} Seasons
                 </Chip>
-                <Chip chipKey="default" className={DETAIL_CHIP}>
+                <Chip chipKey={resolveMetadataChip("episode-count")} className={DETAIL_CHIP}>
                   {totalEpisodes(content)} Episodes
                 </Chip>
                 {metadataChips}
@@ -308,35 +282,16 @@ export function ContentDetailHero({
                   initialOnWatchlist={initialOnWatchlist}
                 />
               ) : (
-                <Button
-                  size="sm"
-                  className={detailHeroBtnBase(
-                    "border-transparent bg-gradient-blue-violet hover:border-brand-magenta hover:bg-transparent hover:[background-image:none]",
-                  )}
-                >
-                  <Plus className="size-3.5 shrink-0" />
-                  <span className="truncate">Add To Collection</span>
-                </Button>
+                <ContentHeroCollectionButton
+                  contentSlug={content.id}
+                  contentTitle={content.title}
+                />
               )}
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-            {content.engagementStats.map((stat) => (
-              <div
-                key={stat.id}
-                className="flex flex-col items-center justify-center gap-1 rounded-xl px-2 py-3 text-center sm:py-3.5"
-                style={{ background: statBackground }}
-              >
-                <StatIcon stat={stat} />
-                <span className="text-xs font-medium leading-tight text-white/95 sm:text-sm">
-                  {stat.label}
-                </span>
-                <span className="text-lg font-bold text-white sm:text-xl">
-                  {stat.value}
-                </span>
-              </div>
-            ))}
+          <div className="mt-4">
+            <ContentEngagementPanel accent={content.accent} />
           </div>
 
           <ContentHeroActions
@@ -392,6 +347,7 @@ export function ContentDetailHero({
                 content={content}
                 continueEpisode={continueEpisode}
                 initialFavorited={initialFavorited}
+                initialOnWatchlist={initialOnWatchlist}
               />
             )}
           </div>

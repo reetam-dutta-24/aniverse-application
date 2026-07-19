@@ -266,6 +266,14 @@ export function EpisodesEditor({
               onChange={(e) => update(index, { description: e.target.value })}
             />
           </Field>
+          <Field label="Video URL (MP4)" hint="Direct link to the episode video file">
+            <input
+              className={inputClass}
+              value={episode.videoUrl ?? ""}
+              onChange={(e) => update(index, { videoUrl: e.target.value })}
+              placeholder="https://example.com/episodes/01.mp4"
+            />
+          </Field>
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label="Thumbnail">
               <ImageUploadInput

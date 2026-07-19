@@ -15,7 +15,7 @@ export function ContentReviewCard({ review }: ContentReviewCardProps) {
 
   return (
     <article
-      className="flex h-[260px] w-[min(280px,85vw)] shrink-0 flex-col gap-2.5 overflow-hidden rounded-2xl bg-glass-purple p-4 sm:h-[272px] sm:w-[292px] sm:gap-3 sm:p-5"
+      className="flex min-h-[300px] w-[min(280px,85vw)] shrink-0 flex-col gap-2.5 overflow-hidden rounded-2xl bg-glass-purple p-4 sm:min-h-[320px] sm:w-[292px] sm:gap-3 sm:p-5"
       style={{
         boxShadow: `${getHexOuterGlow(avatarColor, 8)}, inset 0 0 24px rgba(0,0,0,0.4)`,
       }}
@@ -25,7 +25,7 @@ export function ContentReviewCard({ review }: ContentReviewCardProps) {
           {review.headline}
         </h3>
       ) : null}
-      <p className="line-clamp-4 flex-1 text-xs leading-relaxed text-white/88 sm:line-clamp-5 sm:text-sm">
+      <p className="line-clamp-5 flex-1 text-xs leading-relaxed text-white/88 sm:line-clamp-6 sm:text-sm">
         {review.content}
       </p>
       <div className="shrink-0 flex items-center gap-2.5 border-t border-white/10 pt-2.5 sm:pt-3">

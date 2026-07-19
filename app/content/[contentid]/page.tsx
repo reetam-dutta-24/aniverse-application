@@ -8,6 +8,7 @@ import {
 } from "@/components/cards";
 import {
   ContentCharacterCard,
+  ContentDetailEngagementShell,
   ContentDetailHero,
   ContentEpisodeSection,
   ContentMovieSection,
@@ -22,6 +23,7 @@ import {
   getContentDetail,
 } from "@/lib/data/content-detail";
 import { isContentFavorited } from "@/lib/services/favorite.service";
+import { isContentOnWatchlist } from "@/lib/services/watchlist.service";
 
 interface ContentPageProps {
   params: Promise<{ contentid: string }>;
@@ -57,15 +59,25 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
   const initialFavorited = viewer?.id
     ? await isContentFavorited(viewer.id, content.id)
     : false;
+  const initialOnWatchlist = viewer?.id
+    ? await isContentOnWatchlist(viewer.id, content.id)
+    : false;
 
   const isMovie = isMovieContentType(content.type);
   const movieEpisode = content.episodes[0];
 
   return (
+    <ContentDetailEngagementShell
+      contentSlug={content.id}
+      initialStats={content.engagementStats}
+      initialFavorited={initialFavorited}
+      initialOnWatchlist={initialOnWatchlist}
+    >
     <div className="flex w-full flex-col gap-10 sm:gap-12 lg:gap-14">
       <ContentDetailHero
         content={content}
         initialFavorited={initialFavorited}
+        initialOnWatchlist={initialOnWatchlist}
       />
 
       {isMovie ? (
@@ -87,6 +99,7 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
         title="🎭 Characters"
         variant="content"
         rowHover={false}
+        autoAdvanceMs={4000}
         slides={content.characters.map((character) => ({
           id: character.id,
           node: (
@@ -150,5 +163,6 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
         viewerUserId={viewer?.id}
       />
     </div>
+    </ContentDetailEngagementShell>
   );
 }

@@ -2,16 +2,20 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { detailHeroBtnBase } from "@/lib/detail-route-ui";
+import { cn } from "@/lib/utils";
+import { detailHeroBtnBase, DETAIL_HERO_BTN_COMPACT } from "@/lib/detail-route-ui";
+import { UserHandleSearchInput } from "@/components/forms/user-handle-search-input";
 
 interface AddCollectionCollaboratorButtonProps {
   collectionSlug: string;
   canManage?: boolean;
+  className?: string;
 }
 
 export function AddCollectionCollaboratorButton({
   collectionSlug,
   canManage = false,
+  className,
 }: AddCollectionCollaboratorButtonProps) {
   const [open, setOpen] = useState(false);
   const [handle, setHandle] = useState("");
@@ -60,12 +64,15 @@ export function AddCollectionCollaboratorButton({
   }
 
   return (
-    <div className="min-w-0 flex-1">
+    <div className={cn("relative shrink-0", className)}>
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
         className={detailHeroBtnBase(
-          "border-transparent bg-gradient-to-r from-blue-600 to-violet-600 text-white",
+          cn(
+            DETAIL_HERO_BTN_COMPACT,
+            "border-transparent bg-gradient-to-r from-blue-600 to-violet-600 text-white",
+          ),
         )}
       >
         <Plus className="size-3.5 shrink-0" />
@@ -74,18 +81,18 @@ export function AddCollectionCollaboratorButton({
       {open ? (
         <form
           onSubmit={(event) => void handleSubmit(event)}
-          className="mt-2 flex flex-col gap-2 rounded-xl border border-white/10 bg-black/60 p-3"
+          className="absolute left-1/2 z-20 mt-2 w-[min(100%,240px)] -translate-x-1/2 flex flex-col gap-2 rounded-xl border border-white/10 bg-black/90 p-3 shadow-xl"
         >
-          <input
+          <UserHandleSearchInput
             value={handle}
-            onChange={(event) => setHandle(event.target.value)}
-            placeholder="User handle"
-            className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs text-white outline-none"
+            onChange={setHandle}
+            placeholder="Search user handles…"
+            disabled={loading}
           />
           <button
             type="submit"
-            disabled={loading}
-            className="rounded-lg bg-brand-pink/80 px-3 py-2 text-xs font-semibold text-white"
+            disabled={loading || !handle.trim()}
+            className="rounded-lg bg-brand-pink/80 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
           >
             {loading ? "Adding…" : "Add"}
           </button>

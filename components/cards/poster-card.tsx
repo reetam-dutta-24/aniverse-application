@@ -8,7 +8,7 @@ import { getArtistDetailPath } from "@/lib/artist-routes";
 import { useCarouselTintSeed } from "@/components/carousel/carousel-section-context";
 import { cn } from "@/lib/utils";
 import { getCardTint } from "@/lib/card-theme";
-import { SLOT_H, SLOT_W } from "@/lib/card-dimensions";
+import { SLOT_W } from "@/lib/card-dimensions";
 import { CardAddToCollectionButton } from "@/components/forms/add-to-collection-dialog";
 import type { ContentItem } from "@/types";
 import { Chip, MatchChip, RatingChip } from "@/components/ui/chip";
@@ -26,12 +26,14 @@ const typeLabels: Record<ContentItem["type"], string> = {
   playlist: "Playlist",
 };
 
-export { SLOT_W, SLOT_H } from "@/lib/card-dimensions";
+export { SLOT_W } from "@/lib/card-dimensions";
 
 const CARD_W = 160;
-const CARD_H = 252;
+const CARD_H = 234;
 const HOVER_W = 176;
-const HOVER_H = 278;
+const HOVER_H = 260;
+/** Carousel slot — slightly shorter than music cards; content poster only. */
+const POSTER_SLOT_H = 272;
 
 export interface PosterCardProps extends React.HTMLAttributes<HTMLDivElement> {
   item: ContentItem;
@@ -86,6 +88,7 @@ export function PosterCard({
   const description = item.description ?? defaultDescription(item.title);
   const { meta, year } = resolveMeta(item);
   const collectionItemKind = resolveCollectionItemKind(item.type);
+  const displayGenres = (item.genres ?? []).slice(0, 2);
 
   function handleViewDetails() {
     if (onViewDetails) {
@@ -102,7 +105,7 @@ export function PosterCard({
   return (
     <div
       className={cn("relative isolate mx-auto w-full max-w-[160px] shrink-0 overflow-visible", className)}
-      style={{ width: SLOT_W, height: SLOT_H }}
+      style={{ width: SLOT_W, height: POSTER_SLOT_H }}
       {...props}
       onMouseEnter={() => {
         setHovered(true);
@@ -144,7 +147,7 @@ export function PosterCard({
               <Chip mediaType={item.type}>{typeLabels[item.type]}</Chip>
             </div>
 
-            <div className="mx-auto mt-1 h-[118px] w-[136px] shrink-0 overflow-hidden rounded-[14px]">
+            <div className="mx-auto mt-1 h-[108px] w-[128px] shrink-0 overflow-hidden rounded-[14px]">
               {item.imageUrl ? (
                 <HdImage
                   src={item.imageUrl}
@@ -156,21 +159,23 @@ export function PosterCard({
               )}
             </div>
 
-            <div className="flex flex-1 flex-col items-center justify-end gap-1.5 px-2 pb-2.5 pt-1.5 text-center">
+            <div className="flex flex-1 flex-col items-center justify-end gap-1 px-2 pb-2 pt-1 text-center">
               <p className="line-clamp-1 text-sm font-semibold text-white">
                 {item.title}
               </p>
-              <div className="flex flex-wrap items-center justify-center gap-1">
-                {(item.genres ?? []).map((genre) => (
-                  <Chip
-                    key={genre.id}
-                    genreId={genre.id}
-                    genreLabel={genre.label}
-                  >
-                    {genre.label}
-                  </Chip>
-                ))}
-              </div>
+              {displayGenres.length > 0 ? (
+                <div className="flex items-center justify-center gap-1">
+                  {displayGenres.map((genre) => (
+                    <Chip
+                      key={genre.id}
+                      genreId={genre.id}
+                      genreLabel={genre.label}
+                    >
+                      {genre.label}
+                    </Chip>
+                  ))}
+                </div>
+              ) : null}
               {item.matchScore != null ? (
                 <MatchChip score={item.matchScore} />
               ) : null}
@@ -186,7 +191,7 @@ export function PosterCard({
                 : "pointer-events-none translate-y-2 scale-[1.02] opacity-0",
             )}
           >
-            <div className="relative h-[82px] w-full shrink-0 overflow-hidden">
+            <div className="relative h-[76px] w-full shrink-0 overflow-hidden">
               {item.imageUrl ? (
                 <HdImage
                   src={item.imageUrl}
@@ -198,7 +203,7 @@ export function PosterCard({
               )}
             </div>
 
-            <div className="flex h-[196px] flex-col items-center gap-1.5 bg-black px-2.5 pb-2 pt-2">
+            <div className="flex h-[184px] flex-col items-center gap-1.5 bg-black px-2.5 pb-2 pt-2">
               <p className="line-clamp-2 w-full text-center text-sm font-semibold leading-tight text-white">
                 {item.title}
               </p>

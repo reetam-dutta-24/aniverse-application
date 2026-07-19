@@ -20,6 +20,8 @@ export interface ContentPageSectionProps {
   className?: string;
   /** Disable Spotify-style row hover wash (e.g. character portrait rows). */
   rowHover?: boolean;
+  /** Auto-advance carousel pages (ms). */
+  autoAdvanceMs?: number;
 }
 
 /** Content detail section — heading + paginated carousel (shared app structure). */
@@ -35,6 +37,7 @@ export function ContentPageSection({
   compact = false,
   className,
   rowHover = true,
+  autoAdvanceMs,
 }: ContentPageSectionProps) {
   return (
     <section
@@ -48,14 +51,19 @@ export function ContentPageSection({
         className={cn(
           "flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between",
           compact ? "mb-2 sm:mb-3" : "mb-5 sm:mb-6",
+          !title && !subtitle && !action && "mb-0",
         )}
       >
-        <div className="min-w-0">
-          <h2 className="text-lg font-bold text-white sm:text-heading">{title}</h2>
-          {subtitle ? (
-            <p className="mt-1 text-sm text-white/80">{subtitle}</p>
-          ) : null}
-        </div>
+        {(title || subtitle) ? (
+          <div className="min-w-0">
+            {title ? (
+              <h2 className="text-lg font-bold text-white sm:text-heading">{title}</h2>
+            ) : null}
+            {subtitle ? (
+              <p className="mt-1 text-sm text-white/80">{subtitle}</p>
+            ) : null}
+          </div>
+        ) : null}
         {action}
       </div>
       <ContentCarouselSection
@@ -67,6 +75,7 @@ export function ContentPageSection({
         itemsCenter={itemsCenter}
         compact={compact}
         rowHover={rowHover}
+        autoAdvanceMs={autoAdvanceMs}
       />
     </section>
   );

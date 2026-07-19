@@ -1,10 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { ContentWatchNowLink } from "@/components/content/content-watch-now-link";
+import { useRouter } from "next/navigation";
 import { Clock, Eye, Heart, PlayCircle, Plus, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getContentWatchPath } from "@/lib/content-routes";
+import { formatEpisodeDisplayTitle } from "@/lib/format-episode-title";
 import { formatRating } from "@/lib/format-rating";
-import { getAccentTint, getCardTint, getTintOuterGlow } from "@/lib/card-theme";
+import { getAccentTint, getCardTint } from "@/lib/card-theme";
 import type { AccentColor, Episode } from "@/types";
 import { Chip } from "@/components/ui/chip";
 import { GradientButton } from "@/components/ui/gradient-button";
@@ -21,46 +25,64 @@ function resolveTint(contentId: string, contentAccent?: AccentColor) {
   return getCardTint(contentId);
 }
 
-/** Episode card — compact default; 1.2× scale + detail tint glow on hover. */
+/** Episode card — compact default; subtle scale on hover without outer glow. */
 export function ContentEpisodeCard({
   episode,
   contentId,
   contentAccent,
   onPlay,
 }: ContentEpisodeCardProps) {
+  const router = useRouter();
   const [hovered, setHovered] = useState(false);
+  const [watchlistLoading, setWatchlistLoading] = useState(false);
   const season = episode.seasonNumber ?? 1;
   const tint = resolveTint(contentId, contentAccent);
   const durationLabel = episode.duration?.replace("m", " Min") ?? "24 Min";
+  const displayTitle = formatEpisodeDisplayTitle(episode.title, episode.number);
+  const watchHref = getContentWatchPath(contentId, episode.id);
+
+  async function handleWatchlistAdd() {
+    if (watchlistLoading) return;
+    setWatchlistLoading(true);
+    try {
+      const response = await fetch("/api/watchlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contentSlug: contentId,
+          priority: "NORMAL",
+          status: "PENDING",
+        }),
+      });
+      if (response.ok) router.refresh();
+    } finally {
+      setWatchlistLoading(false);
+    }
+  }
 
   return (
     <article
       className={cn(
-        "relative mx-auto w-full max-w-[351px] origin-center transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
-        hovered ? "z-30 scale-[1.2]" : "z-0 scale-100",
+        "relative mx-auto w-full max-w-[351px] origin-center will-change-transform transition-transform duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]",
+        hovered ? "z-30 scale-[1.06]" : "z-0 scale-100",
       )}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       <div
-        className="flex flex-col overflow-visible rounded-2xl bg-black transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
-        style={
-          hovered
-            ? { boxShadow: getTintOuterGlow(tint.glass, 16) }
-            : { boxShadow: "inset 0 0 24px rgba(0,0,0,0.55)" }
-        }
+        className="flex flex-col overflow-visible rounded-2xl bg-black shadow-[inset_0_0_24px_rgba(0,0,0,0.55)] transition-shadow duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
       >
         <div
           className={cn(
-            "relative w-full overflow-hidden rounded-t-2xl transition-all duration-500",
-            hovered ? "h-[190px]" : "h-[168px] sm:h-[178px]",
+            "relative w-full overflow-hidden rounded-t-2xl transition-[height] duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]",
+            hovered ? "h-[184px]" : "h-[168px] sm:h-[178px]",
           )}
         >
           {episode.thumbnailUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={episode.thumbnailUrl}
-              alt={episode.title}
+              alt={displayTitle}
               className="size-full object-cover"
             />
           ) : (
@@ -69,13 +91,13 @@ export function ContentEpisodeCard({
 
           <div
             className={cn(
-              "absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/80 to-transparent px-3 pb-2.5 pt-8 transition-opacity duration-300",
+              "absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/80 to-transparent px-3 pb-2.5 pt-8 transition-opacity duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]",
               hovered ? "pointer-events-none opacity-0" : "opacity-100",
             )}
           >
             <div className="flex items-end justify-between gap-2">
               <p className="line-clamp-2 text-xs font-semibold text-white sm:text-sm">
-                S{season} | Episode {episode.number} {episode.title}
+                S{season} | Episode {episode.number} · {displayTitle}
               </p>
               <span className="inline-flex shrink-0 items-center gap-1 text-[10px] text-white/80">
                 <Clock className="size-3" />
@@ -86,18 +108,19 @@ export function ContentEpisodeCard({
 
           <div
             className={cn(
-              "absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/95 to-transparent px-3 pb-2.5 pt-6 transition-opacity duration-300",
+              "absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/95 to-transparent px-3 pb-2.5 pt-6 transition-opacity duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]",
               hovered ? "opacity-100" : "pointer-events-none opacity-0",
             )}
           >
-            <button
-              type="button"
+            <ContentWatchNowLink
+              href={watchHref}
+              contentSlug={contentId}
               onClick={onPlay}
               className="flex cursor-pointer items-center gap-1.5 rounded-full border border-brand-magenta bg-black/80 px-3 py-1 text-[10px] font-medium text-white transition-colors hover:bg-brand-magenta/20"
             >
               <PlayCircle className="size-3.5 text-brand-magenta" />
               Watch Now
-            </button>
+            </ContentWatchNowLink>
             <div className="flex items-center gap-2">
               {episode.rating != null ? (
                 <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-white">
@@ -107,7 +130,10 @@ export function ContentEpisodeCard({
               ) : null}
               <GradientButton
                 size="sm"
-                className="h-6 rounded-full px-2.5 text-[9px]"
+                type="button"
+                disabled={watchlistLoading}
+                onClick={() => void handleWatchlistAdd()}
+                className="h-6 rounded-full px-2.5 text-[9px] transition-opacity hover:opacity-90 disabled:opacity-60"
               >
                 <Plus className="size-3" />
                 Watchlist
@@ -118,39 +144,31 @@ export function ContentEpisodeCard({
 
         <div
           className={cn(
-            "flex flex-col overflow-hidden rounded-b-2xl transition-all duration-500",
+            "flex flex-col overflow-hidden rounded-b-2xl bg-black/95 transition-[max-height,opacity,padding] duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]",
             hovered ? "max-h-52 gap-2.5 p-4 opacity-100" : "max-h-0 opacity-0",
           )}
-          style={
-            hovered
-              ? {
-                  boxShadow: `inset 0 12px 36px ${tint.glass}`,
-                  backgroundColor: "rgba(0,0,0,0.92)",
-                }
-              : undefined
-          }
         >
           <p className="text-base font-bold text-white">
-            S{season} | E{episode.number} {episode.title}
+            S{season} | E{episode.number} · {displayTitle}
           </p>
           <div className="flex flex-wrap items-center gap-1.5">
             {episode.language ? (
-              <Chip chipKey="default" className="h-5 text-[10px]">
+              <Chip language={episode.language.toLowerCase()} className="h-5 text-[10px]">
                 {episode.language}
               </Chip>
             ) : null}
-            <Chip variant="indigo" className="h-5 gap-1 text-[10px]">
+            <Chip chipKey="ost" className="h-5 gap-1 text-[10px]">
               <Clock className="size-3" />
               {durationLabel}
             </Chip>
             {episode.views ? (
-              <Chip variant="indigo" className="h-5 gap-1 text-[10px]">
+              <Chip chipKey="show" className="h-5 gap-1 text-[10px]">
                 <Eye className="size-3" />
                 {episode.views}
               </Chip>
             ) : null}
             {episode.likes ? (
-              <Chip variant="indigo" className="h-5 gap-1 text-[10px]">
+              <Chip chipKey="romance" className="h-5 gap-1 text-[10px]">
                 <Heart className="size-3" />
                 {episode.likes}
               </Chip>

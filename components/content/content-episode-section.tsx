@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import type { AccentColor, ContentSeason, Episode } from "@/types";
 import { ContentEpisodeCard } from "@/components/content/content-episode-card";
@@ -13,6 +13,21 @@ export interface ContentEpisodeSectionProps {
   contentAccent?: AccentColor;
 }
 
+function deriveSeasonsFromEpisodes(episodes: Episode[]): ContentSeason[] {
+  const seasonNumbers = [
+    ...new Set(episodes.map((ep) => ep.seasonNumber ?? 1)),
+  ].sort((a, b) => a - b);
+
+  return seasonNumbers.map((seasonNumber) => ({
+    id: `season-${seasonNumber}`,
+    label: `Season ${seasonNumber}`,
+    episodeCount: episodes.filter(
+      (ep) => (ep.seasonNumber ?? 1) === seasonNumber,
+    ).length,
+    seasonNumber,
+  }));
+}
+
 /** Watch All Episodes — season filter + paginated carousel. */
 export function ContentEpisodeSection({
   episodes,
@@ -20,33 +35,50 @@ export function ContentEpisodeSection({
   contentId,
   contentAccent,
 }: ContentEpisodeSectionProps) {
-  const [seasonId, setSeasonId] = useState(seasons[0]?.id ?? "s1");
+  const effectiveSeasons = useMemo(
+    () => (seasons.length > 0 ? seasons : deriveSeasonsFromEpisodes(episodes)),
+    [seasons, episodes],
+  );
+
+  const [seasonId, setSeasonId] = useState(
+    () => effectiveSeasons[0]?.id ?? "season-1",
+  );
+
+  useEffect(() => {
+    if (
+      effectiveSeasons.length > 0 &&
+      !effectiveSeasons.some((season) => season.id === seasonId)
+    ) {
+      setSeasonId(effectiveSeasons[0]!.id);
+    }
+  }, [effectiveSeasons, seasonId]);
 
   const filtered = useMemo(() => {
-    if (seasonId === "movie") {
-      return episodes.filter((ep) => ep.seasonNumber === 0 || ep.number === 0);
-    }
-    const seasonNum = Number.parseInt(seasonId.replace(/\D/g, ""), 10) || 1;
+    const selectedSeason = effectiveSeasons.find(
+      (season) => season.id === seasonId,
+    );
+    const seasonNum = selectedSeason?.seasonNumber ?? 1;
     return episodes.filter((ep) => (ep.seasonNumber ?? 1) === seasonNum);
-  }, [episodes, seasonId]);
+  }, [episodes, seasonId, effectiveSeasons]);
 
-  const seasonAction = (
-    <label className="relative inline-flex items-center">
-      <select
-        value={seasonId}
-        onChange={(e) => setSeasonId(e.target.value)}
-        aria-label="Select season"
-        className="cursor-pointer appearance-none rounded-full bg-brand-purple py-2 pe-9 ps-4 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-brand-magenta"
-      >
-        {seasons.map((season) => (
-          <option key={season.id} value={season.id} className="bg-surface">
-            {season.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown className="pointer-events-none absolute right-3 size-4 text-white" />
-    </label>
-  );
+  const seasonAction =
+    effectiveSeasons.length > 0 ? (
+      <label className="relative inline-flex items-center">
+        <select
+          value={seasonId}
+          onChange={(e) => setSeasonId(e.target.value)}
+          aria-label="Select season"
+          className="cursor-pointer appearance-none rounded-full bg-brand-purple py-2 pe-9 ps-4 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-brand-magenta"
+        >
+          {effectiveSeasons.map((season) => (
+            <option key={season.id} value={season.id} className="bg-surface">
+              {season.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-3 size-4 text-white" />
+      </label>
+    ) : null;
 
   const slides = filtered.map((episode) => ({
     id: episode.id,
@@ -58,6 +90,22 @@ export function ContentEpisodeSection({
       />
     ),
   }));
+
+  if (slides.length === 0) {
+    return (
+      <section className="mx-auto w-full max-w-[1440px] px-4 sm:px-8 lg:px-12">
+        <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <h2 className="text-lg font-bold text-white sm:text-heading">
+            📺 Watch All Episodes
+          </h2>
+          {seasonAction}
+        </div>
+        <p className="text-sm text-white/60">
+          No episodes available for this season yet.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <ContentPageSection

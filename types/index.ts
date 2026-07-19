@@ -146,6 +146,8 @@ export interface CollectionDetail {
   watchedMost: ContentItem[];
   musicTracks: MusicTrack[];
   similarCollections: Collection[];
+  similarContent: ContentItem[];
+  similarTracks: MusicTrack[];
   communities: Community[];
 }
 
@@ -201,6 +203,8 @@ export interface CollectionPlayContentItem {
   genres: { id: string; label: string }[];
   highlightTags?: string[];
   accent?: ContentItem["accent"];
+  /** First playable episode for serial titles in a binge queue. */
+  defaultEpisodeId?: string;
 }
 
 export interface CollectionPlayQueue {
@@ -214,6 +218,17 @@ export interface CollectionPlayQueue {
   canManage?: boolean;
   tracks?: CollectionPlayTrack[];
   items?: CollectionPlayContentItem[];
+}
+
+export interface ContentPlaySession {
+  contentSlug: string;
+  contentTitle: string;
+  contentType: MediaType;
+  imageUrl?: string;
+  accent?: AccentColor;
+  fallbackVideoUrl?: string;
+  currentEpisodeId: string;
+  episodes: Episode[];
 }
 
 /** A single metric shown in the analytics/stats strip. */
@@ -260,6 +275,8 @@ export interface Episode {
   likes?: string;
   /** Primary audio language label. */
   language?: string;
+  /** Direct MP4/HLS URL for playback. */
+  videoUrl?: string;
 }
 
 export interface Review {
@@ -314,6 +331,8 @@ export interface ContentSeason {
   id: string;
   label: string;
   episodeCount: number;
+  /** 1-based season index (matches episode.seasonNumber). */
+  seasonNumber: number;
 }
 
 /**
@@ -338,6 +357,8 @@ export interface ContentDetail {
   metadata: ContentMetadata;
   imageUrl: string;
   backdropUrl?: string;
+  /** Full-length video URL for movies/documentaries. */
+  videoUrl?: string;
   matchScore?: number;
   /** Card accent — drives hero section inner-boundary glow. */
   accent?: AccentColor;

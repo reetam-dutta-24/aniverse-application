@@ -68,6 +68,7 @@ export const contentFormSchema = z.object({
   languages: z.array(languageEnum).default([]),
   seasonCount: z.coerce.number().int().min(0).max(500).optional(),
   episodeCount: z.coerce.number().int().min(0).max(10000).optional(),
+  videoUrl: optionalString,
   genreLabels: z.array(contentGenreEnum).default([]),
   seasons: z.array(contentSeasonInputSchema).default([]),
   episodes: z.array(contentEpisodeInputSchema).default([]),

@@ -19,3 +19,22 @@ export function normalizeContentSlug(id: string): string {
 export function getContentDetailPath(contentId: string): string {
   return `/content/${normalizeContentSlug(contentId)}`;
 }
+
+export function getContentWatchPath(
+  contentId: string,
+  episodeId?: string,
+): string {
+  const slug = normalizeContentSlug(contentId);
+  if (episodeId) {
+    return `/content/${slug}/watch/${encodeURIComponent(episodeId)}`;
+  }
+  return `/content/${slug}/watch`;
+}
+
+/** Watch URL for a queued catalog title — movies and serials open the player directly. */
+export function getContentWatchPathForQueueItem(
+  contentId: string,
+  options?: { episodeId?: string },
+): string {
+  return getContentWatchPath(contentId, options?.episodeId);
+}

@@ -43,6 +43,7 @@ interface AddToCollectionDialogProps {
   itemTitle: string;
   open: boolean;
   onClose: () => void;
+  onItemsAdded?: (count: number, collections?: number) => void;
 }
 
 export function AddToCollectionDialog({
@@ -51,6 +52,7 @@ export function AddToCollectionDialog({
   itemTitle,
   open,
   onClose,
+  onItemsAdded,
 }: AddToCollectionDialogProps) {
   const router = useRouter();
   const [collections, setCollections] = useState<Collection[]>([]);
@@ -127,6 +129,8 @@ export function AddToCollectionDialog({
     const duplicates: string[] = [];
     const failures: string[] = [];
 
+    let latestCollections: number | undefined;
+
     for (const slug of selectedSlugs) {
       const collectionName =
         collections.find((collection) => collection.id === slug)?.name ?? slug;
@@ -154,6 +158,9 @@ export function AddToCollectionDialog({
       }
 
       added.push(collectionName);
+      if (typeof data.collections === "number") {
+        latestCollections = data.collections;
+      }
     }
 
     setSubmitting(false);
@@ -186,6 +193,7 @@ export function AddToCollectionDialog({
       message,
       variant: failures.length > 0 ? "warning" : "success",
     });
+    onItemsAdded?.(added.length, latestCollections);
     router.refresh();
 
     window.setTimeout(() => {

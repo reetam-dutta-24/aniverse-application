@@ -14,10 +14,18 @@ export function detailHeroBtnBase(className?: string) {
   );
 }
 
+/** Compact pair for collection activity panel — narrower than default hero CTAs. */
+export const DETAIL_HERO_BTN_COMPACT = "w-[112px] max-w-[112px]";
+
 /** Filled hero CTA — solid teal → light cyan-blue, dark label, no glow. */
 export const DETAIL_HERO_BTN_ACCENT_SOLID = cn(
   "border border-transparent bg-gradient-teal-blue font-bold text-black",
   "transition-opacity duration-300 hover:opacity-90",
+);
+
+/** Compact watch/play CTA on poster overlay. */
+export const DETAIL_HERO_BTN_WATCH = cn(
+  "h-8 w-[118px] px-2 text-[9px] font-semibold sm:h-8 sm:w-[122px] sm:text-[10px]",
 );
 
 /** Filled hero CTA with play/watch hover — used on content & artist primary actions. */
@@ -38,5 +46,16 @@ export const DETAIL_HERO_BTN_GROUP = cn(
   "justify-center",
 );
 
+/** Tighter centered pair for narrow collection hero CTAs. */
+export const DETAIL_HERO_BTN_GROUP_COMPACT =
+  "flex flex-wrap items-center justify-center gap-2.5 sm:gap-3";
+
 /** Primary pair row under KPI stats (content/song). */
 export const DETAIL_HERO_BTN_PAIR_ROW = cn("mt-3", DETAIL_HERO_BTN_PAIR);
+
+/** Shared hover/disabled treatment for hero action buttons. */
+export const HERO_BTN_INTERACTIVE = cn(
+  "transition-all duration-300 ease-out",
+  "hover:brightness-110",
+  "disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:brightness-100",
+);

@@ -1,4 +1,5 @@
 import { PlayCircle } from "lucide-react";
+import { formatEpisodeDisplayTitle } from "@/lib/format-episode-title";
 import { cn } from "@/lib/utils";
 import type { Episode } from "@/types";
 import { Chip } from "@/components/ui/chip";
@@ -19,6 +20,11 @@ export function EpisodeCard({
   className,
   ...props
 }: EpisodeCardProps) {
+  const displayTitle = formatEpisodeDisplayTitle(
+    episode.title,
+    episode.number,
+  );
+
   return (
     <div
       className={cn(
@@ -32,7 +38,7 @@ export function EpisodeCard({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={episode.thumbnailUrl}
-            alt={episode.title}
+            alt={displayTitle}
             className="size-full object-cover"
           />
         ) : (
@@ -52,7 +58,7 @@ export function EpisodeCard({
       <div className="flex flex-col gap-2 p-4">
         <div className="flex items-center justify-between gap-2">
           <p className="text-base font-semibold text-white">
-            E{episode.number} · {episode.title}
+            E{episode.number} · {displayTitle}
           </p>
           {episode.duration ? (
             <Chip variant="indigo">{episode.duration}</Chip>

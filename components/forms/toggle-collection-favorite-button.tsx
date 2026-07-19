@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { detailHeroBtnBase } from "@/lib/detail-route-ui";
+import { detailHeroBtnBase, DETAIL_HERO_BTN_COMPACT } from "@/lib/detail-route-ui";
 import { emitCollectionFavoriteCount } from "@/components/collection/collection-favorite-count-chip";
 
 interface ToggleCollectionFavoriteButtonProps {
@@ -53,18 +53,18 @@ export function ToggleCollectionFavoriteButton({
   }
 
   return (
-    <div className="min-w-0 flex-1">
+    <div className={cn("relative shrink-0", className)}>
       <button
         type="button"
         disabled={loading}
         onClick={() => void handleToggle()}
         className={cn(
           detailHeroBtnBase(
-            favorited
-              ? "border-transparent bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white"
-              : "border-transparent bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white",
+            cn(
+              DETAIL_HERO_BTN_COMPACT,
+              "border-transparent bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white",
+            ),
           ),
-          className,
         )}
         aria-pressed={favorited}
       >
@@ -75,7 +75,7 @@ export function ToggleCollectionFavoriteButton({
           )}
         />
         <span className="truncate">
-          {favorited ? "Added to Favourites" : "Add To Favourites"}
+          {favorited ? "Added to Favt" : "Add to Favt"}
         </span>
       </button>
       {error ? (

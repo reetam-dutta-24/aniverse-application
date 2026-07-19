@@ -82,7 +82,7 @@ export function InteractiveReviewSection({
     return {
       id: review.id,
       node: (
-        <div className="relative">
+        <div className="relative px-3 py-4 sm:px-4 sm:py-5">
           {isOwner ? (
             <div className="absolute right-3 top-3 z-10 flex items-center gap-2 rounded-full border border-white/10 bg-black/50 px-2 py-1 backdrop-blur-sm">
               <EditReviewButton
@@ -139,13 +139,17 @@ export function InteractiveReviewSection({
       </div>
 
       {slides.length > 0 ? (
-        <ContentCarouselSection
-          slides={slides}
-          sectionTitle={title}
-          variant="review"
-          rowHover={false}
-          autoAdvanceMs={REVIEW_AUTO_ADVANCE_MS}
-        />
+        <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] px-3 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-8">
+          <ContentCarouselSection
+            slides={slides}
+            sectionTitle={title}
+            variant="review"
+            rowHover={false}
+            overflowVisible
+            autoAdvanceMs={REVIEW_AUTO_ADVANCE_MS}
+            className="overflow-visible"
+          />
+        </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 px-6 py-10 text-center">
           <p className="text-sm text-white/70">

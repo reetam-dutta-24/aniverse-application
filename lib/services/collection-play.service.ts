@@ -49,7 +49,16 @@ const collectionPlayInclude = {
   items: {
     orderBy: { position: "asc" as const },
     include: {
-      content: { include: { genres: { include: { genre: true } } } },
+      content: {
+        include: {
+          genres: { include: { genre: true } },
+          episodes: {
+            orderBy: [{ seasonNumber: "asc" }, { number: "asc" }],
+            take: 1,
+            select: { id: true },
+          },
+        },
+      },
       track: true,
     },
   },
@@ -135,6 +144,7 @@ export async function getCollectionPlayQueue(
         genres: mapped.genres ?? [],
         highlightTags: asStringArray(item.content!.highlightTags),
         accent: mapped.accent,
+        defaultEpisodeId: item.content!.episodes[0]?.id,
       };
     });
 

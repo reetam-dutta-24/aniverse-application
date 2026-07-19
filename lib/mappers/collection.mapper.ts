@@ -131,6 +131,8 @@ export function mapCollectionToDetail(
   row: CollectionWithItems,
   options: {
     similarCollections?: AppCollection[];
+    similarContent?: ContentItem[];
+    similarTracks?: MusicTrack[];
     communities?: Community[];
     continueWatching?: ContentItem[];
     watchedMost?: ContentItem[];
@@ -220,6 +222,8 @@ export function mapCollectionToDetail(
     watchedMost: options.watchedMost ?? allItems.slice(0, 6),
     musicTracks: options.musicTracks ?? [],
     similarCollections: options.similarCollections ?? [],
+    similarContent: options.similarContent ?? [],
+    similarTracks: options.similarTracks ?? [],
     communities: options.communities ?? [],
   };
 }

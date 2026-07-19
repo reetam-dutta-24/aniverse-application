@@ -96,7 +96,7 @@ export default async function CollectionDetailPage({
         variant={isMusic ? "music" : "content"}
         favoriteTracks={isMusic ? tracks : undefined}
         initialFavorited={initialFavorited}
-        canFavorite={!canManageCollection}
+        canFavorite={Boolean(viewer?.id)}
         canManage={canManageCollection}
         ownerActions={
           canManageCollection ? (
@@ -160,11 +160,19 @@ export default async function CollectionDetailPage({
           </>
         )}
 
-        <MusicCarouselSection
-          title="🎧 Most Listened Music In This Community"
-          searchPlaceholder="Search tracks…"
-          tracks={isMusic ? tracks.slice(0, 6) : collection.musicTracks}
-        />
+        {isMusic ? (
+          <MusicCarouselSection
+            title={`🎵 Related Songs To ${collection.name}`}
+            searchPlaceholder="Search tracks…"
+            tracks={collection.similarTracks}
+          />
+        ) : (
+          <ContentCarouselSection
+            title={`💡 Similar Content To ${collection.name}`}
+            searchPlaceholder="Search titles…"
+            items={collection.similarContent}
+          />
+        )}
 
         <ContentPageSection
           title="📒 Similar Collections"

@@ -12,6 +12,7 @@ import {
 import {
   detailHeroBtnBase,
   DETAIL_HERO_BTN_GROUP,
+  DETAIL_HERO_BTN_GROUP_COMPACT,
   DETAIL_HERO_BTN_ACCENT_SOLID,
 } from "@/lib/detail-route-ui";
 import { AvatarStack } from "@/components/ui/avatar-stack";
@@ -89,18 +90,20 @@ export function CollectionActivityPanel({
           </div>
         ) : null}
 
-        <div className={DETAIL_HERO_BTN_GROUP}>
-          {collectionSlug && canFavorite ? (
-            <ToggleCollectionFavoriteButton
-              collectionSlug={collectionSlug}
-              initialFavorited={initialFavorited}
+        <div className="flex w-full flex-col items-center gap-2">
+          <div className={DETAIL_HERO_BTN_GROUP_COMPACT}>
+            <AddCollectionCollaboratorButton
+              collectionSlug={collectionSlug ?? ""}
+              canManage={canManage && Boolean(collectionSlug)}
             />
-          ) : null}
 
-          <AddCollectionCollaboratorButton
-            collectionSlug={collectionSlug ?? ""}
-            canManage={canManage && Boolean(collectionSlug)}
-          />
+            {collectionSlug && canFavorite ? (
+              <ToggleCollectionFavoriteButton
+                collectionSlug={collectionSlug}
+                initialFavorited={initialFavorited}
+              />
+            ) : null}
+          </div>
         </div>
 
         {contributors.length > 0 ? (

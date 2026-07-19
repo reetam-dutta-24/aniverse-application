@@ -109,7 +109,9 @@ function PaginatedCarouselInner({
 
   const viewportPadding = compact
     ? "px-4 sm:px-8 lg:px-10"
-    : "px-6 sm:px-10 lg:px-12";
+    : variant === "review"
+      ? "px-2 sm:px-4 lg:px-5"
+      : "px-6 sm:px-10 lg:px-12";
 
   return (
     <div className={cn("flex flex-col", compact ? "gap-1" : "gap-4", className)}>
@@ -150,7 +152,10 @@ function PaginatedCarouselInner({
                 key={pageIndex}
                 className={cn(
                   "flex w-full min-w-full shrink-0",
-                  compact ? "gap-2 sm:gap-2.5" : "gap-4 sm:gap-6",
+                  compact ? "gap-2 sm:gap-2.5" : variant === "review" ? "gap-5 sm:gap-6" : "gap-4 sm:gap-6",
+                  !rowHover && variant === "review" && "justify-start overflow-visible px-1 sm:px-2",
+                  !rowHover && variant !== "review" && "justify-start overflow-hidden",
+                  variant === "review" && !rowHover && "items-start",
                   itemsCenter || (overflowVisible && rowHover)
                     ? "items-center"
                     : "items-stretch",
@@ -169,15 +174,12 @@ function PaginatedCarouselInner({
                       {slide.node}
                     </CarouselCardSlot>
                   ) : (
-                    <div
-                      key={slide.id}
-                      className="relative flex min-w-0 flex-1 justify-center"
-                    >
+                    <div key={slide.id} className="relative shrink-0">
                       {slide.node}
                     </div>
                   ),
                 )}
-                {pageSlides.length < perPage
+                {rowHover && pageSlides.length < perPage
                   ? Array.from({ length: perPage - pageSlides.length }).map(
                       (_, i) => (
                         <div
@@ -192,7 +194,8 @@ function PaginatedCarouselInner({
             ));
 
             const viewportClass = cn(
-              compact ? "py-1" : variant === "review" ? "py-4" : "py-6",
+              compact ? "py-1" : variant === "review" ? "py-3 sm:py-4" : "py-6",
+              variant === "review" && !rowHover && "min-h-[420px] sm:min-h-[450px]",
             );
 
             if (rowHover) {
