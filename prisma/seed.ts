@@ -13,7 +13,6 @@ import {
 import { CONTENT_NESTED } from "../lib/seed/content-nested";
 import {
   generateMovieNested,
-  generateSeriesNested,
   isMovieType,
   normalizeContentGenre,
   type CatalogReviewSeed,
@@ -23,6 +22,8 @@ import {
 import { NOTIFICATION_SEEDS } from "../lib/seed/notifications";
 import { seedAnalyticsEventsForUser } from "../lib/seed/analytics-events";
 import { wipeDatabase } from "../lib/seed/wipe-database";
+import { getDetailedNested } from "../lib/seed/detailed-episodes";
+import { runRecoverySeed } from "../lib/seed/recovery-seed";
 import { roundRating } from "../lib/format-rating";
 import { syncNotificationsForUser } from "../lib/services/notification.service";
 
@@ -85,51 +86,37 @@ async function upsertGenres(slugs: string[]) {
 }
 
 function resolveNested(item: ContentSeedBase, index: number): ContentNestedSeed {
+  const detailed = getDetailedNested(item.slug);
+  if (detailed) return detailed;
+
   const custom = CONTENT_NESTED[item.slug as keyof typeof CONTENT_NESTED];
-  let nested: ContentNestedSeed;
+  if (custom) return custom;
 
-  if (custom) {
-    nested = custom;
-  } else if (isMovieType(item.type)) {
-    nested = generateMovieNested(item.slug, item.title, item.episodeDuration ?? "Full Movie");
-  } else {
-    const seasonCount = item.seasonCount ?? 1;
-    const episodeCount = item.episodeCount ?? 12;
-    const episodesPerSeason = Math.max(3, Math.min(12, Math.ceil(episodeCount / seasonCount)));
-
-    nested = {
-      ...generateSeriesNested(item.slug, { seasonCount, episodesPerSeason }),
-      characters: [
-        { name: `${item.title} Lead`, role: "Protagonist", voiceActor: pick(VOICE_ACTORS, index), accent: item.accent ?? "blue" },
-        { name: `${item.title} Rival`, role: "Supporting", voiceActor: pick(VOICE_ACTORS, index + 3), accent: "purple" },
-        { name: `${item.title} Mentor`, role: "Supporting", voiceActor: pick(VOICE_ACTORS, index + 5), accent: "cyan" },
-      ],
-      relatedSlugs: CONTENT_ITEMS.filter((c) => c.slug !== item.slug && c.type === item.type)
-        .slice(index % 10, (index % 10) + 4)
-        .map((c) => c.slug),
-      catalogReviews: [
-        {
-          authorName: "AniVerse Curator",
-          authorAvatarColor: "#ff00cc",
-          rating: roundRating(item.rating) ?? 8,
-          body: `${item.title} is a standout pick on AniVerse — rich storytelling, memorable characters, and production that holds up on every rewatch. The ${item.genreLabels[0]} tone is handled with confidence, and the pacing gives major moments room to breathe. Easily one of the strongest entries in its category on the platform.`,
-          accent: item.accent,
-          likeCount: 12,
-          headline: `Why ${item.title} belongs on your list`,
-        },
-        {
-          authorName: USER_SEEDS[index % USER_SEEDS.length]!.name,
-          authorAvatarColor: "#00d4ff",
-          rating: roundRating((item.rating ?? 8) - 0.3) ?? 7.7,
-          body: `Finished ${item.title} last week and still thinking about the finale. The ${item.genreLabels[0]} beats hit different when you know where the story is heading. Already recommended it in two communities and added it to my top-priority watchlist.`,
-          accent: item.accent ?? "pink",
-          likeCount: 8,
-        },
-      ],
-    };
+  if (isMovieType(item.type)) {
+    return generateMovieNested(item.slug, item.title, item.episodeDuration ?? "Full Movie");
   }
 
-  return nested;
+  return {
+    seasons: [{ label: item.seasonLabel ?? "Season 1", episodeCount: item.episodeCount ?? 12 }],
+    characters: [
+      { name: `${item.title} Lead`, role: "Protagonist", voiceActor: pick(VOICE_ACTORS, index), accent: item.accent ?? "blue" },
+      { name: `${item.title} Rival`, role: "Supporting", voiceActor: pick(VOICE_ACTORS, index + 3), accent: "purple" },
+    ],
+    relatedSlugs: CONTENT_ITEMS.filter((c) => c.slug !== item.slug && c.type === item.type)
+      .slice(index % 10, (index % 10) + 4)
+      .map((c) => c.slug),
+    catalogReviews: [
+      {
+        authorName: "AniVerse Curator",
+        authorAvatarColor: "#ff00cc",
+        rating: roundRating(item.rating) ?? 8,
+        body: `${item.title} is a standout pick on AniVerse.`,
+        accent: item.accent,
+        likeCount: 12,
+        headline: `Why ${item.title} belongs on your list`,
+      },
+    ],
+  };
 }
 
 function pick<T>(arr: T[], index: number): T {
@@ -573,10 +560,7 @@ async function seedAllUsersAndSocial(
       },
     });
 
-    const memberEmails = Array.from(
-      { length: USER_SEEDS.length },
-      (_, i) => USER_SEEDS[(cIndex + i) % USER_SEEDS.length]!.email.toLowerCase(),
-    );
+    const memberEmails = USER_SEEDS.slice(1).map((user) => user.email.toLowerCase());
     for (const [mIndex, email] of memberEmails.entries()) {
       const userId = emailToUserId.get(email);
       if (!userId) continue;
@@ -624,9 +608,20 @@ async function seedAllUsersAndSocial(
 }
 
 async function main() {
-  console.log("Wiping database…");
-  await wipeDatabase(prisma);
-  console.log("Database wiped.\n");
+  const shouldWipe =
+    process.env.SEED_WIPE === "1" ||
+    process.env.SEED_WIPE === "true" ||
+    process.argv.includes("--wipe");
+
+  if (shouldWipe) {
+    console.log("⚠️  SEED_WIPE enabled — deleting ALL application data…");
+    await wipeDatabase(prisma);
+    console.log("Database wiped.\n");
+  } else {
+    console.log(
+      "Non-destructive seed (existing data kept). To wipe first, run: npm run db:reset\n",
+    );
+  }
 
   console.log("Seeding AniVerse catalog…\n");
   await seedAdminUsers();
@@ -636,6 +631,7 @@ async function main() {
   const trackSlugToId = await seedMusic(artistSlugToId, contentSlugToId);
   await linkAllContentRelations(contentSlugToId, trackSlugToId);
   await seedAllUsersAndSocial(contentSlugToId, trackSlugToId);
+  await runRecoverySeed(prisma);
   console.log("\nSeed complete.");
   console.log(`  ${CONTENT_ITEMS.length} content titles`);
   console.log(`  ${ARTIST_ITEMS.length} artists`);

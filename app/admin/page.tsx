@@ -91,8 +91,10 @@ export default async function AdminHomePage() {
         <p className="font-semibold text-white">Getting started</p>
         <ol className="mt-3 list-decimal space-y-2 pl-5">
           <li>
-            Run <code className="text-brand-pink">npm run db:seed</code> to
-            create admin accounts and starter catalog data.
+            Run <code className="text-brand-pink">npm run db:reset</code> for a
+            fresh database (destructive — deletes all data). Use{" "}
+            <code className="text-brand-pink">npm run db:seed</code> only to add
+            starter catalog without wiping.
           </li>
           <li>
             Sign in with your role-specific admin account (e.g.{" "}

@@ -140,7 +140,7 @@ export async function getUserProfileDetail(
     listenRows,
     watchRows,
     albumRows,
-    artistRows,
+    artistFollowRows,
     counts,
     watchMinutes,
     followerCount,
@@ -222,8 +222,10 @@ export async function getUserProfileDetail(
       orderBy: { rating: "desc" },
       take: 8,
     }),
-    prisma.artist.findMany({
-      orderBy: { rating: "desc" },
+    prisma.artistFollow.findMany({
+      where: { userId: user.id },
+      include: { artist: true },
+      orderBy: { createdAt: "desc" },
       take: 8,
     }),
     Promise.all([
@@ -281,20 +283,7 @@ export async function getUserProfileDetail(
   const mostPlayedSongs = topTracksByPlayCount(listenRows, 8);
   const likedAlbums = albumRows.map(mapTrackToMusicTrack);
 
-  const listenedArtistNames = [
-    ...new Set(listenRows.map((row) => row.track.artist)),
-  ].slice(0, 8);
-
-  const topArtists =
-    artistRows
-      .filter((artist) => listenedArtistNames.includes(artist.title))
-      .map(mapArtistToContentItem)
-      .slice(0, 8).length > 0
-      ? artistRows
-          .filter((artist) => listenedArtistNames.includes(artist.title))
-          .map(mapArtistToContentItem)
-          .slice(0, 8)
-      : artistRows.slice(0, 5).map(mapArtistToContentItem);
+  const topArtists = artistFollowRows.map((row) => mapArtistToContentItem(row.artist));
 
   const recentActivity = [
     ...watchlistRows.slice(0, 4).map(

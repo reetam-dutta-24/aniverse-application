@@ -15,6 +15,7 @@ import type {
 import { artistImageUrl } from "./artist-images";
 import { songImageUrl } from "./song-images";
 import { generateCuratedContentItems } from "./content-catalog";
+import { generateCollectionSeeds as buildCollectionSeeds } from "./collection-seeds";
 
 const ACCENTS: AccentColor[] = [
   "pink",
@@ -627,7 +628,7 @@ export function generateCollectionSeeds(
   _content: ContentSeedBase[],
   _tracks: MusicSeed[],
 ): CollectionSeed[] {
-  return [];
+  return buildCollectionSeeds();
 }
 
 export const CONTENT_ITEMS = generateContentItems();

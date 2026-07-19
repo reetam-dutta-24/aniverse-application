@@ -20,6 +20,11 @@ import {
   getTrackRecordBySlug,
   listAllTrackSlugs,
 } from "@/lib/services/music.service";
+import {
+  findSimilarTracks,
+  listCollectionsContainingTrack,
+  listCommunitiesForTrack,
+} from "@/lib/services/catalog-relations.service";
 import { prisma } from "@/lib/prisma";
 import { listAllCatalogMusicTracks } from "@/lib/services/feed.service";
 import {
@@ -388,15 +393,35 @@ export async function getSongDetail(
   const record = await getTrackRecordBySlug(slug);
 
   if (record) {
-    const engagement = await getTrackEngagementStats(record.id);
-    const similarRows = await prisma.musicTrack.findMany({
-      where: { slug: { not: slug } },
-      take: 12,
-      orderBy: { updatedAt: "desc" },
-    });
-    const similar = similarRows.map((t) => mapTrackToMusicTrack(t));
+    const genreLabels = Array.isArray(record.genres)
+      ? record.genres.filter((item): item is string => typeof item === "string")
+      : [];
+
+    const [engagement, similar, collections, communities, userReviews] =
+      await Promise.all([
+        getTrackEngagementStats(record.id),
+        findSimilarTracks({
+          id: record.id,
+          slug: record.slug,
+          artistId: record.artistId,
+          artist: record.artist,
+          contentId: record.contentId,
+          genres: record.genres,
+          language: record.language,
+        }),
+        listCollectionsContainingTrack(record.id),
+        listCommunitiesForTrack(record.id, {
+          title: record.title,
+          artist: record.artist,
+          contentId: record.contentId,
+          genreLabels,
+        }),
+        getUserReviewsForTarget("song", slug, viewerUserId),
+      ]);
+
     const detail = mapTrackRecordToSongDetail(record, engagement, similar);
-    const userReviews = await getUserReviewsForTarget("song", slug, viewerUserId);
+    detail.collections = collections;
+    detail.communities = communities;
     detail.reviews = mergeDisplayedReviews(userReviews, detail.reviews);
     return enrichSongCatalogLinks(detail, record);
   }

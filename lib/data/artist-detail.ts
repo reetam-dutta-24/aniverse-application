@@ -18,6 +18,12 @@ import {
 import { isArtistFollowed, getArtistFollowerPreview } from "@/lib/services/artist-follow.service";
 import { isArtistFavorited } from "@/lib/services/favorite.service";
 import {
+  artistGenreSlugsFromRecord,
+  findSimilarArtists,
+  listCollectionsContainingArtistTracks,
+  listCommunitiesForArtist,
+} from "@/lib/services/catalog-relations.service";
+import {
   getUserReviewsForTarget,
   mergeDisplayedReviews,
 } from "@/lib/services/review.service";
@@ -364,7 +370,20 @@ export async function getArtistDetail(
   const record = await getArtistRecordBySlug(slug);
   if (record) {
     const detail = mapArtistRecordToDetail(record);
-    const userReviews = await getUserReviewsForTarget("artist", slug, viewerUserId);
+    const genreSlugs = artistGenreSlugsFromRecord(record);
+    const [collections, communities, similarArtists, userReviews] = await Promise.all([
+      listCollectionsContainingArtistTracks(record.id),
+      listCommunitiesForArtist(record.id, {
+        title: record.title,
+        genreLabels: genreSlugs,
+      }),
+      findSimilarArtists(record.id, genreSlugs, slug),
+      getUserReviewsForTarget("artist", slug, viewerUserId),
+    ]);
+
+    detail.collections = collections;
+    detail.communities = communities;
+    detail.similarArtists = similarArtists;
     detail.reviews = mergeDisplayedReviews(userReviews, detail.reviews);
 
     if (viewerUserId) {

@@ -18,6 +18,11 @@ import {
   listAllContentSlugs,
 } from "@/lib/services/content.service";
 import { mapContentRecordToDetail } from "@/lib/mappers/content-detail.mapper";
+import {
+  findSimilarContent,
+  listCollectionsContainingContent,
+  listCommunitiesForContent,
+} from "@/lib/services/catalog-relations.service";
 import { getRecommendedContent } from "@/lib/services/feed.service";
 import {
   getUserReviewsForTarget,
@@ -717,12 +722,28 @@ export async function getContentDetail(
   const record = await getContentRecordBySlug(slug);
 
   if (record) {
-    const related = (await getRecommendedContent(12)).filter(
-      (item) => item.id !== slug,
-    );
-    const engagement = await getContentEngagementStats(record.id);
-    const detail = mapContentRecordToDetail(record, engagement, related);
-    const userReviews = await getUserReviewsForTarget("content", slug, viewerUserId);
+    const genreIds = record.genres.map((g) => g.genreId);
+    const genreLabels = record.genres.map((g) => g.genre.label);
+    const needsRelatedFallback = record.relatedFrom.length === 0;
+
+    const [engagement, fallbackRelated, collections, communities, userReviews] =
+      await Promise.all([
+        getContentEngagementStats(record.id),
+        needsRelatedFallback
+          ? findSimilarContent(slug, genreIds, 12)
+          : Promise.resolve([] as ContentItem[]),
+        listCollectionsContainingContent(record.id),
+        listCommunitiesForContent(record.id, {
+          title: record.title,
+          genreLabels,
+          category: record.type === "ANIME" ? "Anime" : "Content",
+        }),
+        getUserReviewsForTarget("content", slug, viewerUserId),
+      ]);
+
+    const detail = mapContentRecordToDetail(record, engagement, fallbackRelated);
+    detail.collections = collections;
+    detail.communities = communities;
     detail.reviews = mergeDisplayedReviews(userReviews, detail.reviews);
     return detail;
   }
