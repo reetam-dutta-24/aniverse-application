@@ -16,7 +16,7 @@ import {
   TextInput,
 } from "@/components/forms/form-shell";
 import { CatalogMultiSearchPicker } from "@/components/forms/catalog-search-picker";
-import { ACCENT_OPTIONS, CONTENT_GENRE_OPTIONS } from "@/lib/catalog-enums";
+import { ACCENT_OPTIONS, CONTENT_GENRE_OPTIONS, SONG_GENRE_OPTIONS } from "@/lib/catalog-enums";
 import {
   collectionCategories,
   collectionKinds,
@@ -40,6 +40,21 @@ export function CreateCollectionButton() {
   const [trackSlugs, setTrackSlugs] = useState<string[]>([]);
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
+
+  const genreOptions =
+    kind === "music" ? SONG_GENRE_OPTIONS : CONTENT_GENRE_OPTIONS;
+
+  function handleKindChange(nextKind: (typeof collectionKinds)[number]) {
+    setKind(nextKind);
+    const allowed = new Set(
+      (nextKind === "music" ? SONG_GENRE_OPTIONS : CONTENT_GENRE_OPTIONS).map(
+        (option) => option.value,
+      ),
+    );
+    setGenreLabels((current) =>
+      current.filter((value) => allowed.has(value as never)),
+    );
+  }
 
   const slugPreview = useMemo(
     () => slug.trim() || slugify(name || "my-collection"),
@@ -148,7 +163,9 @@ export function CreateCollectionButton() {
               <SelectInput
                 value={kind}
                 onChange={(event) =>
-                  setKind(event.target.value as (typeof collectionKinds)[number])
+                  handleKindChange(
+                    event.target.value as (typeof collectionKinds)[number],
+                  )
                 }
               >
                 <option value="content">Shows &amp; movies</option>
@@ -178,7 +195,7 @@ export function CreateCollectionButton() {
             label="Genre tags"
             hint="Shown on the collection page when items are not added yet."
             values={genreLabels}
-            options={CONTENT_GENRE_OPTIONS}
+            options={genreOptions}
             onChange={setGenreLabels}
           />
 

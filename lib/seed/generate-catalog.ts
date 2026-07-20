@@ -16,6 +16,7 @@ import { artistImageUrl } from "./artist-images";
 import { songImageUrl } from "./song-images";
 import { generateCuratedContentItems } from "./content-catalog";
 import { generateCollectionSeeds as buildCollectionSeeds } from "./collection-seeds";
+import { GLOBAL_COMMUNITY_SEEDS } from "./global-seeds";
 
 const ACCENTS: AccentColor[] = [
   "pink",
@@ -620,7 +621,24 @@ export function generateUserSeeds(): UserSeed[] {
 }
 
 export function generateCommunitySeeds(_users: UserSeed[]): CommunitySeed[] {
-  return [];
+  return GLOBAL_COMMUNITY_SEEDS.map((seed) => ({
+    slug: seed.slug,
+    name: seed.name,
+    description: seed.description,
+    category: seed.category,
+    visibility: seed.visibility,
+    activityLevel: seed.activityLevel,
+    accent: seed.accent,
+    posts: (seed.posts ?? []).map((post) => ({
+      authorEmail: seed.ownerEmail,
+      title: post.title,
+      content: post.content,
+      kind: "POST" as const,
+      likeCount: 12,
+      commentCount: 3,
+      shareCount: 1,
+    })),
+  }));
 }
 
 export function generateCollectionSeeds(

@@ -4,7 +4,7 @@ import type {
   MusicTrack as PrismaMusicTrack,
   User,
 } from "@prisma/client";
-import { CONTENT_GENRE_OPTIONS } from "@/lib/catalog-enums";
+import { CONTENT_GENRE_OPTIONS, SONG_GENRE_OPTIONS } from "@/lib/catalog-enums";
 import { mapContentToItem } from "@/lib/mappers/content.mapper";
 import { mapTrackToContentItem, mapTrackToMusicTrack } from "@/lib/mappers/music.mapper";
 import { formatCardDate, formatRelativeTime } from "@/lib/format-dates";
@@ -35,7 +35,12 @@ function mapVisibility(value: Collection["visibility"]): AppCollection["visibili
   return value === "PUBLIC" ? "public" : "private";
 }
 
-export function mapCollectionToCard(row: Collection): AppCollection {
+type CollectionCardRow = Collection & {
+  _count?: { favorites: number };
+};
+
+export function mapCollectionToCard(row: CollectionCardRow): AppCollection {
+  const favoriteCount = row._count?.favorites ?? row.favoriteCount;
   return {
     id: row.slug,
     name: row.name,
@@ -44,7 +49,7 @@ export function mapCollectionToCard(row: Collection): AppCollection {
     collectionKind: row.kind === "music" ? "music" : "content",
     genreLabelIds: row.genreLabels ?? [],
     itemCount: row.itemCount,
-    favoriteCount: row.favoriteCount,
+    favoriteCount,
     visibility: mapVisibility(row.visibility),
     createdAt: formatCardDate(row.createdAt),
     updatedAt: formatRelativeTime(row.updatedAt),
@@ -86,10 +91,15 @@ function collectGenres(items: ContentItem[]): Genre[] {
   return genres.slice(0, 6);
 }
 
-function mapStoredGenreLabels(labels: string[]): Genre[] {
+function mapStoredGenreLabels(
+  labels: string[],
+  collectionKind: "content" | "music" = "content",
+): Genre[] {
+  const options =
+    collectionKind === "music" ? SONG_GENRE_OPTIONS : CONTENT_GENRE_OPTIONS;
   return labels
     .map((value) => {
-      const option = CONTENT_GENRE_OPTIONS.find((entry) => entry.value === value);
+      const option = options.find((entry) => entry.value === value);
       return option
         ? { id: option.value, label: option.label }
         : { id: value, label: value };
@@ -101,11 +111,12 @@ function resolveCollectionGenres(
   items: ContentItem[],
   genreLabels: string[],
   category: string,
+  collectionKind: "content" | "music" = "content",
 ): Genre[] {
   const itemGenres = collectGenres(items);
   if (itemGenres.length > 0) return itemGenres;
 
-  const storedGenres = mapStoredGenreLabels(genreLabels);
+  const storedGenres = mapStoredGenreLabels(genreLabels, collectionKind);
   if (storedGenres.length > 0) return storedGenres;
 
   return [{ id: category.toLowerCase().replace(/\s+/g, "-"), label: category }];
@@ -145,13 +156,14 @@ export function mapCollectionToDetail(
     .filter((item): item is ContentItem => item != null);
 
   const owner = mapOwnerSummary(row.user);
+  const collectionKind = row.kind === "music" ? "music" : "content";
   const genres = resolveCollectionGenres(
     allItems,
     row.genreLabels ?? [],
     row.category ?? "Mixed",
+    collectionKind,
   );
   const rating = averageRating(allItems);
-  const collectionKind = row.kind === "music" ? "music" : "content";
 
   const engagementStats: ContentEngagementStat[] = [
     { id: "items", label: "Items", value: String(row.itemCount) },

@@ -1,0 +1,202 @@
+export interface OstTrackSeed {
+  slug: string;
+  title: string;
+  artist: string;
+  album?: string;
+  duration: string;
+  contentSlug: string;
+  genres: string[];
+  language?: string;
+  explicit?: boolean;
+}
+
+/** Elite (Netflix) OST tracks — linked to the Elite show page. */
+export const ELITE_OST_SEEDS: OstTrackSeed[] = [
+  {
+    slug: "elite-antes-de-morirme",
+    title: "Antes de Morirme (feat. ROSALÍA)",
+    artist: "C. Tangana, ROSALÍA",
+    album: "Antes de Morirme",
+    duration: "3:20",
+    contentSlug: "elite",
+    genres: ["pop", "spanish"],
+    language: "spanish",
+    explicit: true,
+  },
+  {
+    slug: "elite-never-far-behind",
+    title: "Never Far Behind",
+    artist: "Dual Frequencies",
+    album: "Kiss Me One Last Time",
+    duration: "4:37",
+    contentSlug: "elite",
+    genres: ["pop", "electronic"],
+    language: "english",
+  },
+  {
+    slug: "elite-kiss-me-one-last-time",
+    title: "Kiss Me One Last Time",
+    artist: "Dual Frequencies",
+    album: "Kiss Me One Last Time",
+    duration: "4:28",
+    contentSlug: "elite",
+    genres: ["pop", "electronic"],
+    language: "english",
+  },
+  {
+    slug: "elite-hundred-miles",
+    title: "Hundred Miles",
+    artist: "YALL, Gabriela Richardson",
+    album: "Hundred Miles",
+    duration: "2:52",
+    contentSlug: "elite",
+    genres: ["pop", "electronic"],
+    language: "english",
+  },
+  {
+    slug: "elite-el-momento",
+    title: "El Momento",
+    artist: "La Casa Azul",
+    album: "El Momento",
+    duration: "4:31",
+    contentSlug: "elite",
+    genres: ["pop", "indie"],
+    language: "spanish",
+  },
+  {
+    slug: "elite-te-miro",
+    title: "Te Miro",
+    artist: "Zazo & Gxurmet, Vega & D3llano",
+    album: "Te Miro",
+    duration: "4:00",
+    contentSlug: "elite",
+    genres: ["pop", "electronic"],
+    language: "spanish",
+  },
+  {
+    slug: "elite-paris",
+    title: "París",
+    artist: "Zazo & Gxurmet, Vega Almohalla",
+    album: "París",
+    duration: "2:50",
+    contentSlug: "elite",
+    genres: ["pop", "electronic"],
+    language: "spanish",
+  },
+  {
+    slug: "elite-forever-young",
+    title: "Forever Young",
+    artist: "Youth Group",
+    album: "Casino Twilight Dogs",
+    duration: "3:59",
+    contentSlug: "elite",
+    genres: ["indie", "rock"],
+    language: "english",
+  },
+];
+
+/** Fifty Shades of Grey soundtrack — linked to the first film. */
+export const FIFTY_SHADES_OST_SEEDS: OstTrackSeed[] = [
+  {
+    slug: "fifty-shades-crazy-in-love",
+    title: "Crazy in Love (Remix)",
+    artist: "Beyoncé",
+    album: "Fifty Shades of Grey (Original Motion Picture Soundtrack)",
+    duration: "3:14",
+    contentSlug: "fifty-shades-of-grey",
+    genres: ["pop", "rnb"],
+    language: "english",
+  },
+  {
+    slug: "fifty-shades-earned-it",
+    title: "Earned It",
+    artist: "The Weeknd",
+    album: "Fifty Shades of Grey (Original Motion Picture Soundtrack)",
+    duration: "4:37",
+    contentSlug: "fifty-shades-of-grey",
+    genres: ["rnb", "pop"],
+    language: "english",
+  },
+  {
+    slug: "fifty-shades-love-me-like-you-do",
+    title: "Love Me like You Do",
+    artist: "Ellie Goulding",
+    album: "Fifty Shades of Grey (Original Motion Picture Soundtrack)",
+    duration: "4:12",
+    contentSlug: "fifty-shades-of-grey",
+    genres: ["pop", "electronic"],
+    language: "english",
+  },
+  {
+    slug: "fifty-shades-i-know-you",
+    title: "I Know You",
+    artist: "Skylar Grey",
+    album: "Fifty Shades of Grey (Original Motion Picture Soundtrack)",
+    duration: "4:01",
+    contentSlug: "fifty-shades-of-grey",
+    genres: ["pop", "ballad"],
+    language: "english",
+  },
+  {
+    slug: "fifty-shades-pray",
+    title: "Pray",
+    artist: "JRY ft. Skylar Grey",
+    album: "Fifty Shades of Grey (Original Motion Picture Soundtrack)",
+    duration: "3:44",
+    contentSlug: "fifty-shades-of-grey",
+    genres: ["pop", "electronic"],
+    language: "english",
+  },
+  {
+    slug: "fifty-shades-where-you-belong",
+    title: "Where You Belong",
+    artist: "The Weeknd",
+    album: "Fifty Shades of Grey (Original Motion Picture Soundtrack)",
+    duration: "4:59",
+    contentSlug: "fifty-shades-of-grey",
+    genres: ["rnb", "pop"],
+    language: "english",
+  },
+  {
+    slug: "fifty-shades-not-afraid-anymore",
+    title: "Not Afraid Anymore",
+    artist: "Halsey",
+    album: "Fifty Shades Darker (Original Motion Picture Soundtrack)",
+    duration: "3:43",
+    contentSlug: "fifty-shades-darker",
+    genres: ["pop", "electronic"],
+    language: "english",
+  },
+  {
+    slug: "fifty-shades-bombshell",
+    title: "Bombshell",
+    artist: "The Weeknd",
+    album: "Fifty Shades Darker (Original Motion Picture Soundtrack)",
+    duration: "4:03",
+    contentSlug: "fifty-shades-darker",
+    genres: ["rnb", "pop"],
+    language: "english",
+  },
+  {
+    slug: "fifty-shades-haunting",
+    title: "Haunting",
+    artist: "Halsey",
+    album: "Fifty Shades of Grey (Original Motion Picture Soundtrack)",
+    duration: "4:05",
+    contentSlug: "fifty-shades-of-grey",
+    genres: ["pop", "electronic"],
+    language: "english",
+  },
+  {
+    slug: "fifty-shades-salted-wound",
+    title: "Salted Wound",
+    artist: "Sia",
+    album: "Fifty Shades of Grey (Original Motion Picture Soundtrack)",
+    duration: "4:30",
+    contentSlug: "fifty-shades-of-grey",
+    genres: ["pop", "ballad"],
+    language: "english",
+  },
+];
+
+export const ALL_OST_SEEDS = [...ELITE_OST_SEEDS, ...FIFTY_SHADES_OST_SEEDS];

@@ -63,6 +63,8 @@ export const SONG_GENRE_OPTIONS = [
   { value: "pop", label: "Pop" },
   { value: "rock", label: "Rock" },
   { value: "hip-hop", label: "Hip-Hop" },
+  { value: "rap", label: "Rap" },
+  { value: "english", label: "English" },
   { value: "rnb", label: "R&B" },
   { value: "electronic", label: "Electronic" },
   { value: "ost", label: "Anime OST" },

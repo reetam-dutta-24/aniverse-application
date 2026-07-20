@@ -43,6 +43,9 @@ export default async function ArtistDetailPage({ params }: ArtistPageProps) {
 
   if (!artist) notFound();
 
+  const showBandMembers = artist.members.length > 0;
+  const relatedAutoMs = 4000;
+
   return (
     <div className="flex w-full flex-col">
       <ArtistDetailHero artist={artist} />
@@ -73,26 +76,35 @@ export default async function ArtistDetailPage({ params }: ArtistPageProps) {
           tracks={artist.albums}
         />
 
-        <ContentPageSection
-          title={`👥 ${artist.title} Band Members`}
-          variant="content"
-          rowHover={false}
-          slides={artist.members.map((member) => ({
-            id: member.id,
-            node: (
-              <ContentCharacterCard
-                character={member}
-                contentId={artist.id}
-                contentAccent={artist.accent}
-                interactive={false}
-              />
-            ),
-          }))}
-        />
+        {showBandMembers ? (
+          <ContentPageSection
+            title={`👥 ${artist.title} Band Members`}
+            variant="content"
+            rowHover={false}
+            itemsPerPage={5}
+            overflowVisible
+            itemsCenter
+            autoAdvanceMs={relatedAutoMs}
+            emptyMessage="No band members listed for this artist."
+            slides={artist.members.map((member) => ({
+              id: member.id,
+              node: (
+                <ContentCharacterCard
+                  character={member}
+                  contentId={artist.id}
+                  contentAccent={artist.accent}
+                  interactive={false}
+                />
+              ),
+            }))}
+          />
+        ) : null}
 
         <ContentPageSection
           title={`🎤 Artists Similar To ${artist.title}`}
           variant="content"
+          autoAdvanceMs={relatedAutoMs}
+          emptyMessage={`No similar artists to ${artist.title} yet.`}
           slides={artist.similarArtists.map((entry) => ({
             id: entry.id,
             node: <ArtistCard item={entry} />,
@@ -102,6 +114,7 @@ export default async function ArtistDetailPage({ params }: ArtistPageProps) {
         <ContentPageSection
           title="📀 EP Collections"
           variant="community"
+          emptyMessage={`No collections featuring ${artist.title} yet.`}
           slides={artist.collections.map((collection) => ({
             id: collection.id,
             node: <CollectionCard collection={collection} />,
@@ -111,6 +124,7 @@ export default async function ArtistDetailPage({ params }: ArtistPageProps) {
         <ContentPageSection
           title={`👥 Communities Involving ${artist.title}`}
           variant="community"
+          emptyMessage={`No communities linked to ${artist.title} yet.`}
           slides={artist.communities.map((community) => ({
             id: community.id,
             node: (

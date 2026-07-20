@@ -10,9 +10,11 @@ import {
 import { ShareUrlButton } from "@/components/ui/share-url-button";
 import { AvatarStack } from "@/components/ui/avatar-stack";
 import { Chip } from "@/components/ui/chip";
+import { CommunityJoinAction } from "@/components/community/community-join-action";
 import type { UserSummary } from "@/types";
 
 export interface CommunityWallpaperPanelProps {
+  communitySlug: string;
   wallpaperUrl: string;
   communityName: string;
   members: UserSummary[];
@@ -20,10 +22,12 @@ export interface CommunityWallpaperPanelProps {
   collectionCount?: number;
   popularityLabel?: string;
   globalRankLabel?: string;
+  isMember?: boolean;
 }
 
 /** Right hero panel — wallpaper, member stats, join CTAs. */
 export function CommunityWallpaperPanel({
+  communitySlug,
   wallpaperUrl,
   communityName,
   members,
@@ -31,7 +35,12 @@ export function CommunityWallpaperPanel({
   collectionCount,
   popularityLabel,
   globalRankLabel,
+  isMember = false,
 }: CommunityWallpaperPanelProps) {
+  const overflowCount = Math.max(0, members.length - 3);
+  const overflowLabel =
+    overflowCount > 0 ? `...+${overflowCount}` : undefined;
+
   return (
     <aside className="relative flex h-full min-h-0 flex-col overflow-hidden border-l border-cyan-400/20 bg-black shadow-[inset_0_0_40px_rgba(0,255,230,0.08)]">
       <div className="relative min-h-0 flex-1 overflow-hidden">
@@ -84,7 +93,7 @@ export function CommunityWallpaperPanel({
                 users={members}
                 max={3}
                 size="md"
-                overflowLabel="....+25"
+                overflowLabel={overflowLabel}
               />
               {memberSummary ? (
                 <p className="text-[11px] font-medium text-white/85 sm:text-xs">
@@ -112,14 +121,10 @@ export function CommunityWallpaperPanel({
             ) : null}
           </div>
 
-          <button
-            type="button"
-            className={detailHeroBtnBase(
-              "mx-auto border-transparent bg-gradient-to-r from-red-600 to-rose-600 font-bold text-white",
-            )}
-          >
-            <span className="truncate">Join Community</span>
-          </button>
+          <CommunityJoinAction
+            communitySlug={communitySlug}
+            isMember={isMember}
+          />
 
           <div className={DETAIL_HERO_BTN_GROUP}>
             <button

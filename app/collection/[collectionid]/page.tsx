@@ -165,18 +165,23 @@ export default async function CollectionDetailPage({
             title={`🎵 Related Songs To ${collection.name}`}
             searchPlaceholder="Search tracks…"
             tracks={collection.similarTracks}
+            autoAdvanceMs={4000}
+            emptyMessage={`No related songs for ${collection.name} yet.`}
           />
         ) : (
           <ContentCarouselSection
             title={`💡 Similar Content To ${collection.name}`}
             searchPlaceholder="Search titles…"
             items={collection.similarContent}
+            autoAdvanceMs={4000}
+            emptyMessage={`No similar content for ${collection.name} yet.`}
           />
         )}
 
         <ContentPageSection
           title="📒 Similar Collections"
           variant="community"
+          emptyMessage="No similar collections found yet."
           slides={collection.similarCollections.map((entry) => ({
             id: entry.id,
             node: <CollectionCard collection={entry} />,
@@ -186,6 +191,7 @@ export default async function CollectionDetailPage({
         <ContentPageSection
           title={`👥 Communities Involving ${collection.name}`}
           variant="community"
+          emptyMessage={`No communities linked to ${collection.name} yet.`}
           slides={collection.communities.map((community) => ({
             id: community.id,
             node: (

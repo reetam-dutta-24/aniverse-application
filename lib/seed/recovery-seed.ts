@@ -7,7 +7,13 @@ import {
 import {
   REETAM_COLLECTION_SEEDS,
   REETAM_EMAIL,
+  type CollectionSeed,
 } from "@/lib/seed/collection-seeds";
+import {
+  GLOBAL_COLLECTION_SEEDS,
+  GLOBAL_COMMUNITY_SEEDS,
+} from "@/lib/seed/global-seeds";
+import { ALL_OST_SEEDS } from "@/lib/seed/ost-seeds";
 import type { ContentNestedSeed } from "@/lib/seed/helpers";
 
 async function syncContentNested(
@@ -67,18 +73,25 @@ async function syncContentNested(
   }
 }
 
-async function seedReetamCollections(
+async function seedCollectionsFromSeeds(
   prisma: PrismaClient,
-  userId: string,
+  ownerEmail: string,
+  seeds: CollectionSeed[],
   contentSlugToId: Map<string, string>,
   trackSlugToId: Map<string, string>,
 ) {
-  for (const seed of REETAM_COLLECTION_SEEDS) {
+  const owner = await prisma.user.findUnique({
+    where: { email: ownerEmail.toLowerCase() },
+    select: { id: true },
+  });
+  if (!owner) return;
+
+  for (const seed of seeds) {
     const collection = await prisma.collection.upsert({
       where: { slug: seed.slug },
       create: {
         slug: seed.slug,
-        userId,
+        userId: owner.id,
         name: seed.name,
         description: seed.description,
         category: seed.category,
@@ -87,7 +100,7 @@ async function seedReetamCollections(
         visibility: seed.visibility,
         accent: seed.accent,
         imageUrl: null,
-        favoriteCount: seed.favoriteCount,
+        favoriteCount: 0,
       },
       update: {
         name: seed.name,
@@ -97,7 +110,7 @@ async function seedReetamCollections(
         kind: seed.kind,
         visibility: seed.visibility,
         accent: seed.accent,
-        favoriteCount: seed.favoriteCount,
+        favoriteCount: 0,
       },
     });
 
@@ -121,11 +134,29 @@ async function seedReetamCollections(
     const itemCount = await prisma.collectionItem.count({
       where: { collectionId: collection.id },
     });
+    const favoriteCount = await prisma.collectionFavorite.count({
+      where: { collectionId: collection.id },
+    });
     await prisma.collection.update({
       where: { id: collection.id },
-      data: { itemCount, updatedAt: new Date() },
+      data: { itemCount, favoriteCount, updatedAt: new Date() },
     });
   }
+}
+
+async function seedReetamCollections(
+  prisma: PrismaClient,
+  userId: string,
+  contentSlugToId: Map<string, string>,
+  trackSlugToId: Map<string, string>,
+) {
+  await seedCollectionsFromSeeds(
+    prisma,
+    REETAM_EMAIL,
+    REETAM_COLLECTION_SEEDS,
+    contentSlugToId,
+    trackSlugToId,
+  );
 }
 
 async function seedReetamActivity(
@@ -289,8 +320,123 @@ async function syncDetailedEpisodes(prisma: PrismaClient) {
   }
 
   await prisma.contentEpisode.deleteMany({
-    where: { content: { slug: { notIn: [...DETAILED_EPISODE_SLUGS] } } },
+    where: {
+      content: {
+        slug: { notIn: [...DETAILED_EPISODE_SLUGS] },
+        type: { not: "MOVIE" },
+      },
+    },
   });
+}
+
+async function seedGlobalCommunities(prisma: PrismaClient) {
+  for (const seed of GLOBAL_COMMUNITY_SEEDS) {
+    const owner = await prisma.user.findUnique({
+      where: { email: seed.ownerEmail.toLowerCase() },
+      select: { id: true },
+    });
+    if (!owner) continue;
+
+    const community = await prisma.community.upsert({
+      where: { slug: seed.slug },
+      create: {
+        slug: seed.slug,
+        name: seed.name,
+        description: seed.description,
+        category: seed.category,
+        visibility: seed.visibility,
+        activityLevel: seed.activityLevel,
+        accent: seed.accent,
+        memberCount: 1,
+      },
+      update: {
+        name: seed.name,
+        description: seed.description,
+        category: seed.category,
+        visibility: seed.visibility,
+        activityLevel: seed.activityLevel,
+        accent: seed.accent,
+      },
+    });
+
+    await prisma.communityMember.upsert({
+      where: {
+        userId_communityId: { userId: owner.id, communityId: community.id },
+      },
+      create: { userId: owner.id, communityId: community.id, role: "ADMIN" },
+      update: { role: "ADMIN" },
+    });
+
+    for (const post of seed.posts ?? []) {
+      const existing = await prisma.communityPost.findFirst({
+        where: { communityId: community.id, title: post.title },
+      });
+      if (existing) continue;
+      await prisma.communityPost.create({
+        data: {
+          communityId: community.id,
+          authorId: owner.id,
+          title: post.title,
+          content: post.content,
+          kind: "POST",
+        },
+      });
+    }
+
+    const [memberCount, postCount] = await Promise.all([
+      prisma.communityMember.count({ where: { communityId: community.id } }),
+      prisma.communityPost.count({ where: { communityId: community.id } }),
+    ]);
+    await prisma.community.update({
+      where: { id: community.id },
+      data: { memberCount, postCount, updatedAt: new Date() },
+    });
+  }
+}
+
+async function seedOstTracks(
+  prisma: PrismaClient,
+  contentSlugToId: Map<string, string>,
+) {
+  for (const [index, seed] of ALL_OST_SEEDS.entries()) {
+    const contentId = contentSlugToId.get(seed.contentSlug);
+    if (!contentId) continue;
+
+    const track = await prisma.musicTrack.upsert({
+      where: { slug: seed.slug },
+      create: {
+        slug: seed.slug,
+        title: seed.title,
+        artist: seed.artist,
+        kind: "ost",
+        source: seed.contentSlug.replace(/-/g, " "),
+        album: seed.album ?? null,
+        durationLabel: seed.duration,
+        genres: seed.genres,
+        language: seed.language ?? null,
+        contentId,
+        accent: "purple",
+        trendingLabel: `Featured OST · ${seed.contentSlug}`,
+        creditLabel: `By ${seed.artist}`,
+      },
+      update: {
+        title: seed.title,
+        artist: seed.artist,
+        kind: "ost",
+        album: seed.album ?? null,
+        durationLabel: seed.duration,
+        genres: seed.genres,
+        language: seed.language ?? null,
+        contentId,
+      },
+    });
+
+    await prisma.contentFeaturedTrack.upsert({
+      where: { contentId_trackId: { contentId, trackId: track.id } },
+      create: { contentId, trackId: track.id, position: index % 20 },
+      update: { position: index % 20 },
+    });
+  }
 }
 
 export async function runRecoverySeed(prisma: PrismaClient) {
@@ -319,6 +465,28 @@ export async function runRecoverySeed(prisma: PrismaClient) {
 
   await seedReetamCollections(prisma, reetam.id, contentSlugToId, trackSlugToId);
   console.log(`Collections upserted for ${REETAM_EMAIL}: ${REETAM_COLLECTION_SEEDS.length}`);
+
+  await seedCollectionsFromSeeds(
+    prisma,
+    "aisha@aniverse.local",
+    GLOBAL_COLLECTION_SEEDS.filter((s) => s.ownerEmail.includes("aisha")),
+    contentSlugToId,
+    trackSlugToId,
+  );
+  await seedCollectionsFromSeeds(
+    prisma,
+    "vikram@aniverse.local",
+    GLOBAL_COLLECTION_SEEDS.filter((s) => s.ownerEmail.includes("vikram")),
+    contentSlugToId,
+    trackSlugToId,
+  );
+  console.log(`Global public collections upserted: ${GLOBAL_COLLECTION_SEEDS.length}`);
+
+  await seedOstTracks(prisma, contentSlugToId);
+  console.log(`OST tracks upserted: ${ALL_OST_SEEDS.length}`);
+
+  await seedGlobalCommunities(prisma);
+  console.log(`Global communities upserted: ${GLOBAL_COMMUNITY_SEEDS.length}`);
 
   await seedReetamActivity(prisma, reetam.id, contentSlugToId, trackSlugToId, artistSlugToId);
   console.log("Reetam watchlist, favorites, listen/watch events, and artist follows seeded.\n");

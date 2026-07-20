@@ -67,7 +67,7 @@ export default async function CommunityPage() {
       getFavouriteCommunities(user.id),
       getMostActiveCommunities(user.id),
       getRecommendedCommunities(user.id),
-      getGlobalCommunities(),
+      getGlobalCommunities(user.id),
     ]);
 
   const activeGenres = new Set(["All", "Anime"]);
@@ -132,7 +132,7 @@ export default async function CommunityPage() {
       />
 
       <CommunityGridSection
-        title="🔥 Most Active Communities  (12)"
+        title="🔥 Most Active Communities"
         searchPlaceholder="Search Communities……. "
         communities={mostActive}
         members={members}
@@ -148,7 +148,7 @@ export default async function CommunityPage() {
       />
 
       <CommunityGridSection
-        title="🌍 Discover Global Communities"
+        title={`🌍 Discover Global Communities  (${global.length})`}
         searchPlaceholder="Search Communities……. "
         communities={global}
         ctaMode="join"

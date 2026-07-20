@@ -5,6 +5,7 @@ import { canAccessAdminSection } from "@/lib/admin-nav";
 import { countCatalogArtists } from "@/lib/services/artist.service";
 import { countCatalogContent } from "@/lib/services/content.service";
 import { countCatalogTracks } from "@/lib/services/music.service";
+import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
   title: "Admin — AniVerse",
@@ -17,11 +18,20 @@ export default async function AdminHomePage() {
   const showContent = canAccessAdminSection(role, "content");
   const showMusic = canAccessAdminSection(role, "music");
   const showArtists = canAccessAdminSection(role, "artists");
+  const showCollections = canAccessAdminSection(role, "collections");
+  const showCommunities = canAccessAdminSection(role, "communities");
 
-  const [contentCount, musicCount, artistCount] = await Promise.all([
+  const [contentCount, musicCount, artistCount, collectionCount, communityCount] =
+    await Promise.all([
     showContent ? countCatalogContent() : Promise.resolve(0),
     showMusic ? countCatalogTracks() : Promise.resolve(0),
     showArtists ? countCatalogArtists() : Promise.resolve(0),
+    showCollections
+      ? prisma.collection.count({ where: { visibility: "PUBLIC" } })
+      : Promise.resolve(0),
+    showCommunities
+      ? prisma.community.count({ where: { visibility: "PUBLIC" } })
+      : Promise.resolve(0),
   ]);
 
   const visibleCards = [
@@ -42,6 +52,18 @@ export default async function AdminHomePage() {
       count: artistCount,
       href: "/admin/artists/new",
       cta: "+ Add artist",
+    },
+    showCollections && {
+      label: "Public collections",
+      count: collectionCount,
+      href: "/admin/collections",
+      cta: "Manage collections",
+    },
+    showCommunities && {
+      label: "Public communities",
+      count: communityCount,
+      href: "/admin/communities",
+      cta: "Manage communities",
     },
   ].filter(Boolean) as {
     label: string;

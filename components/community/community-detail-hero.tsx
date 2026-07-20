@@ -85,7 +85,7 @@ export function CommunityDetailHero({
             {community.description}
           </p>
 
-          <CommunityHeroActions />
+          <CommunityHeroActions communityId={community.id} />
 
           <div className={cn(CHIP_ROW, "shrink-0")}>
             {community.matchScore != null ? (
@@ -113,6 +113,7 @@ export function CommunityDetailHero({
         </div>
 
         <CommunityWallpaperPanel
+          communitySlug={community.id}
           wallpaperUrl={community.wallpaperUrl}
           communityName={community.name}
           members={community.members}
@@ -120,6 +121,7 @@ export function CommunityDetailHero({
           collectionCount={community.collectionCount}
           popularityLabel={community.popularityLabel}
           globalRankLabel={community.globalRankLabel}
+          isMember={Boolean(community.viewerRole)}
         />
       </div>
     </section>

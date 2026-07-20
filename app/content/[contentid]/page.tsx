@@ -65,6 +65,8 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
 
   const isMovie = isMovieContentType(content.type);
   const movieEpisode = content.episodes[0];
+  const castLabel = content.type === "anime" ? "voice" : "played";
+  const relatedAutoMs = 4000;
 
   return (
     <ContentDetailEngagementShell
@@ -107,6 +109,7 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
               character={character}
               contentId={content.id}
               contentAccent={content.accent}
+              castLabel={castLabel}
               interactive={false}
             />
           ),
@@ -116,6 +119,8 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
       <ContentPageSection
         title={`🎼 Featured OSTs of ${content.title}`}
         variant="content"
+        autoAdvanceMs={relatedAutoMs}
+        emptyMessage={`No featured OSTs linked to ${content.title} yet.`}
         slides={content.featuredOsts.map((track) => ({
           id: track.id,
           node: <MusicCard track={track} />,
@@ -125,6 +130,8 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
       <ContentPageSection
         title="💡 You May Also Like"
         variant="content"
+        autoAdvanceMs={relatedAutoMs}
+        emptyMessage="No related titles to suggest yet."
         slides={content.relatedContent.map((item) => ({
           id: item.id,
           node: <PosterCard item={item} />,
@@ -134,6 +141,7 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
       <ContentPageSection
         title="📒 Included in Collections"
         variant="community"
+        emptyMessage={`${content.title} is not in any collections yet.`}
         slides={content.collections.map((collection) => ({
           id: collection.id,
           node: <CollectionCard collection={collection} />,
@@ -143,6 +151,7 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
       <ContentPageSection
         title={`👥 Communities Involving ${content.title}`}
         variant="community"
+        emptyMessage={`No communities linked to ${content.title} yet.`}
         slides={content.communities.map((community) => ({
           id: community.id,
           node: (

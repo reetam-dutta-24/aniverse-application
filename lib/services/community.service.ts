@@ -8,6 +8,7 @@ import {
   mapUserSummary,
 } from "@/lib/mappers/community.mapper";
 import { mapCollectionToCard } from "@/lib/mappers/collection.mapper";
+import { mapContentToItem } from "@/lib/mappers/content.mapper";
 import { slugify } from "@/lib/slugify";
 import type { Community, CommunityDetail, UserSummary } from "@/types";
 import type {
@@ -435,6 +436,26 @@ export async function getCommunityMemberPreview(
   return members.map((member) => mapUserSummary(member.user));
 }
 
+const CATEGORY_MEDIA: Record<string, string> = {
+  Anime: "ANIME",
+  Movies: "MOVIE",
+  Shows: "SHOW",
+};
+
+async function getCommunityFavoriteContent(
+  category: string,
+  limit = 8,
+) {
+  const mediaType = CATEGORY_MEDIA[category];
+  const rows = await prisma.content.findMany({
+    where: mediaType ? { type: mediaType as "ANIME" | "MOVIE" | "SHOW" } : {},
+    include: { genres: { include: { genre: true } } },
+    orderBy: [{ rating: "desc" }, { updatedAt: "desc" }],
+    take: limit,
+  });
+  return rows.map(mapContentToItem);
+}
+
 export async function getCommunityDetailBySlug(
   slug: string,
   viewerUserId?: string,
@@ -449,7 +470,7 @@ export async function getCommunityDetailBySlug(
     if (!isMember) return null;
   }
 
-  const [posts, announcements, voiceChannels, watchChannels, watchedMost, trending, musicTracks, collections, similarRows] =
+  const [posts, announcements, voiceChannels, watchChannels, watchedMost, trending, musicTracks, collections, similarRows, categoryContent] =
     await Promise.all([
       listCommunityPosts(slug, 24, "POST"),
       listCommunityPosts(slug, 12, "ANNOUNCEMENT"),
@@ -461,19 +482,27 @@ export async function getCommunityDetailBySlug(
       getTrendingContent(8),
       getTrendingMusic(8),
       prisma.collection.findMany({
-        where: { visibility: "PUBLIC" },
+        where: {
+          visibility: "PUBLIC",
+          category: row.category,
+        },
         orderBy: { favoriteCount: "desc" },
         take: 4,
+        include: { _count: { select: { favorites: true } } },
       }),
       prisma.community.findMany({
         where: {
           slug: { not: slug },
           visibility: "PUBLIC",
+          ...(viewerUserId
+            ? { members: { none: { userId: viewerUserId } } }
+            : {}),
         },
         include: communityInclude,
         orderBy: { memberCount: "desc" },
         take: 4,
       }),
+      getCommunityFavoriteContent(row.category, 8),
     ]);
 
   const allPostIds = [...posts, ...announcements].map((post) => post.id);
@@ -506,7 +535,7 @@ export async function getCommunityDetailBySlug(
     watchedMost,
     trending,
     musicTracks,
-    favoriteItems: watchedMost.slice(0, 4),
+    favoriteItems: categoryContent.slice(0, 6),
   });
 }
 

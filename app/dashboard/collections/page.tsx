@@ -56,7 +56,7 @@ export default async function CollectionsPage() {
       getRecentlyAddedCollections(user.id),
       getRecentlyUsedCollections(user.id),
       getAllCollections(user.id),
-      getGlobalPublicCollections(),
+      getGlobalPublicCollections(user.id),
     ]);
 
   // Static UI state until filtering is wired to the backend.
@@ -113,14 +113,14 @@ export default async function CollectionsPage() {
       </section>
 
       <CollectionGridSection
-        title={`⭐ Most Liked Collections  (${stats.collections > 20 ? 20 : stats.collections})`}
+        title={`⭐ Most Liked Collections  (${mostLiked.length})`}
         searchPlaceholder="Search Liked Collections……. "
         collections={mostLiked}
         editable
       />
 
       <CollectionGridSection
-        title="🆕 Recently Added  (18)"
+        title={`🆕 Recently Added  (${recentlyAdded.length})`}
         searchPlaceholder="Search Recent Added Collection…… "
         collections={recentlyAdded}
         editable

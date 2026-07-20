@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   CircleDot,
   LayoutGrid,
@@ -12,44 +13,50 @@ import {
   detailHeroBtnBase,
 } from "@/lib/detail-route-ui";
 
-/** Circle Feed, All Members, New Online, and Stats CTAs in the community hero. */
-export function CommunityHeroActions() {
+interface CommunityHeroActionsProps {
+  communityId: string;
+}
+
+/** Circle Feed, All Members, New Online, and Stats — links into community dashboard. */
+export function CommunityHeroActions({ communityId }: CommunityHeroActionsProps) {
+  const base = `/community/${communityId}/dashboard`;
+
   return (
     <div className={DETAIL_HERO_BTN_PAIR_ROW}>
-      <button
-        type="button"
+      <Link
+        href={`${base}/posts`}
         className={detailHeroBtnBase(
           "border-transparent bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white",
         )}
       >
         <MessageCircle className="size-3.5 shrink-0" />
         <span className="truncate">Circle Feed</span>
-      </button>
-      <button
-        type="button"
+      </Link>
+      <Link
+        href={`${base}/analytics`}
         className={detailHeroBtnBase(
           "border-2 border-brand-magenta bg-black/70 text-white",
         )}
       >
         <Users className="size-3.5 shrink-0 text-brand-magenta" />
         <span className="truncate">All Members</span>
-      </button>
-      <button
-        type="button"
+      </Link>
+      <Link
+        href={`${base}/chat`}
         className={detailHeroBtnBase(DETAIL_HERO_BTN_ACCENT_SOLID)}
       >
         <CircleDot className="size-3.5 shrink-0" />
         <span className="truncate">New Online</span>
-      </button>
-      <button
-        type="button"
+      </Link>
+      <Link
+        href={`${base}/analytics`}
         className={detailHeroBtnBase(
           "border-transparent bg-gradient-to-r from-blue-600 to-violet-600 text-white",
         )}
       >
         <LayoutGrid className="size-3.5 shrink-0" />
         <span className="truncate">Stats</span>
-      </button>
+      </Link>
     </div>
   );
 }

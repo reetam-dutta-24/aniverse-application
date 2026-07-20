@@ -19,6 +19,9 @@ export interface MusicCarouselSectionProps {
   subtitle?: string;
   searchPlaceholder: string;
   tracks: MusicTrack[];
+  /** Auto-advance pages (ms) — for related-content rows only. */
+  autoAdvanceMs?: number;
+  emptyMessage?: string;
 }
 
 function filterTracks(tracks: MusicTrack[], query: string) {
@@ -47,6 +50,8 @@ export function MusicCarouselSection({
   subtitle,
   searchPlaceholder,
   tracks,
+  autoAdvanceMs,
+  emptyMessage = "No related music available yet.",
 }: MusicCarouselSectionProps) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
@@ -84,6 +89,29 @@ export function MusicCarouselSection({
     setQuery(value);
     setPage(0);
     setHoveredId(null);
+  }
+
+  useEffect(() => {
+    if (!autoAdvanceMs || totalPages <= 1) return;
+    const id = window.setInterval(() => {
+      setPage((current) => {
+        const safe = Math.min(current, totalPages - 1);
+        return (safe + 1) % totalPages;
+      });
+      setHoveredId(null);
+    }, autoAdvanceMs);
+    return () => window.clearInterval(id);
+  }, [autoAdvanceMs, totalPages]);
+
+  if (tracks.length === 0) {
+    return (
+      <section className="flex flex-col gap-3">
+        <h2 className="px-2 text-lg font-bold text-white sm:text-heading">{title}</h2>
+        <p className="mx-2 rounded-xl border border-white/10 bg-white/5 px-4 py-6 text-center text-sm text-white/65">
+          {emptyMessage}
+        </p>
+      </section>
+    );
   }
 
   return (

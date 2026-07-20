@@ -123,6 +123,7 @@ export const DETAILED_EPISODE_SLUGS = new Set([
   "death-note",
   "alice-in-borderland",
   "money-heist",
+  "elite",
 ]);
 
 export function getDetailedNested(slug: string): ContentNestedSeed | null {
@@ -202,6 +203,61 @@ export function getDetailedNested(slug: string): ContentNestedSeed | null {
         { name: "Nairobi", role: "Forgery Expert", accent: "yellow" },
       ],
       relatedSlugs: ["squid-game", "breaking-bad", "dark"],
+    };
+  }
+
+  if (slug === "elite") {
+    const ELITE_S1 = [
+      { title: "Welcome", description: "Three scholarship students arrive at Las Encinas and immediately clash with the elite." },
+      { title: "The Minute of Silence", description: "Marina's death shocks the school and suspicion spreads through every clique." },
+      { title: "Sara", description: "Nadia struggles with family expectations while Samuel grows closer to Carla." },
+      { title: "Love You", description: "Relationships tighten as the investigation into Marina's murder intensifies." },
+      { title: "Go Big or Go Home", description: "Secrets from the past resurface and alliances begin to fracture." },
+      { title: "If You Missed What's Right in Front of You, You Will Crucify Yourself", description: "Guilty parties scramble as new evidence points toward the killer." },
+      { title: "Everything Will Be Alright", description: "The students confront the fallout of their choices before the truth breaks." },
+      { title: "Asshole", description: "Season one closes with a confession that reshapes every relationship at Las Encinas." },
+    ];
+    const ELITE_S2 = [
+      { title: "0 Hours Missing", description: "Samuel returns to Las Encinas while a new disappearance grips the school." },
+      { title: "Two Meters Underground", description: "The search for a missing student forces old rivals into uneasy cooperation." },
+      { title: "The Juniper Tree", description: "Ari and Benjamin's arrival stirs jealousy, ambition, and fresh scandals." },
+      { title: "Fifty Meters Underground", description: "Tensions explode as the missing-person case collides with class politics." },
+      { title: "Revenge", description: "Past betrayals fuel retaliation among the students and their families." },
+      { title: "0.1 Millimeters", description: "Small lies snowball into a crisis that threatens everyone's future." },
+      { title: "0 Kilometers", description: "The group closes in on the truth behind the latest disappearance." },
+      { title: "One Week", description: "Season two ends with consequences that will define Las Encinas for years." },
+    ];
+
+    const episodes = [
+      ...ELITE_S1.map((entry, index) =>
+        ep(1, index + 1, entry.title, entry.description, {
+          duration: "50 Min",
+          language: "english",
+          rating: roundRating(7.6 + index * 0.05) ?? 7.6,
+        }),
+      ),
+      ...ELITE_S2.map((entry, index) =>
+        ep(2, index + 1, entry.title, entry.description, {
+          duration: "50 Min",
+          language: "english",
+          rating: roundRating(7.7 + index * 0.05) ?? 7.7,
+        }),
+      ),
+    ];
+
+    return {
+      seasons: [
+        { label: "Season 1", episodeCount: 8 },
+        { label: "Season 2", episodeCount: 8 },
+      ],
+      episodes,
+      characters: [
+        { name: "Samuel", role: "Protagonist", accent: "cyan" },
+        { name: "Carla", role: "Elite Student", accent: "pink" },
+        { name: "Guzmán", role: "Rival", accent: "red" },
+        { name: "Nadia", role: "Scholarship Student", accent: "purple" },
+      ],
+      relatedSlugs: ["money-heist", "control-z", "class"],
     };
   }
 

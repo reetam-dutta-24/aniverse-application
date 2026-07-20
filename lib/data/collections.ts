@@ -2,8 +2,8 @@ import type { Collection } from "@/types";
 import {
   getCollectionStatsForUser,
   listCollectionsForUser,
+  listDiscoverablePublicCollections,
   listMostLikedCollections,
-  listPublicCollections,
   listRecentlyUpdatedCollections,
 } from "@/lib/services/collection.service";
 
@@ -54,6 +54,8 @@ export async function getAllCollections(userId: string): Promise<Collection[]> {
   return listCollectionsForUser(userId);
 }
 
-export async function getGlobalPublicCollections(): Promise<Collection[]> {
-  return listPublicCollections(15);
+export async function getGlobalPublicCollections(
+  userId: string,
+): Promise<Collection[]> {
+  return listDiscoverablePublicCollections(userId, 15);
 }

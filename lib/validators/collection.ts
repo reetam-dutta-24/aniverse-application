@@ -32,7 +32,7 @@ export const collectionFormSchema = z.object({
     .optional(),
   description: z.string().max(2000).optional(),
   category: z.enum(collectionCategories).default("Mixed"),
-  genreLabels: z.array(z.enum(contentGenreValues)).max(8).optional(),
+  genreLabels: z.array(z.string().min(1)).max(8).optional(),
   kind: z.enum(collectionKinds).default("content"),
   visibility: z.enum(["PUBLIC", "PRIVATE"]).default("PRIVATE"),
   accent: z.enum(accentValues).optional(),

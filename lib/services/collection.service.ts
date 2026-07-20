@@ -69,10 +69,15 @@ async function getCollectionRecordBySlug(slug: string) {
   });
 }
 
+const collectionCardInclude = {
+  _count: { select: { favorites: true } },
+} satisfies Prisma.CollectionInclude;
+
 export async function listCollectionsForUser(userId: string): Promise<Collection[]> {
   const rows = await prisma.collection.findMany({
     where: { userId },
     orderBy: { updatedAt: "desc" },
+    include: collectionCardInclude,
   });
   return rows.map(mapCollectionToCard);
 }
@@ -82,6 +87,25 @@ export async function listPublicCollections(limit = 24): Promise<Collection[]> {
     where: { visibility: "PUBLIC" },
     orderBy: [{ favoriteCount: "desc" }, { updatedAt: "desc" }],
     take: limit,
+    include: collectionCardInclude,
+  });
+  return rows.map(mapCollectionToCard);
+}
+
+/** Public collections the viewer does not own and has not favorited. */
+export async function listDiscoverablePublicCollections(
+  userId: string,
+  limit = 15,
+): Promise<Collection[]> {
+  const rows = await prisma.collection.findMany({
+    where: {
+      visibility: "PUBLIC",
+      userId: { not: userId },
+      favorites: { none: { userId } },
+    },
+    orderBy: [{ favoriteCount: "desc" }, { updatedAt: "desc" }],
+    take: limit,
+    include: collectionCardInclude,
   });
   return rows.map(mapCollectionToCard);
 }
@@ -94,6 +118,7 @@ export async function listMostLikedCollections(
     where: { userId },
     orderBy: [{ favoriteCount: "desc" }, { updatedAt: "desc" }],
     take: limit,
+    include: collectionCardInclude,
   });
   return rows.map(mapCollectionToCard);
 }
@@ -106,6 +131,7 @@ export async function listRecentlyUpdatedCollections(
     where: { userId },
     orderBy: { updatedAt: "desc" },
     take: limit,
+    include: collectionCardInclude,
   });
   return rows.map(mapCollectionToCard);
 }

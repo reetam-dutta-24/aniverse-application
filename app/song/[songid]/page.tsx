@@ -78,6 +78,8 @@ export default async function SongDetailPage({ params }: SongPageProps) {
       <ContentPageSection
         title={`🎵 Songs/OSTs Similar To ${song.title}`}
         variant="content"
+        autoAdvanceMs={4000}
+        emptyMessage={`No similar songs or OSTs for ${song.title} yet.`}
         slides={song.featuredOsts.map((track) => ({
           id: track.id,
           node: <MusicCard track={track} />,
@@ -87,6 +89,7 @@ export default async function SongDetailPage({ params }: SongPageProps) {
       <ContentPageSection
         title="📒 Included in Collections"
         variant="community"
+        emptyMessage={`${song.title} is not in any collections yet.`}
         slides={song.collections.map((collection) => ({
           id: collection.id,
           node: <CollectionCard collection={collection} />,
@@ -96,6 +99,7 @@ export default async function SongDetailPage({ params }: SongPageProps) {
       <ContentPageSection
         title={`👥 Communities Involving ${song.title}`}
         variant="community"
+        emptyMessage={`No communities linked to ${song.title} yet.`}
         slides={song.communities.map((community) => ({
           id: community.id,
           node: (

@@ -58,7 +58,7 @@ export async function getContentPlaySession(
       ? episodes.find((episode) => episode.id === episodeId)
       : undefined) ?? pickDefaultEpisode(episodes, isMovie);
 
-  if (!currentEpisode && fallbackVideoUrl) {
+  if (!currentEpisode && (fallbackVideoUrl || isMovie)) {
     currentEpisode = {
       id: `${slug}-watch`,
       seasonNumber: 1,

@@ -67,8 +67,8 @@ export async function getRecommendedCommunities(
   return listRecommendedCommunities(userId, 12);
 }
 
-export async function getGlobalCommunities(): Promise<Community[]> {
-  return listPublicCommunities(12);
+export async function getGlobalCommunities(userId: string): Promise<Community[]> {
+  return listRecommendedCommunities(userId, 12);
 }
 
 export async function getCommunityMemberPreviewForSlug(

@@ -22,6 +22,8 @@ export interface ContentPageSectionProps {
   rowHover?: boolean;
   /** Auto-advance carousel pages (ms). */
   autoAdvanceMs?: number;
+  /** Shown when slides is empty. */
+  emptyMessage?: string;
 }
 
 /** Content detail section — heading + paginated carousel (shared app structure). */
@@ -38,7 +40,11 @@ export function ContentPageSection({
   className,
   rowHover = true,
   autoAdvanceMs,
+  emptyMessage = "No related content available yet.",
 }: ContentPageSectionProps) {
+  const hasHeader = Boolean(title || subtitle || action);
+  const isEmpty = slides.length === 0;
+
   return (
     <section
       className={cn(
@@ -47,36 +53,44 @@ export function ContentPageSection({
         className,
       )}
     >
-      <div
-        className={cn(
-          "flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between",
-          compact ? "mb-2 sm:mb-3" : "mb-5 sm:mb-6",
-          !title && !subtitle && !action && "mb-0",
-        )}
-      >
-        {(title || subtitle) ? (
-          <div className="min-w-0">
-            {title ? (
-              <h2 className="text-lg font-bold text-white sm:text-heading">{title}</h2>
-            ) : null}
-            {subtitle ? (
-              <p className="mt-1 text-sm text-white/80">{subtitle}</p>
-            ) : null}
-          </div>
-        ) : null}
-        {action}
-      </div>
-      <ContentCarouselSection
-        slides={slides}
-        sectionTitle={title}
-        variant={variant}
-        itemsPerPage={itemsPerPage}
-        overflowVisible={overflowVisible}
-        itemsCenter={itemsCenter}
-        compact={compact}
-        rowHover={rowHover}
-        autoAdvanceMs={autoAdvanceMs}
-      />
+      {hasHeader ? (
+        <div
+          className={cn(
+            "flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between",
+            compact ? "mb-2 sm:mb-3" : "mb-5 sm:mb-6",
+          )}
+        >
+          {(title || subtitle) ? (
+            <div className="min-w-0">
+              {title ? (
+                <h2 className="text-lg font-bold text-white sm:text-heading">{title}</h2>
+              ) : null}
+              {subtitle ? (
+                <p className="mt-1 text-sm text-white/80">{subtitle}</p>
+              ) : null}
+            </div>
+          ) : null}
+          {action}
+        </div>
+      ) : null}
+
+      {isEmpty ? (
+        <p className="rounded-xl border border-white/10 bg-white/5 px-4 py-6 text-center text-sm text-white/65">
+          {emptyMessage}
+        </p>
+      ) : (
+        <ContentCarouselSection
+          slides={slides}
+          sectionTitle={title}
+          variant={variant}
+          itemsPerPage={itemsPerPage}
+          overflowVisible={overflowVisible}
+          itemsCenter={itemsCenter}
+          compact={compact}
+          rowHover={rowHover}
+          autoAdvanceMs={autoAdvanceMs}
+        />
+      )}
     </section>
   );
 }

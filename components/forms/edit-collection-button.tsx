@@ -15,7 +15,7 @@ import {
   TextArea,
   TextInput,
 } from "@/components/forms/form-shell";
-import { ACCENT_OPTIONS, CONTENT_GENRE_OPTIONS } from "@/lib/catalog-enums";
+import { ACCENT_OPTIONS, CONTENT_GENRE_OPTIONS, SONG_GENRE_OPTIONS } from "@/lib/catalog-enums";
 import {
   collectionCategories,
   collectionKinds,
@@ -66,6 +66,21 @@ export function EditCollectionButton({
   const [imageUrl, setImageUrl] = useState(collection.imageUrl ?? "");
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
+
+  const genreOptions =
+    kind === "music" ? SONG_GENRE_OPTIONS : CONTENT_GENRE_OPTIONS;
+
+  function handleKindChange(nextKind: (typeof collectionKinds)[number]) {
+    setKind(nextKind);
+    const allowed = new Set(
+      (nextKind === "music" ? SONG_GENRE_OPTIONS : CONTENT_GENRE_OPTIONS).map(
+        (option) => option.value,
+      ),
+    );
+    setGenreLabels((current) =>
+      current.filter((value) => allowed.has(value as never)),
+    );
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -177,7 +192,9 @@ export function EditCollectionButton({
               <SelectInput
                 value={kind}
                 onChange={(event) =>
-                  setKind(event.target.value as (typeof collectionKinds)[number])
+                  handleKindChange(
+                    event.target.value as (typeof collectionKinds)[number],
+                  )
                 }
               >
                 <option value="content">Shows &amp; movies</option>
@@ -207,7 +224,7 @@ export function EditCollectionButton({
             label="Genre tags"
             hint="Shown when the collection has no items yet."
             values={genreLabels}
-            options={CONTENT_GENRE_OPTIONS}
+            options={genreOptions}
             onChange={setGenreLabels}
           />
 

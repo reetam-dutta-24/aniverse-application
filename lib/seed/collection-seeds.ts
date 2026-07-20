@@ -30,7 +30,7 @@ export const REETAM_COLLECTION_SEEDS: CollectionSeed[] = [
     kind: "content",
     visibility: "PUBLIC",
     accent: "blue",
-    favoriteCount: 24,
+    favoriteCount: 0,
     items: [
       "death-note",
       "jujutsu-kaisen",
@@ -51,7 +51,7 @@ export const REETAM_COLLECTION_SEEDS: CollectionSeed[] = [
     kind: "content",
     visibility: "PUBLIC",
     accent: "cyan",
-    favoriteCount: 18,
+    favoriteCount: 0,
     items: [
       "money-heist",
       "alice-in-borderland",
@@ -72,7 +72,7 @@ export const REETAM_COLLECTION_SEEDS: CollectionSeed[] = [
     kind: "content",
     visibility: "PUBLIC",
     accent: "purple",
-    favoriteCount: 15,
+    favoriteCount: 0,
     items: [
       "inception",
       "interstellar",
@@ -93,7 +93,7 @@ export const REETAM_COLLECTION_SEEDS: CollectionSeed[] = [
     kind: "music",
     visibility: "PUBLIC",
     accent: "fuchsia",
-    favoriteCount: 21,
+    favoriteCount: 0,
     tracks: [
       "bts-dynamite",
       "bts-butter",
@@ -115,7 +115,7 @@ export const REETAM_COLLECTION_SEEDS: CollectionSeed[] = [
     kind: "content",
     visibility: "PUBLIC",
     accent: "green",
-    favoriteCount: 32,
+    favoriteCount: 0,
     items: [
       "death-note",
       "money-heist",

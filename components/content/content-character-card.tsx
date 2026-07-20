@@ -10,6 +10,8 @@ export interface ContentCharacterCardProps {
   character: Character;
   contentId: string;
   contentAccent?: AccentColor;
+  /** anime → Voice Actor; movie/show → Played by */
+  castLabel?: "voice" | "played";
   /** When false, fixed portrait with no hover expand or glow. */
   interactive?: boolean;
 }
@@ -18,14 +20,16 @@ export interface ContentCharacterCardProps {
 export function ContentCharacterCard({
   character,
   contentAccent = "purple",
+  castLabel = "played",
   interactive = true,
 }: ContentCharacterCardProps) {
   const [hovered, setHovered] = useState(false);
   const accent = getAccentStyle(character.accent ?? "purple");
   const tint = getAccentTint(contentAccent);
   const shortName = character.name.split(" ")[0];
+  const castPrefix = castLabel === "voice" ? "Voice Actor" : "Played by";
   const subtitle = character.voiceActor
-    ? `Played by ${character.voiceActor}`
+    ? `${castPrefix}: ${character.voiceActor}`
     : character.role;
   const isHovered = interactive && hovered;
 
