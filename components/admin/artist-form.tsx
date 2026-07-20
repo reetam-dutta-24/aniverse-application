@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { GradientButton } from "@/components/ui/gradient-button";
 import {
   ACCENT_OPTIONS,
@@ -31,7 +31,7 @@ function slugify(title: string) {
 }
 
 export function ArtistForm({ mode, recordId, initial }: ArtistFormProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [form, setForm] = useState<ArtistFormInput>(initial);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);

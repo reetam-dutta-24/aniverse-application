@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import type { ActiveFilter } from "@/lib/data/discover";
 import { ONBOARDING_RETAKE_PATH } from "@/lib/onboarding-routes";
 import { resolveGenreChip } from "@/lib/chip-styles";
@@ -13,7 +13,7 @@ export interface ActiveFiltersBarProps {
 
 /** Taste-test filter strip shown under the Discover welcome banner. */
 export function ActiveFiltersBar({ filters }: ActiveFiltersBarProps) {
-  const router = useRouter();
+  const router = useAppRouter();
 
   return (
     <section className="flex flex-col gap-3 rounded-2xl bg-surface/40 px-4 py-3.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-8 sm:px-6 lg:px-7">

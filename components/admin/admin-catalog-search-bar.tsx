@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +18,7 @@ export function AdminCatalogSearchBar({
   placeholder = "Search by title, slug, artist, or native name…",
   className,
 }: AdminCatalogSearchBarProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(defaultQuery);

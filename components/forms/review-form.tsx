@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { GradientButton } from "@/components/ui/gradient-button";
 import {
@@ -146,7 +146,7 @@ export function AddReviewButton({
   targetSlug,
   onCreated,
 }: AddReviewButtonProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [open, setOpen] = useState(false);
 
   async function handleSubmit(values: ReviewFormValues) {
@@ -202,7 +202,7 @@ export function EditReviewButton({
   trigger = "button",
   onUpdated,
 }: EditReviewButtonProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [open, setOpen] = useState(false);
 
   async function handleSubmit(values: ReviewFormValues) {
@@ -268,7 +268,7 @@ export function DeleteReviewButton({
   review,
   onDeleted,
 }: DeleteReviewButtonProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();

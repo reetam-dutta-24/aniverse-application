@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { signIn } from "next-auth/react";
 import { Lock, Mail, User } from "lucide-react";
 import { AuthInput } from "@/components/auth/auth-input";
@@ -11,7 +11,7 @@ import { GradientButton } from "@/components/ui/gradient-button";
 import { clearLegacyOnboardingProfile } from "@/lib/onboarding-store";
 
 export function SignupForm() {
-  const router = useRouter();
+  const router = useAppRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 

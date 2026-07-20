@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { cn } from "@/lib/utils";
 import { getCommunityDetailPath } from "@/lib/community-routes";
 import { getAccentStyle } from "@/lib/accents";
@@ -47,7 +47,7 @@ export function CommunityCard({
   className,
   ...props
 }: CommunityCardProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [hovered, setHovered] = useState(false);
   const accent = getAccentStyle(community.accent ?? "cyan");
   const ctaLabel =

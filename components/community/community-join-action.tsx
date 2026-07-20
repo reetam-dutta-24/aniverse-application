@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { useState } from "react";
 import { detailHeroBtnBase } from "@/lib/detail-route-ui";
 
@@ -13,7 +13,7 @@ export function CommunityJoinAction({
   communitySlug,
   isMember,
 }: CommunityJoinActionProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [loading, setLoading] = useState(false);
 
   async function handleJoin() {

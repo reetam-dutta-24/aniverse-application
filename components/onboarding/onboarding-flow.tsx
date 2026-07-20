@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { useSession } from "next-auth/react";
 import {
   ArrowLeft,
@@ -72,7 +72,7 @@ export function OnboardingFlow({
   userName: string;
   isRetake?: boolean;
 }) {
-  const router = useRouter();
+  const router = useAppRouter();
   const { update } = useSession();
   const [stepIndex, setStepIndex] = useState(0);
   const [selection, setSelection] = useState<OnboardingSelection>(

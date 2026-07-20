@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { Plus } from "lucide-react";
 import { GradientButton } from "@/components/ui/gradient-button";
 import {
@@ -26,7 +26,7 @@ export function AddCollectionItemButton({
   collectionKind?: "content" | "music";
   existingItemSlugs?: string[];
 }) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [open, setOpen] = useState(false);
   const [slugs, setSlugs] = useState<string[]>([]);
   const [selections, setSelections] = useState<CatalogPickerSelection[]>([]);

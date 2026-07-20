@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { Headphones, PlayCircle } from "lucide-react";
 import { getSongDetailPath } from "@/lib/song-routes";
 import { useCarouselTintSeed } from "@/components/carousel/carousel-section-context";
@@ -85,7 +85,7 @@ export function MusicCard({
   className,
   ...props
 }: MusicCardProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const contextTintSeed = useCarouselTintSeed();
   const tintSeed = tintSeedProp ?? contextTintSeed;
   const [hovered, setHovered] = useState(false);

@@ -1,7 +1,7 @@
 "use client";
 
 import { cloneElement, isValidElement, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { Trash2 } from "lucide-react";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { FormShell } from "@/components/forms/form-shell";
@@ -21,7 +21,7 @@ export function DeleteCollectionButton({
   trigger,
   onDeleted,
 }: DeleteCollectionButtonProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();

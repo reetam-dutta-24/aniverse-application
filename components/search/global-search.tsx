@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SearchResult, SearchResultType } from "@/lib/search/types";
@@ -31,7 +31,7 @@ export function GlobalSearch({
   initialQuery = "",
   autoFocus = false,
 }: GlobalSearchProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const listId = useId();

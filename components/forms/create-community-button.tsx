@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { Plus } from "lucide-react";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { ImageUploadInput } from "@/components/ui/image-upload-input";
@@ -19,7 +19,7 @@ import { communityCategories } from "@/lib/validators/community";
 import { slugify } from "@/lib/slugify";
 
 export function CreateCommunityButton() {
-  const router = useRouter();
+  const router = useAppRouter();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");

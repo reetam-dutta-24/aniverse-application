@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { GradientButton } from "@/components/ui/gradient-button";
 import {
@@ -20,7 +20,7 @@ interface CreateVoiceChannelButtonProps {
 export function CreateVoiceChannelButton({
   communitySlug,
 }: CreateVoiceChannelButtonProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [memberLimit, setMemberLimit] = useState("10");
@@ -116,7 +116,7 @@ export function VoiceChannelActions({
   communitySlug,
   channel,
 }: VoiceChannelActionsProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [title, setTitle] = useState(channel.title);

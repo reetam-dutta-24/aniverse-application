@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { Pencil, Trash2 } from "lucide-react";
 import { getSongDetailPath } from "@/lib/song-routes";
 
@@ -20,7 +20,7 @@ export function AdminMusicTable({
   rows: AdminMusicRow[];
   searchQuery?: string;
 }) {
-  const router = useRouter();
+  const router = useAppRouter();
 
   async function handleDelete(recordId: string, title: string) {
     if (!window.confirm(`Delete "${title}" from the catalog?`)) return;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { useState } from "react";
 import { PlayCircle, Plus } from "lucide-react";
 import type { AccentColor, ContentDetail, Episode } from "@/types";
@@ -23,7 +23,7 @@ export function ContentMovieSection({
   episode,
   contentAccent,
 }: ContentMovieSectionProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [watchlistLoading, setWatchlistLoading] = useState(false);
   const tint = getAccentTint(contentAccent ?? content.accent);
   const duration =

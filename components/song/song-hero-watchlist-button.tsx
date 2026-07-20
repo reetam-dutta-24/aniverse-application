@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { Clapperboard, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { detailHeroBtnBase } from "@/lib/detail-route-ui";
@@ -29,7 +29,7 @@ export function SongHeroWatchlistButton({
   initialOnWatchlist = false,
   className,
 }: SongHeroWatchlistButtonProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [onWatchlist, setOnWatchlist] = useState(initialOnWatchlist);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();

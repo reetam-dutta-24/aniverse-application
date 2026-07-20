@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { cn } from "@/lib/utils";
 import { COLLECTION_CARD_H } from "@/lib/card-dimensions";
 import { getCollectionDetailPath } from "@/lib/collection-routes";
@@ -52,7 +52,7 @@ export function CollectionCard({
   className,
   ...props
 }: CollectionCardProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [hovered, setHovered] = useState(false);
   const accent = getAccentStyle(collection.accent ?? "blue");
 

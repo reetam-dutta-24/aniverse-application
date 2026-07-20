@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { ArtistCard } from "@/components/cards/artist-card";
 import { MusicCard } from "@/components/cards/music-card";
 import { PosterCard } from "@/components/cards/poster-card";
@@ -39,7 +39,7 @@ function TopResultRow({
 /** Featured results — the same Poster/Music/Artist cards used across the app,
  *  showing every ranked match for the query (not just the single best hit). */
 export function SearchTopResult({ data }: SearchTopResultProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const label = capitalize(data.query);
   const tintSeed = sectionTintSeed("search-top-results");
 

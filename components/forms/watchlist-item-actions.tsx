@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { Trash2 } from "lucide-react";
 import { SelectInput } from "@/components/forms/form-shell";
 import { FormShell } from "@/components/forms/form-shell";
@@ -17,7 +17,7 @@ const statusOptions = [
 ] as const;
 
 export function WatchlistItemActions({ item }: { item: ContentItem }) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [status, setStatus] = useState(item.watchlistStatus ?? "PENDING");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [loading, setLoading] = useState(false);

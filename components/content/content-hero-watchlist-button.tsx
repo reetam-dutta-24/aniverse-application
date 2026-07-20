@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { Clapperboard, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { detailHeroBtnBase, HERO_BTN_INTERACTIVE } from "@/lib/detail-route-ui";
@@ -20,7 +20,7 @@ export function ContentHeroWatchlistButton({
   initialOnWatchlist = false,
   className,
 }: ContentHeroWatchlistButtonProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const engagement = useOptionalContentEngagement();
   const [onWatchlist, setOnWatchlist] = useState(initialOnWatchlist);
   const [loading, setLoading] = useState(false);

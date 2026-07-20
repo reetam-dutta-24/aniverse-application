@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { useSession } from "next-auth/react";
 import { getOnboardingProfile } from "@/lib/onboarding-store";
 import { ONBOARDING_RETAKE_PATH } from "@/lib/onboarding-routes";
@@ -12,7 +12,7 @@ export interface AiTasteProfileBarProps {
 
 /** AI taste profile summary — uses onboarding score when available. */
 export function AiTasteProfileBar({ score: fallbackScore }: AiTasteProfileBarProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const [score, setScore] = useState(fallbackScore);

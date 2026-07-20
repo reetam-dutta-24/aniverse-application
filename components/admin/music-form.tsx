@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { GradientButton } from "@/components/ui/gradient-button";
 import {
   ACCENT_OPTIONS,
@@ -39,7 +39,7 @@ function slugify(title: string) {
 const kinds = ["song", "ost", "album"] as const;
 
 export function MusicForm({ mode, recordId, initial }: MusicFormProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [form, setForm] = useState<MusicFormInput>(initial);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);

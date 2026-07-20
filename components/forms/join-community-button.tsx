@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +16,7 @@ import {
 } from "@/components/forms/form-shell";
 
 export function JoinCommunityButton() {
-  const router = useRouter();
+  const router = useAppRouter();
   const [open, setOpen] = useState(false);
   const [selection, setSelection] = useState<CatalogPickerSelection | null>(null);
   const [error, setError] = useState<string>();

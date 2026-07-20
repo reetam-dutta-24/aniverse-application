@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { Pencil, Trash2 } from "lucide-react";
 import { getArtistDetailPath } from "@/lib/artist-routes";
 
@@ -19,7 +19,7 @@ export function AdminArtistTable({
   rows: AdminArtistRow[];
   searchQuery?: string;
 }) {
-  const router = useRouter();
+  const router = useAppRouter();
 
   async function handleDelete(recordId: string, title: string) {
     if (!window.confirm(`Delete "${title}" from the catalog?`)) return;

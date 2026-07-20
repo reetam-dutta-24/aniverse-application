@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { ImageUploadInput } from "@/components/ui/image-upload-input";
@@ -36,7 +36,7 @@ export function CommunityPostFormButton({
       : "Share an update with the community.",
   submitLabel = kind === "ANNOUNCEMENT" ? "Publish Announcement" : "Publish Post",
 }: CommunityPostFormButtonProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [imageUrl, setImageUrl] = useState("");
@@ -151,7 +151,7 @@ export function EditCommunityPostButton({
   communitySlug,
   post,
 }: EditCommunityPostButtonProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(post.title);
   const [imageUrl, setImageUrl] = useState(post.imageUrl ?? "");
@@ -234,7 +234,7 @@ export function DeleteCommunityPostButton({
   communitySlug,
   post,
 }: DeleteCommunityPostButtonProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();

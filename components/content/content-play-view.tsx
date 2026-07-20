@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import {
   ArrowLeft,
   Maximize,
@@ -34,7 +34,7 @@ function formatTime(seconds: number) {
 }
 
 export function ContentPlayView({ session }: ContentPlayViewProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeEpisodeId, setActiveEpisodeId] = useState(session.currentEpisodeId);

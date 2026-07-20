@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { signIn } from "next-auth/react";
 import { Lock, User } from "lucide-react";
 import { AuthInput } from "@/components/auth/auth-input";
@@ -10,7 +10,7 @@ import { SocialButtons } from "@/components/auth/social-buttons";
 import { GradientButton } from "@/components/ui/gradient-button";
 
 export function LoginForm() {
-  const router = useRouter();
+  const router = useAppRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 

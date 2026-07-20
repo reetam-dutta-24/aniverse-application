@@ -1,7 +1,7 @@
 "use client";
 
 import { cloneElement, isValidElement, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { Pencil } from "lucide-react";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { ImageUploadInput } from "@/components/ui/image-upload-input";
@@ -44,7 +44,7 @@ export function EditCollectionButton({
   trigger,
   onOpenChange,
 }: EditCollectionButtonProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(collection.name);
   const [description, setDescription] = useState(collection.description ?? "");

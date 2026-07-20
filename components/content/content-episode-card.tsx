@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ContentWatchNowLink } from "@/components/content/content-watch-now-link";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { Clock, Eye, Heart, PlayCircle, Plus, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getContentWatchPath } from "@/lib/content-routes";
@@ -32,7 +32,7 @@ export function ContentEpisodeCard({
   contentAccent,
   onPlay,
 }: ContentEpisodeCardProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [hovered, setHovered] = useState(false);
   const [watchlistLoading, setWatchlistLoading] = useState(false);
   const season = episode.seasonNumber ?? 1;

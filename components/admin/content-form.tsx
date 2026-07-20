@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { GradientButton } from "@/components/ui/gradient-button";
 import {
   ACCENT_OPTIONS,
@@ -146,7 +146,7 @@ function TagListEditor({
 
 /** Admin form for creating and editing catalog content (video titles). */
 export function ContentForm({ mode, contentId, initial }: ContentFormProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [form, setForm] = useState<ContentFormInput>(initial);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);

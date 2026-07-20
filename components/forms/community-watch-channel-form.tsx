@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GradientButton } from "@/components/ui/gradient-button";
@@ -26,7 +26,7 @@ function filterMediaResults(results: SearchResult[]) {
 export function CreateWatchChannelButton({
   communitySlug,
 }: CreateWatchChannelButtonProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [memberLimit, setMemberLimit] = useState("20");
@@ -223,7 +223,7 @@ export function WatchChannelActions({
   communitySlug,
   channel,
 }: WatchChannelActionsProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [title, setTitle] = useState(channel.title);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { LayoutList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { COMMUNITY_DASHBOARD_NAV_ICONS } from "@/lib/community-dashboard-nav";
@@ -74,7 +74,7 @@ export function CommunityDashboardPreview({
   postsToday,
   className,
 }: CommunityDashboardPreviewProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [activeNav, setActiveNav] = useState(navItems[0]?.id ?? "posts");
   const [memberQuery, setMemberQuery] = useState("");
 

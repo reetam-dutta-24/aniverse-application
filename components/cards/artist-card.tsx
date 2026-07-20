@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { MicVocal } from "lucide-react";
 import { getArtistDetailPath } from "@/lib/artist-routes";
 import { useCarouselTintSeed } from "@/components/carousel/carousel-section-context";
@@ -41,7 +41,7 @@ export function ArtistCard({
   className,
   ...props
 }: ArtistCardProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const contextTintSeed = useCarouselTintSeed();
   const tintSeed = tintSeedProp ?? contextTintSeed;
   const [hovered, setHovered] = useState(false);

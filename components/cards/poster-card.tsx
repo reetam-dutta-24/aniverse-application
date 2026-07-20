@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { PlayCircle } from "lucide-react";
 import { getContentDetailPath } from "@/lib/content-routes";
 import { getArtistDetailPath } from "@/lib/artist-routes";
@@ -80,7 +80,7 @@ export function PosterCard({
   className,
   ...props
 }: PosterCardProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const contextTintSeed = useCarouselTintSeed();
   const tintSeed = tintSeedProp ?? contextTintSeed;
   const [hovered, setHovered] = useState(false);

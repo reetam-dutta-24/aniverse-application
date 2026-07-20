@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { signOut } from "next-auth/react";
 import {
   Globe,
@@ -48,7 +48,7 @@ export interface SettingsViewProps {
 
 /** App settings — notifications, privacy, preferences, account danger zone. */
 export function SettingsView({ data: initialData, userId }: SettingsViewProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [data, setData] = useState(initialData);
   const [notifications, setNotifications] = useState(initialData.notifications);
   const [privacy, setPrivacy] = useState(initialData.privacy);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/hooks/use-app-router";
 import { Check, FolderPlus, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -54,7 +54,7 @@ export function AddToCollectionDialog({
   onClose,
   onItemsAdded,
 }: AddToCollectionDialogProps) {
-  const router = useRouter();
+  const router = useAppRouter();
   const [collections, setCollections] = useState<Collection[]>([]);
   const [selectedSlugs, setSelectedSlugs] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
