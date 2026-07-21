@@ -6,6 +6,9 @@ This repository contains the **frontend application** — a Next.js 16 app with 
 
 ---
 
+![Uploading image.png…]()
+
+
 ## UI Completion Status
 
 | Area | Status | Notes |
