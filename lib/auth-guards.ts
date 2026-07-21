@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { isContentAdmin, isMusicAdmin, isArtistAdmin, isPlatformAdmin } from "@/lib/platform-roles";
+import { isContentAdmin, isMusicAdmin, isArtistAdmin, isPlatformAdmin, isSuperAdmin } from "@/lib/platform-roles";
 import { getPostAuthPath } from "@/lib/services/onboarding.service";
 import { getUserById } from "@/lib/services/user.service";
 
@@ -117,4 +117,9 @@ export async function requireMusicAdmin() {
 /** Artist CMS — ARTIST_ADMIN or SUPER_ADMIN. */
 export async function requireArtistAdmin() {
   return requireSpecialistAdmin(isArtistAdmin, "/admin/artists");
+}
+
+/** Global collections & communities CMS — SUPER_ADMIN only. */
+export async function requireSuperAdmin() {
+  return requireSpecialistAdmin(isSuperAdmin, "/admin");
 }

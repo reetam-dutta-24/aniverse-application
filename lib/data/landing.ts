@@ -224,13 +224,24 @@ const featuredReviews: Review[] = [
 ];
 
 const tasteStats: StatMetric[] = [
-  { id: "watched", label: "Content Watched", value: "186" },
-  { id: "listened", label: "Music Listened", value: "214 h" },
-  { id: "communities", label: "Communities Joined", value: "24" },
-  { id: "collections", label: "Collections Created", value: "18" },
-  { id: "reviews", label: "Reviews Written", value: "57" },
-  { id: "artists", label: "Artists Followed", value: "36" },
+  { id: "watched", label: "🎬 Content Watched", value: "186" },
+  { id: "listened", label: "🎵 Music Listened", value: "214 h" },
+  { id: "communities", label: "👥 Communities Joined", value: "24" },
+  { id: "collections", label: "📒 Collections Created", value: "18" },
+  { id: "reviews", label: "✍️ Reviews Written", value: "57" },
+  { id: "artists", label: "🎤 Artists Followed", value: "36" },
 ];
+
+/** Static landing-page exports — never fetch from DB or authenticated APIs. */
+export const LANDING_FEATURES = features;
+export const LANDING_SPOTLIGHT_CONTENT = spotlightContent;
+export const LANDING_SPOTLIGHT_MUSIC = spotlightMusic;
+export const LANDING_FEATURED_COMMUNITY = featuredCommunity;
+export const LANDING_FEATURED_COMMUNITY_MEMBERS = featuredCommunityMembers;
+export const LANDING_FEATURED_COLLECTION = featuredCollection;
+export const LANDING_TRENDING_COMMUNITIES = trendingCommunities;
+export const LANDING_FEATURED_REVIEWS = featuredReviews;
+export const LANDING_TASTE_STATS = tasteStats;
 
 export async function getLandingFeatures(): Promise<LandingFeature[]> {
   return features;

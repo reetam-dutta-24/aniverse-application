@@ -1,30 +1,30 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { requireAdmin } from "@/lib/auth-guards";
-import { canAccessAdminSection } from "@/lib/admin-nav";
-import { prisma } from "@/lib/prisma";
-import { mapCollectionToCard } from "@/lib/mappers/collection.mapper";
-import { CreateCollectionButton } from "@/components/forms/create-collection-button";
+import { Suspense } from "react";
+import { AdminCatalogPagination } from "@/components/admin/admin-catalog-pagination";
+import { AdminCatalogSearchBar } from "@/components/admin/admin-catalog-search-bar";
+import { AdminCollectionTable } from "@/components/admin/collection-table";
+import { requireSuperAdmin } from "@/lib/auth-guards";
+import { listAdminCollections } from "@/lib/services/admin-collection.service";
 
 export const metadata: Metadata = {
   title: "Collections — Admin — AniVerse",
   robots: { index: false, follow: false },
 };
 
-export default async function AdminCollectionsPage() {
-  const { role } = await requireAdmin();
-  if (!canAccessAdminSection(role, "collections")) {
-    return (
-      <p className="text-sm text-white/70">Super admin access required.</p>
-    );
-  }
+interface AdminCollectionsPageProps {
+  searchParams: Promise<{ q?: string; page?: string }>;
+}
 
-  const rows = await prisma.collection.findMany({
-    orderBy: { updatedAt: "desc" },
-    include: { _count: { select: { favorites: true } } },
-    take: 100,
-  });
-  const collections = rows.map(mapCollectionToCard);
+export default async function AdminCollectionsPage({
+  searchParams,
+}: AdminCollectionsPageProps) {
+  await requireSuperAdmin();
+  const { q, page: pageParam } = await searchParams;
+  const page = Math.max(1, Number(pageParam) || 1);
+  const search = q?.trim() || undefined;
+
+  const result = await listAdminCollections({ search, page, pageSize: 50 });
 
   return (
     <div className="flex flex-col gap-6">
@@ -32,36 +32,36 @@ export default async function AdminCollectionsPage() {
         <div>
           <h1 className="text-2xl font-bold text-white">Global collections</h1>
           <p className="mt-1 text-sm text-white/60">
-            Create and manage public collections discoverable across AniVerse.
+            {search
+              ? `${result.total} match${result.total === 1 ? "" : "es"} for “${search}”`
+              : `${result.total} collections — public by default, with catalog items`}
           </p>
         </div>
-        <CreateCollectionButton />
+        <Link
+          href="/admin/collections/new"
+          className="rounded-full border border-brand-magenta/40 bg-brand-magenta/10 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-magenta/20"
+        >
+          + New collection
+        </Link>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-white/10">
-        <table className="w-full text-left text-sm text-white/85">
-          <thead className="bg-white/5 text-xs uppercase tracking-wide text-white/50">
-            <tr>
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Slug</th>
-              <th className="px-4 py-3">Items</th>
-              <th className="px-4 py-3">Favts</th>
-              <th className="px-4 py-3">Visibility</th>
-            </tr>
-          </thead>
-          <tbody>
-            {collections.map((collection) => (
-              <tr key={collection.id} className="border-t border-white/10">
-                <td className="px-4 py-3 font-medium">{collection.name}</td>
-                <td className="px-4 py-3 text-white/60">{collection.id}</td>
-                <td className="px-4 py-3">{collection.itemCount}</td>
-                <td className="px-4 py-3">{collection.favoriteCount}</td>
-                <td className="px-4 py-3 capitalize">{collection.visibility}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Suspense fallback={null}>
+        <AdminCatalogSearchBar
+          defaultQuery={search ?? ""}
+          placeholder="Search collections by name or slug…"
+        />
+      </Suspense>
+
+      <AdminCollectionTable rows={result.items} searchQuery={search} />
+
+      <Suspense fallback={null}>
+        <AdminCatalogPagination
+          page={result.page}
+          totalPages={result.totalPages}
+          total={result.total}
+          pageSize={result.pageSize}
+        />
+      </Suspense>
 
       <Link href="/admin" className="text-sm text-brand-pink hover:underline">
         ← Back to admin overview

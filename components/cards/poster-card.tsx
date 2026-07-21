@@ -38,6 +38,8 @@ const POSTER_SLOT_H = 272;
 export interface PosterCardProps extends React.HTMLAttributes<HTMLDivElement> {
   item: ContentItem;
   tintSeed?: number;
+  /** Landing page — visual demo only, no navigation or collection actions. */
+  demo?: boolean;
   onWatch?: () => void;
   onViewDetails?: () => void;
   onHoverChange?: (hovered: boolean) => void;
@@ -74,6 +76,7 @@ const layerTransition =
 export function PosterCard({
   item,
   tintSeed: tintSeedProp,
+  demo = false,
   onWatch,
   onViewDetails,
   onHoverChange,
@@ -91,6 +94,7 @@ export function PosterCard({
   const displayGenres = (item.genres ?? []).slice(0, 2);
 
   function handleViewDetails() {
+    if (demo) return;
     if (onViewDetails) {
       onViewDetails();
       return;
@@ -218,29 +222,33 @@ export function PosterCard({
               </p>
 
               <div className="mt-auto flex w-full flex-col items-center gap-1.5 pt-1">
-                <div className="flex w-full items-center justify-center gap-2">
-                  <button
-                    type="button"
-                    onClick={onWatch}
-                    className="flex cursor-pointer items-center gap-1 rounded-full border border-brand-magenta px-2 py-0.5 text-[10px] font-normal text-white transition-colors hover:bg-brand-magenta/15"
-                  >
-                    <PlayCircle className="size-3.5 text-brand-magenta" />
-                    Watch Now
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleViewDetails}
-                    className="cursor-pointer rounded-full border border-brand-magenta px-2 py-0.5 text-[10px] font-normal text-white transition-colors hover:bg-brand-magenta/15"
-                  >
-                    View Details
-                  </button>
-                </div>
-                {collectionItemKind ? (
-                  <CardAddToCollectionButton
-                    itemKind={collectionItemKind}
-                    itemSlug={item.id}
-                    itemTitle={item.title}
-                  />
+                {!demo ? (
+                  <>
+                    <div className="flex w-full items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={onWatch}
+                        className="flex cursor-pointer items-center gap-1 rounded-full border border-brand-magenta px-2 py-0.5 text-[10px] font-normal text-white transition-colors hover:bg-brand-magenta/15"
+                      >
+                        <PlayCircle className="size-3.5 text-brand-magenta" />
+                        Watch Now
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleViewDetails}
+                        className="cursor-pointer rounded-full border border-brand-magenta px-2 py-0.5 text-[10px] font-normal text-white transition-colors hover:bg-brand-magenta/15"
+                      >
+                        View Details
+                      </button>
+                    </div>
+                    {collectionItemKind ? (
+                      <CardAddToCollectionButton
+                        itemKind={collectionItemKind}
+                        itemSlug={item.id}
+                        itemTitle={item.title}
+                      />
+                    ) : null}
+                  </>
                 ) : null}
               </div>
             </div>

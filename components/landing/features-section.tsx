@@ -1,5 +1,5 @@
 import { SectionHeader } from "@/components/ui/section-header";
-import { getLandingFeatures } from "@/lib/data/landing";
+import { LANDING_FEATURES } from "@/lib/data/landing";
 import {
   ScrollFadeIn,
   ScrollFadeItem,
@@ -7,8 +7,8 @@ import {
 } from "@/components/landing/scroll-fade-in";
 
 /** "Everything you love, connected." — 4×2 grid of gradient feature cards. */
-export async function FeaturesSection() {
-  const features = await getLandingFeatures();
+export function FeaturesSection() {
+  const features = LANDING_FEATURES;
 
   return (
     <section

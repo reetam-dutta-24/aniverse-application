@@ -5,11 +5,11 @@ import {
   ScrollFadeItem,
   ScrollFadeStagger,
 } from "@/components/landing/scroll-fade-in";
-import { getTrendingCommunities } from "@/lib/data/landing";
+import { LANDING_TRENDING_COMMUNITIES } from "@/lib/data/landing";
 
-/** "Find fandoms that feel like home" — trending community cards. */
-export async function CommunitiesSection() {
-  const communities = await getTrendingCommunities();
+/** "Find fandoms that feel like home" — static demo community cards. */
+export function CommunitiesSection() {
+  const communities = LANDING_TRENDING_COMMUNITIES;
 
   return (
     <section
@@ -29,6 +29,7 @@ export async function CommunitiesSection() {
             <CommunityCard
               community={community}
               className="w-[190px] shrink-0"
+              demo
             />
             </ScrollFadeItem>
           ))}

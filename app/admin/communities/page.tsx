@@ -1,29 +1,30 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { requireAdmin } from "@/lib/auth-guards";
-import { canAccessAdminSection } from "@/lib/admin-nav";
-import { prisma } from "@/lib/prisma";
-import { mapCommunityToCard } from "@/lib/mappers/community.mapper";
-import { CreateCommunityButton } from "@/components/forms/create-community-button";
+import { Suspense } from "react";
+import { AdminCatalogPagination } from "@/components/admin/admin-catalog-pagination";
+import { AdminCatalogSearchBar } from "@/components/admin/admin-catalog-search-bar";
+import { AdminCommunityTable } from "@/components/admin/community-table";
+import { requireSuperAdmin } from "@/lib/auth-guards";
+import { listAdminCommunities } from "@/lib/services/admin-community.service";
 
 export const metadata: Metadata = {
   title: "Communities — Admin — AniVerse",
   robots: { index: false, follow: false },
 };
 
-export default async function AdminCommunitiesPage() {
-  const { role } = await requireAdmin();
-  if (!canAccessAdminSection(role, "communities")) {
-    return (
-      <p className="text-sm text-white/70">Super admin access required.</p>
-    );
-  }
+interface AdminCommunitiesPageProps {
+  searchParams: Promise<{ q?: string; page?: string }>;
+}
 
-  const rows = await prisma.community.findMany({
-    orderBy: { updatedAt: "desc" },
-    take: 100,
-  });
-  const communities = rows.map(mapCommunityToCard);
+export default async function AdminCommunitiesPage({
+  searchParams,
+}: AdminCommunitiesPageProps) {
+  await requireSuperAdmin();
+  const { q, page: pageParam } = await searchParams;
+  const page = Math.max(1, Number(pageParam) || 1);
+  const search = q?.trim() || undefined;
+
+  const result = await listAdminCommunities({ search, page, pageSize: 50 });
 
   return (
     <div className="flex flex-col gap-6">
@@ -31,36 +32,36 @@ export default async function AdminCommunitiesPage() {
         <div>
           <h1 className="text-2xl font-bold text-white">Global communities</h1>
           <p className="mt-1 text-sm text-white/60">
-            Create public communities for users to discover and join.
+            {search
+              ? `${result.total} match${result.total === 1 ? "" : "es"} for “${search}”`
+              : `${result.total} communities — public by default`}
           </p>
         </div>
-        <CreateCommunityButton />
+        <Link
+          href="/admin/communities/new"
+          className="rounded-full border border-brand-magenta/40 bg-brand-magenta/10 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-magenta/20"
+        >
+          + New community
+        </Link>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-white/10">
-        <table className="w-full text-left text-sm text-white/85">
-          <thead className="bg-white/5 text-xs uppercase tracking-wide text-white/50">
-            <tr>
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Slug</th>
-              <th className="px-4 py-3">Category</th>
-              <th className="px-4 py-3">Members</th>
-              <th className="px-4 py-3">Visibility</th>
-            </tr>
-          </thead>
-          <tbody>
-            {communities.map((community) => (
-              <tr key={community.id} className="border-t border-white/10">
-                <td className="px-4 py-3 font-medium">{community.name}</td>
-                <td className="px-4 py-3 text-white/60">{community.id}</td>
-                <td className="px-4 py-3">{community.category}</td>
-                <td className="px-4 py-3">{community.memberCount}</td>
-                <td className="px-4 py-3 capitalize">{community.visibility}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Suspense fallback={null}>
+        <AdminCatalogSearchBar
+          defaultQuery={search ?? ""}
+          placeholder="Search communities by name or slug…"
+        />
+      </Suspense>
+
+      <AdminCommunityTable rows={result.items} searchQuery={search} />
+
+      <Suspense fallback={null}>
+        <AdminCatalogPagination
+          page={result.page}
+          totalPages={result.totalPages}
+          total={result.total}
+          pageSize={result.pageSize}
+        />
+      </Suspense>
 
       <Link href="/admin" className="text-sm text-brand-pink hover:underline">
         ← Back to admin overview

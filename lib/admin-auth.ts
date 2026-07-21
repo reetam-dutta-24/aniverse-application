@@ -5,6 +5,7 @@ import {
   isContentAdmin,
   isMusicAdmin,
   isPlatformAdmin,
+  isSuperAdmin,
 } from "@/lib/platform-roles";
 import { getUserById } from "@/lib/services/user.service";
 
@@ -59,4 +60,16 @@ export async function requireArtistAdminApi() {
   if (!ctx) return unauthorized();
   if (isArtistAdmin(ctx.role)) return null;
   return forbidden();
+}
+
+/** Global collections & communities CMS — SUPER_ADMIN only. */
+export async function requireSuperAdminApi() {
+  const ctx = await resolveSessionRole();
+  if (!ctx) return unauthorized();
+  if (isSuperAdmin(ctx.role)) return null;
+  return forbidden();
+}
+
+export async function resolveAdminSession() {
+  return resolveSessionRole();
 }

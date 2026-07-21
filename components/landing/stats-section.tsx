@@ -5,11 +5,11 @@ import {
   ScrollFadeItem,
   ScrollFadeStagger,
 } from "@/components/landing/scroll-fade-in";
-import { getTasteStats } from "@/lib/data/landing";
+import { LANDING_TASTE_STATS } from "@/lib/data/landing";
 
-/** "Understand your entertainment taste" — gradient stat cards. */
-export async function StatsSection() {
-  const stats = await getTasteStats();
+/** "Understand your entertainment taste" — static demo stat cards. */
+export function StatsSection() {
+  const stats = LANDING_TASTE_STATS;
 
   return (
     <section

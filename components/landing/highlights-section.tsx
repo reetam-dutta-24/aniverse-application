@@ -1,13 +1,17 @@
-import { GradientButton } from "@/components/ui/gradient-button";
+import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
 import { SectionHeader } from "@/components/ui/section-header";
 import { PosterCard } from "@/components/cards/poster-card";
 import { CommunityCard } from "@/components/cards/community-card";
 import { CollectionCard } from "@/components/cards/collection-card";
 import { ScrollFadeIn } from "@/components/landing/scroll-fade-in";
+import { cn } from "@/lib/utils";
 import {
-  getFeaturedCollection,
-  getFeaturedCommunity,
-  getSpotlightContent,
+  LANDING_FEATURED_COLLECTION,
+  LANDING_FEATURED_COMMUNITY,
+  LANDING_FEATURED_COMMUNITY_MEMBERS,
+  LANDING_SPOTLIGHT_CONTENT,
+  LANDING_SPOTLIGHT_MUSIC,
 } from "@/lib/data/landing";
 
 interface HighlightTextProps {
@@ -15,9 +19,10 @@ interface HighlightTextProps {
   subtitle: string;
   bullets: string[];
   cta: string;
+  href: string;
 }
 
-function HighlightText({ title, subtitle, bullets, cta }: HighlightTextProps) {
+function HighlightText({ title, subtitle, bullets, cta, href }: HighlightTextProps) {
   return (
     <div className="flex max-w-[560px] flex-col justify-center gap-8 px-6 py-8 lg:px-10">
       <div className="flex flex-col gap-2">
@@ -32,20 +37,24 @@ function HighlightText({ title, subtitle, bullets, cta }: HighlightTextProps) {
         ))}
       </ul>
       <div>
-        <GradientButton size="md">{cta}</GradientButton>
+        <Link
+          href={href}
+          className={cn(buttonVariants({ variant: "gradient", size: "md" }))}
+        >
+          {cta}
+        </Link>
       </div>
     </div>
   );
 }
 
-/** "One hub for your entertainment world" — three alternating rows. */
-export async function HighlightsSection() {
-  const [{ content, music }, { community, members }, collection] =
-    await Promise.all([
-      getSpotlightContent(),
-      getFeaturedCommunity(),
-      getFeaturedCollection(),
-    ]);
+/** "One hub for your entertainment world" — three alternating rows (static demo cards). */
+export function HighlightsSection() {
+  const content = LANDING_SPOTLIGHT_CONTENT;
+  const music = LANDING_SPOTLIGHT_MUSIC;
+  const community = LANDING_FEATURED_COMMUNITY;
+  const members = LANDING_FEATURED_COMMUNITY_MEMBERS;
+  const collection = LANDING_FEATURED_COLLECTION;
 
   return (
     <section className="flex w-full flex-col items-center gap-6 px-6 py-16">
@@ -59,8 +68,8 @@ export async function HighlightsSection() {
       {/* Row 1: cards left, text right */}
       <div className="flex w-full max-w-[1200px] flex-col items-center justify-between gap-8 py-8 lg:flex-row lg:px-10">
         <ScrollFadeIn direction="left" className="flex flex-wrap items-center justify-center gap-9">
-          <PosterCard item={content} />
-          <PosterCard item={music} />
+          <PosterCard item={content} demo />
+          <PosterCard item={music} demo />
         </ScrollFadeIn>
         <ScrollFadeIn direction="right" delay={0.1}>
           <HighlightText
@@ -72,6 +81,7 @@ export async function HighlightsSection() {
               "Content across anime, music, and shows",
             ]}
             cta="Explore Discover"
+            href="/login?callbackUrl=/dashboard/discover"
           />
         </ScrollFadeIn>
       </div>
@@ -88,6 +98,7 @@ export async function HighlightsSection() {
               "Public and niche fandom spaces",
             ]}
             cta="View Communities"
+            href="/login?callbackUrl=/community"
           />
         </ScrollFadeIn>
         <ScrollFadeIn direction="right">
@@ -95,6 +106,7 @@ export async function HighlightsSection() {
             community={community}
             members={members}
             className="shadow-glow-cyan"
+            demo
           />
         </ScrollFadeIn>
       </div>
@@ -105,6 +117,7 @@ export async function HighlightsSection() {
           <CollectionCard
             collection={collection}
             className="rounded-card-xl shadow-glow-blue"
+            demo
           />
         </ScrollFadeIn>
         <ScrollFadeIn direction="right" delay={0.1}>
@@ -117,6 +130,7 @@ export async function HighlightsSection() {
               "Revisit your best picks anytime",
             ]}
             cta="See Collections"
+            href="/login?callbackUrl=/collection"
           />
         </ScrollFadeIn>
       </div>

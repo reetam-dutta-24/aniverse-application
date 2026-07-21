@@ -35,6 +35,8 @@ export interface CommunityCardProps
   members?: UserSummary[];
   /** Join for global discover rows; view for joined/favourite rows. */
   ctaMode?: "view" | "join";
+  /** Landing page — visual demo only, no navigation or join actions. */
+  demo?: boolean;
   onAction?: () => void;
 }
 
@@ -43,6 +45,7 @@ export function CommunityCard({
   community,
   members,
   ctaMode = "view",
+  demo = false,
   onAction,
   className,
   ...props
@@ -55,6 +58,7 @@ export function CommunityCard({
   const showManage = community.canEdit || community.canDelete;
 
   function handleAction() {
+    if (demo) return;
     if (onAction) {
       onAction();
       return;
@@ -87,7 +91,7 @@ export function CommunityCard({
     >
       <div
         className="flex flex-col items-center overflow-hidden rounded-[20px] bg-glass-purple"
-        style={{ height: showManage ? 300 : 272 }}
+        style={{ height: showManage ? 300 : demo ? 244 : 272 }}
       >
         <div className="relative h-[84px] w-full shrink-0 overflow-hidden">
           {community.imageUrl ? (
@@ -152,14 +156,16 @@ export function CommunityCard({
             </span>
           </p>
           <div className="flex w-full flex-col items-center gap-1.5 px-2">
-            <Button
-              variant="gradient"
-              size="sm"
-              className="h-6 w-[100px] rounded-full px-2 text-[9px] font-normal"
-              onClick={handleAction}
-            >
-              {ctaLabel}
-            </Button>
+            {!demo ? (
+              <Button
+                variant="gradient"
+                size="sm"
+                className="h-6 w-[100px] rounded-full px-2 text-[9px] font-normal"
+                onClick={handleAction}
+              >
+                {ctaLabel}
+              </Button>
+            ) : null}
             {showManage ? (
               <div className="flex w-full items-center justify-center gap-2">
                 {community.canEdit ? (

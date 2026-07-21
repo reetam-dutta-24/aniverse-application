@@ -18,6 +18,8 @@ export interface CollectionCardProps
   collection: Collection;
   /** Show edit/delete actions for collections the user owns. */
   editable?: boolean;
+  /** Landing page — visual demo only, no navigation. */
+  demo?: boolean;
   onView?: () => void;
 }
 
@@ -48,6 +50,7 @@ function CardHeaderImage({
 export function CollectionCard({
   collection,
   editable = false,
+  demo = false,
   onView,
   className,
   ...props
@@ -57,6 +60,7 @@ export function CollectionCard({
   const accent = getAccentStyle(collection.accent ?? "blue");
 
   function handleView() {
+    if (demo) return;
     if (onView) {
       onView();
       return;
@@ -82,7 +86,7 @@ export function CollectionCard({
     >
       <div
         className="flex flex-col items-center overflow-hidden rounded-[20px] bg-glass-purple"
-        style={{ height: editable ? COLLECTION_CARD_H + 28 : COLLECTION_CARD_H }}
+        style={{ height: editable ? COLLECTION_CARD_H + 28 : demo ? COLLECTION_CARD_H - 28 : COLLECTION_CARD_H }}
       >
         <CardHeaderImage
           imageUrl={collection.imageUrl}
@@ -129,14 +133,16 @@ export function CollectionCard({
             </p>
           </div>
           <div className="flex w-full flex-col items-center gap-1.5 px-2">
-            <Button
-              variant="gradient"
-              size="sm"
-              className="h-6 w-[100px] shrink-0 rounded-full px-2 text-[9px] font-normal"
-              onClick={handleView}
-            >
-              View Collection
-            </Button>
+            {!demo ? (
+              <Button
+                variant="gradient"
+                size="sm"
+                className="h-6 w-[100px] shrink-0 rounded-full px-2 text-[9px] font-normal"
+                onClick={handleView}
+              >
+                View Collection
+              </Button>
+            ) : null}
             {editable ? (
               <div className="flex w-full items-center justify-center gap-2">
                 <EditCollectionButton
