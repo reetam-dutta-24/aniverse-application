@@ -125,6 +125,7 @@ export function mapTrackRecordToSongDetail(
     },
     imageUrl: row.imageUrl ?? poster(slug),
     backdropUrl: row.backdropUrl ?? row.imageUrl ?? poster(slug),
+    audioUrl: row.audioUrl ?? undefined,
     accent: (row.accent as AccentColor) ?? undefined,
     sourceContentSlug: row.sourceContent?.slug,
     durationSeconds: row.durationSeconds ?? undefined,

@@ -154,6 +154,10 @@ async function syncNestedContentRelations(
   }
 
   if (input.featuredTrackSlugs.length > 0) {
+    const content = await prisma.content.findUnique({
+      where: { id: contentId },
+      select: { title: true },
+    });
     const tracks = await prisma.musicTrack.findMany({
       where: { slug: { in: input.featuredTrackSlugs } },
       select: { id: true, slug: true },
@@ -165,8 +169,25 @@ async function syncNestedContentRelations(
       await prisma.contentFeaturedTrack.create({
         data: { contentId, trackId, position: index },
       });
+      await prisma.musicTrack.update({
+        where: { id: trackId },
+        data: {
+          contentId,
+          source: content?.title ?? undefined,
+        },
+      });
     }
   }
+
+  await prisma.musicTrack.updateMany({
+    where: {
+      contentId,
+      slug: { notIn: input.featuredTrackSlugs },
+    },
+    data: {
+      contentId: null,
+    },
+  });
 
   if (input.relatedContentSlugs.length > 0) {
     const related = await prisma.content.findMany({

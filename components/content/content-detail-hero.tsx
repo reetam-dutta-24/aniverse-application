@@ -340,6 +340,7 @@ export function ContentDetailHero({
                 artist={content.metadata.studio ?? content.creditLabel ?? "Artist"}
                 resumeLabel={content.resumeLabel}
                 durationSeconds={content.durationSeconds}
+                audioUrl={content.audioUrl}
                 initialFavorited={initialFavorited}
               />
             ) : (

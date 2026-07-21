@@ -12,8 +12,8 @@ async function resolveSessionRole() {
   const session = await auth();
   if (!session?.user?.id) return null;
 
-  if (session.user.role && session.user.role !== "USER") {
-    return { userId: session.user.id, role: session.user.role };
+  if (isPlatformAdmin(session.user.role)) {
+    return { userId: session.user.id, role: session.user.role! };
   }
 
   const user = await getUserById(session.user.id);

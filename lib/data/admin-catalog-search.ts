@@ -3,6 +3,9 @@ import {
   searchCatalogContent,
   searchCatalogMusic,
 } from "@/lib/services/feed.service";
+import { prisma } from "@/lib/prisma";
+import { mapArtistToContentItem } from "@/lib/mappers/artist.mapper";
+import { mapContentToItem } from "@/lib/mappers/content.mapper";
 import { getArtistDetailPath } from "@/lib/artist-routes";
 import { getContentDetailPath } from "@/lib/content-routes";
 import { getSongDetailPath } from "@/lib/song-routes";
@@ -20,14 +23,70 @@ function toResult(
   return { type, id, title, subtitle, imageUrl, href, score: 100 };
 }
 
+/** Resolve a single catalog row by slug for admin form hydration. */
+export async function adminCatalogLookup(
+  slug: string,
+  type: SearchResultType,
+): Promise<SearchResult | null> {
+  const normalized = slug.trim().toLowerCase();
+  if (!normalized) return null;
+
+  if (type === "artist") {
+    const row = await prisma.artist.findUnique({ where: { slug: normalized } });
+    if (!row) return null;
+    const item = mapArtistToContentItem(row);
+    return toResult(
+      "artist",
+      item.id,
+      item.title,
+      item.meta ?? "Artist",
+      item.imageUrl,
+      getArtistDetailPath(item.id),
+    );
+  }
+
+  if (type === "content") {
+    const row = await prisma.content.findUnique({
+      where: { slug: normalized },
+      include: { genres: { include: { genre: true } } },
+    });
+    if (!row) return null;
+    const item = mapContentToItem(row);
+    return toResult(
+      "content",
+      item.id,
+      item.title,
+      item.type,
+      item.imageUrl,
+      getContentDetailPath(item.id),
+    );
+  }
+
+  if (type === "song") {
+    const row = await prisma.musicTrack.findUnique({ where: { slug: normalized } });
+    if (!row) return null;
+    return toResult(
+      "song",
+      row.slug,
+      row.title,
+      row.artist,
+      row.imageUrl ?? undefined,
+      getSongDetailPath(row.slug),
+    );
+  }
+
+  return null;
+}
+
 /** Admin CMS search — DB-backed, no fuzzy score cutoff, higher limits for large catalogs. */
 export async function adminCatalogSearch(
   query: string,
   allowedTypes: SearchResultType[] = ["content", "song", "artist"],
   limit = 40,
+  browse = false,
 ): Promise<SearchResult[]> {
   const q = normalizeSearchQuery(query);
-  if (q.length < 1) return [];
+  if (q.length < 1 && !browse) return [];
 
   const perType = Math.max(8, Math.ceil(limit / allowedTypes.length));
   const results: SearchResult[] = [];
@@ -81,7 +140,7 @@ export async function adminCatalogSearch(
               "artist",
               artist.id,
               artist.title,
-              "Artist",
+              artist.meta ?? "Artist",
               artist.imageUrl,
               getArtistDetailPath(artist.id),
             ),

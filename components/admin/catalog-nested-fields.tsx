@@ -44,7 +44,7 @@ export function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+    <section className="flex flex-col gap-4 overflow-visible rounded-2xl border border-white/10 bg-white/[0.03] p-5">
       <div>
         <h2 className="text-sm font-semibold text-white">{title}</h2>
         {description ? (

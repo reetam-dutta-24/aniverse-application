@@ -359,6 +359,8 @@ export interface ContentDetail {
   backdropUrl?: string;
   /** Full-length video URL for movies/documentaries. */
   videoUrl?: string;
+  /** Full-length audio URL for songs/OSTs. */
+  audioUrl?: string;
   matchScore?: number;
   /** Card accent — drives hero section inner-boundary glow. */
   accent?: AccentColor;

@@ -262,16 +262,22 @@ export async function searchCatalogArtists(
   query: string,
   limit = 12,
 ): Promise<ContentItem[]> {
+  const q = query.trim();
+  const where =
+    q.length > 0
+      ? {
+          OR: [
+            { title: { contains: q, mode: "insensitive" as const } },
+            { slug: { contains: q, mode: "insensitive" as const } },
+            { nativeTitle: { contains: q, mode: "insensitive" as const } },
+          ],
+        }
+      : undefined;
+
   const rows = await prisma.artist.findMany({
-    where: {
-      OR: [
-        { title: { contains: query, mode: "insensitive" } },
-        { slug: { contains: query, mode: "insensitive" } },
-        { nativeTitle: { contains: query, mode: "insensitive" } },
-      ],
-    },
+    where,
     take: limit,
-    orderBy: { rating: "desc" },
+    orderBy: [{ title: "asc" }],
   });
   return rows.map(mapArtistToContentItem);
 }

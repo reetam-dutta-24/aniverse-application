@@ -354,6 +354,7 @@ model MusicTrack {
   durationSeconds Int?
   imageUrl        String?
   backdropUrl     String?
+  audioUrl        String?
   accent          String?
   trendingLabel   String?
   creditLabel     String?

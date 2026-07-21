@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { mapTrackToMusicTrack } from "@/lib/mappers/music.mapper";
+import { prismaMediaTypeToApp } from "@/lib/mappers/content.mapper";
 import type { MusicFormInput } from "@/lib/validators/admin/music";
 import { roundRating } from "@/lib/format-rating";
 
@@ -28,22 +29,43 @@ function emptyToNull(value: string | undefined) {
   return value;
 }
 
-async function resolveArtistId(slug?: string) {
-  if (!slug) return null;
-  const artist = await prisma.artist.findUnique({
-    where: { slug },
-    select: { id: true },
-  });
-  return artist?.id ?? null;
+function slugifyArtist(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
-async function resolveContentId(slug?: string) {
-  if (!slug) return null;
-  const content = await prisma.content.findUnique({
-    where: { slug },
+async function resolveArtistId(slug?: string, artistName?: string) {
+  const normalizedSlug = slug?.trim().toLowerCase();
+  if (normalizedSlug) {
+    const bySlug = await prisma.artist.findUnique({
+      where: { slug: normalizedSlug },
+      select: { id: true },
+    });
+    if (bySlug) return bySlug.id;
+  }
+
+  const name = artistName?.trim();
+  if (!name) return null;
+
+  const byTitle = await prisma.artist.findFirst({
+    where: { title: { equals: name, mode: "insensitive" } },
     select: { id: true },
   });
-  return content?.id ?? null;
+  if (byTitle) return byTitle.id;
+
+  const slugified = slugifyArtist(name);
+  if (slugified) {
+    const byDerivedSlug = await prisma.artist.findUnique({
+      where: { slug: slugified },
+      select: { id: true },
+    });
+    if (byDerivedSlug) return byDerivedSlug.id;
+  }
+
+  return null;
 }
 
 async function syncTrackReviews(trackId: string, input: MusicFormInput) {
@@ -66,8 +88,7 @@ async function syncTrackReviews(trackId: string, input: MusicFormInput) {
 }
 
 async function toTrackData(input: MusicFormInput): Promise<Prisma.MusicTrackCreateInput> {
-  const artistId = await resolveArtistId(input.artistSlug);
-  const contentId = await resolveContentId(input.contentSlug);
+  const artistId = await resolveArtistId(input.artistSlug, input.artist);
 
   return {
     title: input.title,
@@ -87,12 +108,16 @@ async function toTrackData(input: MusicFormInput): Promise<Prisma.MusicTrackCrea
     durationSeconds: input.durationSeconds ?? null,
     imageUrl: emptyToNull(input.imageUrl),
     backdropUrl: emptyToNull(input.backdropUrl),
+    audioUrl: emptyToNull(input.audioUrl),
     accent: input.accent ?? null,
     trendingLabel: emptyToNull(input.trendingLabel),
     creditLabel: emptyToNull(input.creditLabel),
     featuredRank: input.featuredRank ?? null,
-    artistRef: artistId ? { connect: { id: artistId } } : undefined,
-    sourceContent: contentId ? { connect: { id: contentId } } : undefined,
+    ...(artistId
+      ? { artistRef: { connect: { id: artistId } } }
+      : input.artistSlug === ""
+        ? { artistRef: { disconnect: true } }
+        : {}),
   } as Prisma.MusicTrackCreateInput;
 }
 
@@ -199,6 +224,48 @@ export async function getTrackEngagementStats(trackId: string) {
   return { reviews, listening, listenEvents, collections };
 }
 
+export interface TrackLinkedSelections {
+  artist: {
+    id: string;
+    type: "artist";
+    title: string;
+    subtitle?: string;
+    imageUrl?: string;
+  } | null;
+  source: {
+    id: string;
+    type: "content";
+    title: string;
+    subtitle?: string;
+    imageUrl?: string;
+  } | null;
+}
+
+export function trackRecordToLinkedSelections(
+  row: TrackRecordFull,
+): TrackLinkedSelections {
+  return {
+    artist: row.artistRef
+      ? {
+          id: row.artistRef.slug,
+          type: "artist",
+          title: row.artistRef.title,
+          subtitle: row.artistRef.isGroup ? "Group" : "Solo Artist",
+          imageUrl: row.artistRef.imageUrl ?? undefined,
+        }
+      : null,
+    source: row.sourceContent
+      ? {
+          id: row.sourceContent.slug,
+          type: "content",
+          title: row.sourceContent.title,
+          subtitle: prismaMediaTypeToApp(row.sourceContent.type),
+          imageUrl: row.sourceContent.imageUrl ?? undefined,
+        }
+      : null,
+  };
+}
+
 export function trackRecordToFormInput(row: TrackRecordFull): MusicFormInput {
   return {
     title: row.title,
@@ -219,6 +286,7 @@ export function trackRecordToFormInput(row: TrackRecordFull): MusicFormInput {
     durationSeconds: row.durationSeconds ?? undefined,
     imageUrl: row.imageUrl ?? "",
     backdropUrl: row.backdropUrl ?? "",
+    audioUrl: row.audioUrl ?? "",
     accent: (row.accent as MusicFormInput["accent"]) ?? undefined,
     trendingLabel: row.trendingLabel ?? "",
     creditLabel: row.creditLabel ?? "",

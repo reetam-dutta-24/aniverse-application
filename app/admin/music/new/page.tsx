@@ -24,6 +24,7 @@ const emptyForm: MusicFormInput = {
   durationLabel: "",
   imageUrl: "",
   backdropUrl: "",
+  audioUrl: "",
   trendingLabel: "",
   creditLabel: "",
   contentSlug: "",

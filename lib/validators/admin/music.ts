@@ -37,6 +37,7 @@ export const musicFormSchema = z.object({
   durationSeconds: z.coerce.number().int().min(0).max(86400).optional(),
   imageUrl: optionalString,
   backdropUrl: optionalString,
+  audioUrl: optionalString,
   accent: accentEnum.optional(),
   trendingLabel: optionalString,
   creditLabel: optionalString,

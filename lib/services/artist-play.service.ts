@@ -44,6 +44,7 @@ function mapDbTrack(
     durationLabel: string | null;
     imageUrl: string | null;
     backdropUrl: string | null;
+    audioUrl: string | null;
     lyrics: string | null;
     language: string | null;
     rating: number | null;
@@ -68,7 +69,7 @@ function mapDbTrack(
     ),
     imageUrl: getTrackCoverUrl(track.slug, track.imageUrl, track.backdropUrl),
     backdropUrl: getTrackCoverUrl(track.slug, track.backdropUrl, track.imageUrl),
-    previewUrl: getTrackPreviewUrl(track.slug),
+    previewUrl: getTrackPreviewUrl(track.slug, track.audioUrl),
     lyrics: track.lyrics ?? undefined,
     language: track.language ?? undefined,
     rating: track.rating ?? undefined,

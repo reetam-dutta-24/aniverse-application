@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAppRouter } from "@/hooks/use-app-router";
 import { GradientButton } from "@/components/ui/gradient-button";
 import {
@@ -21,12 +21,16 @@ import {
   type CatalogPickerSelection,
 } from "@/components/forms/catalog-search-picker";
 import type { MusicFormInput } from "@/lib/validators/admin/music";
+import type { TrackLinkedSelections } from "@/lib/services/music.service";
 
 export interface MusicFormProps {
   mode: "create" | "edit";
   recordId?: string;
   initial: MusicFormInput;
+  initialLinked?: TrackLinkedSelections;
 }
+
+const ARTIST_SEARCH_TYPES = ["artist"] as const;
 
 function slugify(title: string) {
   return title
@@ -38,30 +42,64 @@ function slugify(title: string) {
 
 const kinds = ["song", "ost", "album"] as const;
 
-export function MusicForm({ mode, recordId, initial }: MusicFormProps) {
+export function MusicForm({ mode, recordId, initial, initialLinked }: MusicFormProps) {
   const router = useAppRouter();
   const [form, setForm] = useState<MusicFormInput>(initial);
+  const [artistSelection, setArtistSelection] = useState<CatalogPickerSelection | null>(
+    () =>
+      initialLinked?.artist ??
+      (initial.artistSlug
+        ? {
+            id: initial.artistSlug,
+            type: "artist",
+            title: initial.artist || initial.artistSlug,
+          }
+        : null),
+  );
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
 
-  const artistSelection = useMemo<CatalogPickerSelection | null>(() => {
-    if (!form.artistSlug) return null;
-    return {
-      id: form.artistSlug,
-      type: "artist",
-      title: form.artist || form.artistSlug,
-    };
-  }, [form.artist, form.artistSlug]);
+  const artistSearchTypes = useMemo(
+    () => [...ARTIST_SEARCH_TYPES] as CatalogPickerSelection["type"][],
+    [],
+  );
 
-  const sourceSelection = useMemo<CatalogPickerSelection | null>(() => {
-    if (!form.contentSlug) return null;
-    return {
-      id: form.contentSlug,
-      type: "content",
-      title: form.source || form.contentSlug,
+  const linkedSourceLabel =
+    initialLinked?.source?.title ?? (form.source?.trim() ? form.source : null);
+
+  useEffect(() => {
+    if (!initialLinked?.artist) return;
+    setArtistSelection(initialLinked.artist);
+  }, [initialLinked?.artist]);
+
+  useEffect(() => {
+    if (artistSelection?.imageUrl || !form.artistSlug) return;
+
+    let cancelled = false;
+    void (async () => {
+      const response = await fetch(
+        `/api/admin/catalog-search?slug=${encodeURIComponent(form.artistSlug)}&type=artist`,
+        { cache: "no-store" },
+      );
+      if (!response.ok || cancelled) return;
+      const data = (await response.json()) as { results: CatalogPickerSelection[] };
+      const match = data.results[0];
+      if (match && !cancelled) {
+        setArtistSelection({
+          id: match.id,
+          type: "artist",
+          title: match.title,
+          subtitle: match.subtitle,
+          imageUrl: match.imageUrl,
+        });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
     };
-  }, [form.contentSlug, form.source]);
+  }, [form.artistSlug, artistSelection?.imageUrl]);
 
   function update<K extends keyof MusicFormInput>(key: K, value: MusicFormInput[K]) {
     setForm((c) => ({ ...c, [key]: value }));
@@ -72,11 +110,15 @@ export function MusicForm({ mode, recordId, initial }: MusicFormProps) {
     setError(null);
     setPending(true);
     try {
+      const payload: MusicFormInput = {
+        ...form,
+        contentSlug: "",
+      };
       const url = mode === "create" ? "/api/admin/music" : `/api/admin/music/${recordId}`;
       const res = await fetch(url, {
         method: mode === "create" ? "POST" : "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
@@ -99,7 +141,7 @@ export function MusicForm({ mode, recordId, initial }: MusicFormProps) {
       </p>
 
       <Section title="Basics">
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-5 overflow-visible sm:grid-cols-2">
           <Field label="Title">
             <input
               className={inputClass}
@@ -127,20 +169,32 @@ export function MusicForm({ mode, recordId, initial }: MusicFormProps) {
               {kinds.map((k) => <option key={k} value={k} className="bg-[#1a0d2e]">{k}</option>)}
             </select>
           </Field>
-          <Field label="Artist credit">
+          <Field label="Artist credit" hint="Display name shown on cards and the song page">
             <input className={inputClass} value={form.artist} onChange={(e) => update("artist", e.target.value)} required />
           </Field>
-          <Field label="Artist" hint="Search and link to an artist profile in Artist CMS">
+          <Field label="Linked artist profile" hint="Search Artist CMS — links this track to the artist page and their discography">
             <CatalogSearchPicker
-              allowedTypes={["artist"]}
+              allowedTypes={artistSearchTypes}
               value={artistSelection}
               onChange={(selection) => {
+                setArtistSelection(selection);
                 update("artistSlug", selection?.id ?? "");
                 if (selection?.title) update("artist", selection.title);
               }}
               placeholder="Search artists…"
               adminSearch
               resultLimit={40}
+            />
+          </Field>
+          <Field
+            label="Source show"
+            hint="Managed from Content CMS — attach this track under Featured OSTs on the show/movie form"
+          >
+            <input
+              className={`${inputClass} text-white/70`}
+              value={linkedSourceLabel ?? ""}
+              readOnly
+              placeholder="Not linked to a show yet"
             />
           </Field>
           <Field label="Rating">
@@ -171,22 +225,6 @@ export function MusicForm({ mode, recordId, initial }: MusicFormProps) {
           />
           <Field label="Album">
             <input className={inputClass} value={form.album ?? ""} onChange={(e) => update("album", e.target.value)} />
-          </Field>
-          <Field label="Source show">
-            <input className={inputClass} value={form.source ?? ""} onChange={(e) => update("source", e.target.value)} placeholder="Demon Slayer" />
-          </Field>
-          <Field label="Source content" hint="Search and link to the anime or movie this track is from">
-            <CatalogSearchPicker
-              allowedTypes={["content"]}
-              value={sourceSelection}
-              onChange={(selection) => {
-                update("contentSlug", selection?.id ?? "");
-                if (selection?.title) update("source", selection.title);
-              }}
-              placeholder="Search anime, movies, shows…"
-              adminSearch
-              resultLimit={40}
-            />
           </Field>
           <Field label="Trending label">
             <input className={inputClass} value={form.trendingLabel ?? ""} onChange={(e) => update("trendingLabel", e.target.value)} />
@@ -223,6 +261,17 @@ export function MusicForm({ mode, recordId, initial }: MusicFormProps) {
               value={form.backdropUrl ?? ""}
               onChange={(value) => update("backdropUrl", value)}
               inputClassName={inputClass}
+            />
+          </Field>
+          <Field
+            label="Audio URL (MP3)"
+            hint="Direct link to the full song or OST file"
+          >
+            <input
+              className={inputClass}
+              value={form.audioUrl ?? ""}
+              onChange={(e) => update("audioUrl", e.target.value)}
+              placeholder="https://example.com/tracks/title.mp3"
             />
           </Field>
         </div>

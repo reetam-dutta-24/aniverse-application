@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SearchResult, SearchResultType } from "@/lib/search/types";
@@ -60,6 +61,15 @@ function CatalogSearchInput({
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [panelRect, setPanelRect] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
+  const allowedTypesKey = useMemo(() => allowedTypes.join(","), [allowedTypes]);
+  const excludeIdsKey = useMemo(() => excludeIds.join(","), [excludeIds]);
+  const canBrowse = adminSearch && query.trim().length === 0;
 
   useEffect(() => {
     if (autoFocus) inputRef.current?.focus();
@@ -67,22 +77,38 @@ function CatalogSearchInput({
 
   useEffect(() => {
     const q = query.trim();
-    const minLength = adminSearch ? 1 : 2;
-    if (q.length < minLength) {
+    const minLength = adminSearch ? 0 : 2;
+    if (!adminSearch && q.length < minLength) {
       setResults([]);
       setLoading(false);
+      setSearchError(null);
       return;
     }
 
     setLoading(true);
+    setSearchError(null);
     const timer = window.setTimeout(async () => {
       try {
         const limit = adminSearch ? Math.max(resultLimit, 24) : resultLimit;
+        const params = new URLSearchParams({
+          q,
+          limit: String(limit),
+          types: allowedTypesKey,
+        });
+        if (canBrowse) params.set("browse", "1");
         const endpoint = adminSearch
-          ? `/api/admin/catalog-search?q=${encodeURIComponent(q)}&limit=${limit}&types=${allowedTypes.join(",")}`
+          ? `/api/admin/catalog-search?${params.toString()}`
           : `/api/search?q=${encodeURIComponent(q)}&limit=${limit}`;
-        const response = await fetch(endpoint);
-        if (!response.ok) return;
+        const response = await fetch(endpoint, { cache: "no-store" });
+        if (!response.ok) {
+          setResults([]);
+          setSearchError(
+            response.status === 403 || response.status === 401
+              ? "You do not have permission to search the catalog."
+              : "Catalog search failed. Try again.",
+          );
+          return;
+        }
         const data = (await response.json()) as { results: SearchResult[] };
         const exclude = new Set(excludeIds);
         setResults(
@@ -92,23 +118,63 @@ function CatalogSearchInput({
           ),
         );
         setActiveIndex(-1);
+      } catch {
+        setResults([]);
+        setSearchError("Catalog search failed. Check your connection.");
       } finally {
         setLoading(false);
       }
-    }, 250);
+    }, adminSearch ? 150 : 250);
 
     return () => window.clearTimeout(timer);
-  }, [query, allowedTypes, excludeIds, adminSearch, resultLimit]);
+  }, [
+    query,
+    allowedTypes,
+    allowedTypesKey,
+    excludeIds,
+    excludeIdsKey,
+    adminSearch,
+    resultLimit,
+    canBrowse,
+  ]);
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
+      const target = event.target as Node;
+      if (rootRef.current?.contains(target)) return;
+      const panel = document.getElementById(listId);
+      if (panel?.contains(target)) return;
+      setOpen(false);
     }
     document.addEventListener("mousedown", onPointerDown);
     return () => document.removeEventListener("mousedown", onPointerDown);
-  }, []);
+  }, [listId]);
+
+  useEffect(() => {
+    if (!open || !rootRef.current) {
+      setPanelRect(null);
+      return;
+    }
+
+    function updatePanelRect() {
+      const node = rootRef.current;
+      if (!node) return;
+      const rect = node.getBoundingClientRect();
+      setPanelRect({
+        top: rect.bottom + 8,
+        left: rect.left,
+        width: rect.width,
+      });
+    }
+
+    updatePanelRect();
+    window.addEventListener("resize", updatePanelRect);
+    window.addEventListener("scroll", updatePanelRect, true);
+    return () => {
+      window.removeEventListener("resize", updatePanelRect);
+      window.removeEventListener("scroll", updatePanelRect, true);
+    };
+  }, [open, query, results.length, loading]);
 
   function pickResult(result: SearchResult) {
     onSelect(toSelection(result));
@@ -119,7 +185,89 @@ function CatalogSearchInput({
     requestAnimationFrame(() => inputRef.current?.focus());
   }
 
-  const showPanel = open && query.trim().length >= (adminSearch ? 1 : 2);
+  const showPanel =
+    open &&
+    (adminSearch ? true : query.trim().length >= 2) &&
+    typeof document !== "undefined";
+
+  const resultsPanel =
+    showPanel && panelRect ? (
+      <div
+        id={listId}
+        role="listbox"
+        style={{
+          position: "fixed",
+          top: panelRect.top,
+          left: panelRect.left,
+          width: panelRect.width,
+          zIndex: 9999,
+        }}
+        className="max-h-80 overflow-y-auto rounded-xl border border-white/10 bg-[#12091f] p-1.5 shadow-2xl"
+      >
+        {loading ? (
+          <p className="px-3 py-4 text-sm text-white/55">Searching…</p>
+        ) : searchError ? (
+          <p className="px-3 py-4 text-sm text-amber-200">{searchError}</p>
+        ) : results.length === 0 ? (
+          <p className="px-3 py-4 text-sm text-white/55">
+            {excludeIds.length > 0
+              ? "No more matches — try a different search."
+              : canBrowse
+                ? "No artists in the catalog yet."
+                : "No matches found."}
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-0.5">
+            {canBrowse && !loading ? (
+              <li className="px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-white/40">
+                Catalog artists
+              </li>
+            ) : null}
+            {results.map((result, index) => (
+              <li key={`${result.type}-${result.id}`}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={index === activeIndex}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => pickResult(result)}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
+                    index === activeIndex
+                      ? "bg-white/10"
+                      : "hover:bg-white/[0.06]",
+                  )}
+                >
+                  <span className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-black/40">
+                    {result.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={result.imageUrl}
+                        alt=""
+                        className="size-full object-cover"
+                      />
+                    ) : (
+                      <span className="flex size-full items-center justify-center text-xs font-bold text-white/70">
+                        {result.title.charAt(0)}
+                      </span>
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-white">
+                      {result.title}
+                    </span>
+                    <span className="block truncate text-xs text-white/55">
+                      {TYPE_LABELS[result.type]}
+                      {result.subtitle ? ` · ${result.subtitle}` : ""}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    ) : null;
 
   return (
     <div ref={rootRef} className="relative">
@@ -127,7 +275,7 @@ function CatalogSearchInput({
         <Search className="size-4 shrink-0 text-white/45" />
         <input
           ref={inputRef}
-          type="search"
+          type="text"
           value={query}
           placeholder={placeholder}
           aria-expanded={showPanel}
@@ -159,66 +307,7 @@ function CatalogSearchInput({
         />
       </label>
 
-      {showPanel ? (
-        <div
-          id={listId}
-          role="listbox"
-          className="absolute top-[calc(100%+8px)] z-[70] max-h-80 w-full overflow-y-auto rounded-xl border border-white/10 bg-[#12091f] p-1.5 shadow-2xl"
-        >
-          {loading ? (
-            <p className="px-3 py-4 text-sm text-white/55">Searching…</p>
-          ) : results.length === 0 ? (
-            <p className="px-3 py-4 text-sm text-white/55">
-              {excludeIds.length > 0
-                ? "No more matches — try a different search."
-                : "No matches found."}
-            </p>
-          ) : (
-            <ul className="flex flex-col gap-0.5">
-              {results.map((result, index) => (
-                <li key={`${result.type}-${result.id}`}>
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={index === activeIndex}
-                    onClick={() => pickResult(result)}
-                    className={cn(
-                      "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
-                      index === activeIndex
-                        ? "bg-white/10"
-                        : "hover:bg-white/[0.06]",
-                    )}
-                  >
-                    <span className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-black/40">
-                      {result.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={result.imageUrl}
-                          alt=""
-                          className="size-full object-cover"
-                        />
-                      ) : (
-                        <span className="flex size-full items-center justify-center text-xs font-bold text-white/70">
-                          {result.title.charAt(0)}
-                        </span>
-                      )}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium text-white">
-                        {result.title}
-                      </span>
-                      <span className="block truncate text-xs text-white/55">
-                        {TYPE_LABELS[result.type]}
-                        {result.subtitle ? ` · ${result.subtitle}` : ""}
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      ) : null}
+      {resultsPanel ? createPortal(resultsPanel, document.body) : null}
     </div>
   );
 }
@@ -232,6 +321,7 @@ interface CatalogSearchPickerProps {
   showHint?: boolean;
   adminSearch?: boolean;
   resultLimit?: number;
+  autoFocus?: boolean;
 }
 
 interface CatalogMultiSearchPickerProps {
@@ -299,6 +389,7 @@ export function CatalogSearchPicker({
   showHint = true,
   adminSearch = false,
   resultLimit = 12,
+  autoFocus = false,
 }: CatalogSearchPickerProps) {
   return (
     <div className="flex flex-col gap-2">
@@ -309,7 +400,7 @@ export function CatalogSearchPicker({
           allowedTypes={allowedTypes}
           placeholder={placeholder}
           onSelect={onChange}
-          autoFocus
+          autoFocus={autoFocus}
           adminSearch={adminSearch}
           resultLimit={resultLimit}
         />
@@ -318,7 +409,7 @@ export function CatalogSearchPicker({
       {showHint && !value ? (
         <p className="text-xs text-white/40">
           {adminSearch
-            ? "Admin search scans the full database — title, slug, artist, and more."
+            ? "Click to browse the catalog, or type to search by title or slug."
             : hint}
         </p>
       ) : null}

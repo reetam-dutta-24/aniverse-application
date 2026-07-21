@@ -26,6 +26,7 @@ export interface SongHeroPosterPanelProps {
   initialFavorited?: boolean;
   resumeLabel?: string;
   durationSeconds?: number;
+  audioUrl?: string;
 }
 
 /** Right hero panel — inline playback, favourites, and add-to-collection. */
@@ -36,6 +37,7 @@ export function SongHeroPosterPanel({
   resumeLabel,
   durationSeconds,
   initialFavorited,
+  audioUrl,
 }: SongHeroPosterPanelProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [collectionOpen, setCollectionOpen] = useState(false);
@@ -43,7 +45,7 @@ export function SongHeroPosterPanel({
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(durationSeconds ?? 0);
 
-  const previewUrl = getTrackPreviewUrl(songSlug);
+  const previewUrl = getTrackPreviewUrl(songSlug, audioUrl);
   const playLabel = resumeLabel ? `Continue from ${resumeLabel}` : "Play Now";
 
   const syncDuration = useCallback(() => {
