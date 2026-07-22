@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useAppRouter } from "@/hooks/use-app-router";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil } from "lucide-react";
+import { AdminDeleteAction } from "@/components/admin/admin-delete-action";
 import { getCollectionDetailPath } from "@/lib/collection-routes";
 
 export interface AdminCollectionRow {
@@ -23,17 +23,6 @@ export function AdminCollectionTable({
   rows: AdminCollectionRow[];
   searchQuery?: string;
 }) {
-  const router = useAppRouter();
-
-  async function handleDelete(recordId: string, name: string) {
-    if (!window.confirm(`Delete collection "${name}"?`)) return;
-    const response = await fetch(`/api/admin/collections/${recordId}`, {
-      method: "DELETE",
-    });
-    if (!response.ok) window.alert("Could not delete.");
-    else router.refresh();
-  }
-
   if (rows.length === 0) {
     return (
       <p className="rounded-2xl border border-white/10 bg-white/5 px-4 py-8 text-center text-sm text-white/60">
@@ -83,13 +72,11 @@ export function AdminCollectionTable({
                   >
                     <Pencil className="size-3.5" /> Edit
                   </Link>
-                  <button
-                    type="button"
-                    onClick={() => void handleDelete(row.recordId, row.name)}
-                    className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1 text-xs text-red-400 hover:bg-red-500/10"
-                  >
-                    <Trash2 className="size-3.5" /> Delete
-                  </button>
+                  <AdminDeleteAction
+                    itemLabel={row.name}
+                    deleteUrl={`/api/admin/collections/${row.recordId}`}
+                    entityName="collection"
+                  />
                 </div>
               </td>
             </tr>

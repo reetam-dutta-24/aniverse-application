@@ -36,11 +36,12 @@ function mapVisibility(value: Collection["visibility"]): AppCollection["visibili
 }
 
 type CollectionCardRow = Collection & {
-  _count?: { favorites: number };
+  _count?: { favorites: number; follows: number };
 };
 
 export function mapCollectionToCard(row: CollectionCardRow): AppCollection {
   const favoriteCount = row._count?.favorites ?? row.favoriteCount;
+  const followerCount = row._count?.follows ?? row.followerCount ?? 0;
   return {
     id: row.slug,
     name: row.name,
@@ -50,9 +51,12 @@ export function mapCollectionToCard(row: CollectionCardRow): AppCollection {
     genreLabelIds: row.genreLabels ?? [],
     itemCount: row.itemCount,
     favoriteCount,
+    followerCount,
     visibility: mapVisibility(row.visibility),
     createdAt: formatCardDate(row.createdAt),
     updatedAt: formatRelativeTime(row.updatedAt),
+    createdAtTime: row.createdAt.getTime(),
+    updatedAtTime: row.updatedAt.getTime(),
     accent: (row.accent as AccentColor) ?? undefined,
     imageUrl: row.imageUrl ?? undefined,
   };
@@ -169,6 +173,11 @@ export function mapCollectionToDetail(
     { id: "items", label: "Items", value: String(row.itemCount) },
     { id: "favorites", label: "Favourites", value: String(row.favoriteCount) },
     {
+      id: "followers",
+      label: "Followers",
+      value: String(row.followerCount ?? 0),
+    },
+    {
       id: "visibility",
       label: "Visibility",
       value: row.visibility === "PUBLIC" ? "Public" : "Private",
@@ -220,6 +229,7 @@ export function mapCollectionToDetail(
     updatedAt: formatRelativeTime(row.updatedAt),
     itemCount: row.itemCount,
     favoriteCount: row.favoriteCount,
+    followerCount: row.followerCount ?? 0,
     matchScore: Math.min(97, Math.round(rating * 10)),
     highlightTags: genres.slice(0, 4).map((genre) => genre.label),
     imageUrl: row.imageUrl ?? allItems[0]?.imageUrl,

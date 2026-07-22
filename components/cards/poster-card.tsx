@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { useAppRouter } from "@/hooks/use-app-router";
 import { PlayCircle } from "lucide-react";
-import { getContentDetailPath } from "@/lib/content-routes";
+import { getContentDetailPath, isCatalogContentType, normalizeContentSlug, resolvePosterWatchPath } from "@/lib/content-routes";
 import { getArtistDetailPath } from "@/lib/artist-routes";
 import { useCarouselTintSeed } from "@/components/carousel/carousel-section-context";
 import { cn } from "@/lib/utils";
-import { getCardTint } from "@/lib/card-theme";
+import { resolveCardTint } from "@/lib/card-theme";
 import { SLOT_W } from "@/lib/card-dimensions";
 import { CardAddToCollectionButton } from "@/components/forms/add-to-collection-dialog";
 import type { ContentItem } from "@/types";
@@ -87,7 +87,7 @@ export function PosterCard({
   const contextTintSeed = useCarouselTintSeed();
   const tintSeed = tintSeedProp ?? contextTintSeed;
   const [hovered, setHovered] = useState(false);
-  const tint = getCardTint(item.id, tintSeed);
+  const tint = resolveCardTint(item.id, item.accent, tintSeed);
   const description = item.description ?? defaultDescription(item.title);
   const { meta, year } = resolveMeta(item);
   const collectionItemKind = resolveCollectionItemKind(item.type);
@@ -104,6 +104,26 @@ export function PosterCard({
       return;
     }
     router.push(getContentDetailPath(item.id));
+  }
+
+  function handleWatchNow() {
+    if (demo) return;
+    if (onWatch) {
+      onWatch();
+      return;
+    }
+
+    const watchPath = resolvePosterWatchPath(item.type, item.id);
+    if (!watchPath) return;
+
+    if (isCatalogContentType(item.type)) {
+      void fetch(
+        `/api/content/${encodeURIComponent(normalizeContentSlug(item.id))}/watch-start`,
+        { method: "POST" },
+      ).catch(() => undefined);
+    }
+
+    router.push(watchPath);
   }
 
   return (
@@ -227,7 +247,7 @@ export function PosterCard({
                     <div className="flex w-full items-center justify-center gap-2">
                       <button
                         type="button"
-                        onClick={onWatch}
+                        onClick={handleWatchNow}
                         className="flex cursor-pointer items-center gap-1 rounded-full border border-brand-magenta px-2 py-0.5 text-[10px] font-normal text-white transition-colors hover:bg-brand-magenta/15"
                       >
                         <PlayCircle className="size-3.5 text-brand-magenta" />

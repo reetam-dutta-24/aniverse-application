@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAppRouter } from "@/hooks/use-app-router";
+import { useFormDraft } from "@/hooks/use-form-draft";
 import { GradientButton } from "@/components/ui/gradient-button";
 import {
   ACCENT_OPTIONS,
@@ -32,7 +33,14 @@ function slugify(title: string) {
 
 export function ArtistForm({ mode, recordId, initial }: ArtistFormProps) {
   const router = useAppRouter();
-  const [form, setForm] = useState<ArtistFormInput>(initial);
+  const draftKey =
+    mode === "create"
+      ? "aniverse:admin:artist:create"
+      : `aniverse:admin:artist:edit:${recordId}`;
+  const { form, setForm, clearDraft, draftRestored } = useFormDraft<ArtistFormInput>(
+    draftKey,
+    initial,
+  );
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
@@ -57,6 +65,7 @@ export function ArtistForm({ mode, recordId, initial }: ArtistFormProps) {
         setError(data.error ?? "Could not save artist.");
         return;
       }
+      clearDraft();
       router.push("/admin/artists");
       router.refresh();
     } catch {
@@ -68,6 +77,11 @@ export function ArtistForm({ mode, recordId, initial }: ArtistFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="flex max-w-4xl flex-col gap-6">
+      {draftRestored ? (
+        <p className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-xs text-amber-100/90">
+          Restored your unsaved draft from this browser.
+        </p>
+      ) : null}
       <p className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 px-4 py-3 text-xs text-cyan-100/80">
         Songs are linked via Music CMS (artist slug). KPI stats and AI Match % come from user activity.
       </p>

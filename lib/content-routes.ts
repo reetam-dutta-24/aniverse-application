@@ -1,4 +1,35 @@
-/** Normalize carousel pool IDs to a stable content detail slug. */
+import type { MediaType } from "@/types";
+import { getArtistPlayPath } from "@/lib/artist-routes";
+import { getCollectionPlayPath } from "@/lib/collection-routes";
+import { getSongDetailPath } from "@/lib/song-routes";
+
+export function isCatalogContentType(type: MediaType): boolean {
+  return (
+    type === "anime" ||
+    type === "show" ||
+    type === "movie" ||
+    type === "documentary" ||
+    type === "kdrama"
+  );
+}
+
+/** Default play/watch destination from carousel poster cards. */
+export function resolvePosterWatchPath(type: MediaType, id: string): string | null {
+  if (isCatalogContentType(type)) {
+    return getContentWatchPath(id);
+  }
+  if (type === "song" || type === "album") {
+    return `${getSongDetailPath(id)}#player`;
+  }
+  if (type === "artist") {
+    return getArtistPlayPath(id);
+  }
+  if (type === "playlist") {
+    return getCollectionPlayPath(id);
+  }
+  return null;
+}
+
 export function normalizeContentSlug(id: string): string {
   const aliases: Record<string, string> = {
     jjk: "jujutsu-kaisen",

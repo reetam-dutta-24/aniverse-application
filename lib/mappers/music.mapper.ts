@@ -58,5 +58,6 @@ export function mapTrackToMusicTrack(row: PrismaTrack): MusicTrack {
     language: row.language ?? undefined,
     rating: roundRating(row.rating) ?? undefined,
     imageUrl: row.imageUrl ?? poster(row.slug),
+    accent: (row.accent as MusicTrack["accent"]) ?? undefined,
   };
 }

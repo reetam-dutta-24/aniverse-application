@@ -33,7 +33,7 @@ export const catalogReviewInputSchema = z.object({
   rating: z.coerce.number().min(0).max(10),
   headline: optionalString,
   body: z.string().trim().min(1).max(5000),
-  accent: accentEnum.optional(),
+  accent: z.union([accentEnum, z.literal("")]).optional(),
   likeCount: z.coerce.number().int().min(0).optional(),
 });
 
@@ -60,7 +60,7 @@ export const contentCharacterInputSchema = z.object({
   role: optionalString,
   voiceActor: optionalString,
   imageUrl: optionalString,
-  accent: accentEnum.optional(),
+  accent: z.union([accentEnum, z.literal("")]).optional(),
 });
 
 export type CatalogReviewInput = z.infer<typeof catalogReviewInputSchema>;

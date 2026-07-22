@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Play } from "lucide-react";
 import { MusicCard } from "@/components/cards/music-card";
 import { SearchPill } from "@/components/dashboard/search-pill";
 import { GradientButton } from "@/components/ui/gradient-button";
+import { useAutoAdvanceInterval } from "@/hooks/use-auto-advance-interval";
 import { SLOT_W } from "@/lib/card-dimensions";
 import { sectionTintSeed } from "@/lib/card-theme";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ export function ArtistHeroTrendingSlider({
 }: ArtistHeroTrendingSliderProps) {
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
+  const [autoPaused, setAutoPaused] = useState(false);
   const tintSeed = sectionTintSeed(title);
 
   const filtered = useMemo(() => {
@@ -55,13 +57,16 @@ export function ArtistHeroTrendingSlider({
     setActiveIndex(0);
   }, [query]);
 
-  useEffect(() => {
-    if (filtered.length <= 1) return;
-    const id = window.setInterval(() => {
-      setActiveIndex((current) => (current + 1) % filtered.length);
-    }, AUTO_ADVANCE_MS);
-    return () => window.clearInterval(id);
+  const advanceSlide = useCallback(() => {
+    setActiveIndex((current) => (current + 1) % filtered.length);
   }, [filtered.length]);
+
+  useAutoAdvanceInterval({
+    intervalMs: AUTO_ADVANCE_MS,
+    enabled: filtered.length > 1,
+    paused: autoPaused,
+    onAdvance: advanceSlide,
+  });
 
   return (
     <div className="mt-2 flex flex-col gap-2.5">
@@ -81,7 +86,11 @@ export function ArtistHeroTrendingSlider({
         </div>
       </div>
 
-      <div className="relative py-2">
+      <div
+        className="relative py-2"
+        onMouseEnter={() => setAutoPaused(true)}
+        onMouseLeave={() => setAutoPaused(false)}
+      >
         {filtered.length > 1 ? (
           <button
             type="button"

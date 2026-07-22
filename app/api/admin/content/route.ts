@@ -11,6 +11,7 @@ import {
   contentFormSchema,
   contentListQuerySchema,
 } from "@/lib/validators/admin/content";
+import { formatZodErrors } from "@/lib/validators/admin/format-zod-error";
 
 /** GET /api/admin/content — paginated catalog list for admin UI. */
 export async function GET(request: Request) {
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.issues[0]?.message ?? "Invalid input." },
+        { error: formatZodErrors(parsed.error) },
         { status: 400 },
       );
     }

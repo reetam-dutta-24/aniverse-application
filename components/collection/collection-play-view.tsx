@@ -17,10 +17,9 @@ import { getArtistDetailPath } from "@/lib/artist-routes";
 import { getContentDetailPath, getContentWatchPathForQueueItem } from "@/lib/content-routes";
 import { getSongDetailPath } from "@/lib/song-routes";
 import {
-  getLyricWindow,
   getSynopsisWindow,
-  parseLyricsText,
 } from "@/lib/lyrics-display";
+import { SongLyricsPanel } from "@/components/song/song-lyrics-panel";
 import { getPlayAccentTheme, type PlayAccentTheme } from "@/lib/play-ambient";
 import { getTrackCoverUrl } from "@/lib/music-preview";
 import {
@@ -199,60 +198,6 @@ function CollectionPlayHeader({
         {action ? <div className="pt-1 sm:pt-1.5">{action}</div> : null}
       </div>
     </header>
-  );
-}
-
-function LyricsPanel({
-  lyrics,
-  progress,
-  duration,
-  theme,
-}: {
-  lyrics?: string;
-  progress: number;
-  duration: number;
-  theme: PlayAccentTheme;
-}) {
-  const lines = useMemo(() => parseLyricsText(lyrics), [lyrics]);
-  const window = useMemo(
-    () => getLyricWindow(lines, progress, duration, 4),
-    [lines, progress, duration],
-  );
-
-  if (!lines.length) {
-    return (
-      <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center">
-        <p className="text-xs text-white/40">No lyrics available for this track.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className="mt-4 flex flex-col gap-3 rounded-xl border px-4 py-5"
-      style={{
-        borderColor: theme.border,
-        backgroundColor: theme.panelBg,
-      }}
-    >
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-white/40">
-        Lyrics
-      </p>
-      <div className="flex min-h-[7rem] flex-col justify-center gap-2">
-        {window.map((line) => (
-          <p
-            key={`${line.text}-${line.active}`}
-            className={cn(
-              "text-sm leading-relaxed transition-all duration-300",
-              line.active ? "scale-[1.03] font-semibold" : line.past ? "text-white/35" : "text-white/55",
-            )}
-            style={line.active ? { color: theme.primary } : undefined}
-          >
-            {line.text}
-          </p>
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -776,11 +721,12 @@ function MusicPlayQueue({
               <ExternalLink className="size-3" />
             </Link>
 
-            <LyricsPanel
+            <SongLyricsPanel
               lyrics={currentTrack.lyrics}
               progress={progress}
               duration={progressMax}
               theme={theme}
+              className="mt-4"
             />
           </>
         ) : (

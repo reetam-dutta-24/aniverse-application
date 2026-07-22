@@ -70,7 +70,7 @@ async function getCollectionRecordBySlug(slug: string) {
 }
 
 const collectionCardInclude = {
-  _count: { select: { favorites: true } },
+  _count: { select: { favorites: true, follows: true } },
 } satisfies Prisma.CollectionInclude;
 
 export async function listCollectionsForUser(userId: string): Promise<Collection[]> {

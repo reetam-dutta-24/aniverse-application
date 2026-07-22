@@ -6,7 +6,7 @@ import { Headphones, PlayCircle } from "lucide-react";
 import { getSongDetailPath } from "@/lib/song-routes";
 import { useCarouselTintSeed } from "@/components/carousel/carousel-section-context";
 import { cn } from "@/lib/utils";
-import { getCardTint } from "@/lib/card-theme";
+import { resolveCardTint } from "@/lib/card-theme";
 import { SLOT_H, SLOT_W } from "@/lib/card-dimensions";
 import { CardAddToCollectionButton } from "@/components/forms/add-to-collection-dialog";
 import type { MusicTrack } from "@/types";
@@ -89,7 +89,7 @@ export function MusicCard({
   const contextTintSeed = useCarouselTintSeed();
   const tintSeed = tintSeedProp ?? contextTintSeed;
   const [hovered, setHovered] = useState(false);
-  const tint = getCardTint(track.id, tintSeed);
+  const tint = resolveCardTint(track.id, track.accent, tintSeed);
 
   function handleViewDetails() {
     if (onViewDetails) {
@@ -97,6 +97,14 @@ export function MusicCard({
       return;
     }
     router.push(getSongDetailPath(track.id));
+  }
+
+  function handleListenNow() {
+    if (onListen) {
+      onListen();
+      return;
+    }
+    router.push(`${getSongDetailPath(track.id)}#player`);
   }
   const langLabel =
     track.language?.toLowerCase() === "japanese"
@@ -239,7 +247,7 @@ export function MusicCard({
                 <div className="flex w-full items-center justify-center gap-2">
                   <button
                     type="button"
-                    onClick={onListen}
+                    onClick={handleListenNow}
                     className="flex cursor-pointer items-center gap-1 rounded-full border border-brand-magenta px-2 py-0.5 text-[10px] font-normal text-white transition-colors hover:bg-brand-magenta/15"
                   >
                     <Headphones className="size-3.5 text-brand-magenta" />

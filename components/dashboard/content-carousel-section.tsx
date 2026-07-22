@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ArtistCard } from "@/components/cards/artist-card";
 import { PosterCard } from "@/components/cards/poster-card";
@@ -10,8 +10,9 @@ import {
 } from "@/components/carousel/carousel-row-viewport";
 import { PaginationDots } from "@/components/dashboard/pagination-dots";
 import { SearchPill } from "@/components/dashboard/search-pill";
+import { useAutoAdvanceInterval } from "@/hooks/use-auto-advance-interval";
 import { useColumnCount } from "@/hooks/use-column-count";
-import { getCardTint, sectionTintSeed } from "@/lib/card-theme";
+import { resolveCardTint, sectionTintSeed } from "@/lib/card-theme";
 import { CAROUSEL_COLS_BREAKPOINTS } from "@/lib/grid-section-config";
 import type { ContentItem } from "@/types";
 
@@ -56,6 +57,7 @@ export function ContentCarouselSection({
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [autoPaused, setAutoPaused] = useState(false);
   const { cols, itemsPerPage } = useColumnCount(CAROUSEL_COLS_BREAKPOINTS, 1);
 
   const filtered = useMemo(
@@ -76,7 +78,7 @@ export function ContentCarouselSection({
     if (!hoveredId) return null;
     const item = filtered.find((i) => i.id === hoveredId);
     if (!item) return null;
-    return getCardTint(item.id, tintSeed).glass;
+    return resolveCardTint(item.id, item.accent, tintSeed).glass;
   }, [hoveredId, filtered, tintSeed]);
 
   useEffect(() => {
@@ -96,17 +98,20 @@ export function ContentCarouselSection({
     setHoveredId(null);
   }
 
-  useEffect(() => {
-    if (!autoAdvanceMs || totalPages <= 1) return;
-    const id = window.setInterval(() => {
-      setPage((current) => {
-        const safe = Math.min(current, totalPages - 1);
-        return (safe + 1) % totalPages;
-      });
-      setHoveredId(null);
-    }, autoAdvanceMs);
-    return () => window.clearInterval(id);
-  }, [autoAdvanceMs, totalPages]);
+  const advancePage = useCallback(() => {
+    setPage((current) => {
+      const safe = Math.min(current, totalPages - 1);
+      return (safe + 1) % totalPages;
+    });
+    setHoveredId(null);
+  }, [totalPages]);
+
+  useAutoAdvanceInterval({
+    intervalMs: autoAdvanceMs,
+    enabled: Boolean(autoAdvanceMs && totalPages > 1),
+    paused: autoPaused,
+    onAdvance: advancePage,
+  });
 
   if (items.length === 0) {
     return (
@@ -135,7 +140,11 @@ export function ContentCarouselSection({
         />
       </div>
 
-      <div className="relative px-2">
+      <div
+        className="relative px-2"
+        onMouseEnter={() => setAutoPaused(true)}
+        onMouseLeave={() => setAutoPaused(false)}
+      >
         {totalPages > 1 ? (
           <button
             type="button"

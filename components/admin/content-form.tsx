@@ -2,14 +2,17 @@
 
 import { useState } from "react";
 import { useAppRouter } from "@/hooks/use-app-router";
+import { useFormDraft } from "@/hooks/use-form-draft";
 import { GradientButton } from "@/components/ui/gradient-button";
 import {
   ACCENT_OPTIONS,
   CONTENT_GENRE_OPTIONS,
   LANGUAGE_OPTIONS,
 } from "@/lib/catalog-enums";
-import { contentMediaTypes } from "@/lib/validators/admin/content";
+import { contentMediaTypes, contentFormSchema } from "@/lib/validators/admin/content";
 import type { ContentFormInput } from "@/lib/validators/admin/content";
+import { sanitizeContentFormForSubmit } from "@/lib/validators/admin/content-form-utils";
+import { formatZodErrors } from "@/lib/validators/admin/format-zod-error";
 import {
   CatalogReviewsEditor,
   CharactersEditor,
@@ -147,7 +150,14 @@ function TagListEditor({
 /** Admin form for creating and editing catalog content (video titles). */
 export function ContentForm({ mode, contentId, initial }: ContentFormProps) {
   const router = useAppRouter();
-  const [form, setForm] = useState<ContentFormInput>(initial);
+  const draftKey =
+    mode === "create"
+      ? "aniverse:admin:content:create"
+      : `aniverse:admin:content:edit:${contentId}`;
+  const { form, setForm, clearDraft, draftRestored } = useFormDraft<ContentFormInput>(
+    draftKey,
+    initial,
+  );
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
@@ -182,7 +192,7 @@ export function ContentForm({ mode, contentId, initial }: ContentFormProps) {
     setError(null);
     setPending(true);
 
-    const payload: ContentFormInput = isMovie
+    const rawPayload: ContentFormInput = isMovie
       ? {
           ...form,
           seasons: [],
@@ -195,6 +205,14 @@ export function ContentForm({ mode, contentId, initial }: ContentFormProps) {
         }
       : form;
 
+    const payload = sanitizeContentFormForSubmit(rawPayload);
+    const validation = contentFormSchema.safeParse(payload);
+    if (!validation.success) {
+      setError(formatZodErrors(validation.error));
+      setPending(false);
+      return;
+    }
+
     try {
       const url =
         mode === "create"
@@ -205,7 +223,7 @@ export function ContentForm({ mode, contentId, initial }: ContentFormProps) {
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(validation.data),
       });
 
       const data = (await response.json()) as { error?: string };
@@ -215,6 +233,7 @@ export function ContentForm({ mode, contentId, initial }: ContentFormProps) {
         return;
       }
 
+      clearDraft();
       router.push("/admin/content");
       router.refresh();
     } catch {
@@ -226,6 +245,11 @@ export function ContentForm({ mode, contentId, initial }: ContentFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="flex max-w-4xl flex-col gap-6">
+      {draftRestored ? (
+        <p className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-xs text-amber-100/90">
+          Restored your unsaved draft from this browser. Your entries are kept locally until you save successfully.
+        </p>
+      ) : null}
       <p className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 px-4 py-3 text-xs text-cyan-100/80">
         Engagement KPIs (Liked By, Currently Watching, Viewed By, AI Match %) are
         not entered here — they are calculated from user ratings, watchlist,
@@ -683,6 +707,7 @@ export function ContentForm({ mode, contentId, initial }: ContentFormProps) {
 
       <CharactersEditor
         characters={form.characters}
+        contentType={form.type}
         onChange={(characters) => update("characters", characters)}
       />
 

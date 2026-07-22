@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useAppRouter } from "@/hooks/use-app-router";
+import { useFormDraft } from "@/hooks/use-form-draft";
 import { GradientButton } from "@/components/ui/gradient-button";
 import {
   ACCENT_OPTIONS,
@@ -15,6 +16,7 @@ import {
   CatalogMultiSearchPicker,
   type CatalogPickerSelection,
 } from "@/components/forms/catalog-search-picker";
+import type { SearchResultType } from "@/lib/search/types";
 import {
   collectionCategories,
   collectionKinds,
@@ -37,7 +39,14 @@ function slugify(title: string) {
 
 export function CollectionForm({ mode, recordId, initial }: CollectionFormProps) {
   const router = useAppRouter();
-  const [form, setForm] = useState<AdminCollectionFormInput>(initial);
+  const draftKey =
+    mode === "create"
+      ? "aniverse:admin:collection:create"
+      : `aniverse:admin:collection:edit:${recordId}`;
+  const { form, setForm, clearDraft, draftRestored } = useFormDraft<AdminCollectionFormInput>(
+    draftKey,
+    initial,
+  );
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
@@ -49,6 +58,35 @@ export function CollectionForm({ mode, recordId, initial }: CollectionFormProps)
     () => [...form.contentSlugs, ...form.trackSlugs],
     [form.contentSlugs, form.trackSlugs],
   );
+
+  const itemTypeHints = useMemo(() => {
+    const hints: Record<string, SearchResultType> = {};
+    for (const slug of form.contentSlugs) hints[slug] = "content";
+    for (const slug of form.trackSlugs) hints[slug] = "song";
+    return hints;
+  }, [form.contentSlugs, form.trackSlugs]);
+
+  function applyItemSelections(selections: CatalogPickerSelection[]) {
+    setForm((current) => ({
+      ...current,
+      contentSlugs: selections
+        .filter((selection) => selection.type === "content")
+        .map((selection) => selection.id),
+      trackSlugs: selections
+        .filter((selection) => selection.type === "song")
+        .map((selection) => selection.id),
+    }));
+  }
+
+  function applyItemSlugs(slugs: string[]) {
+    applyItemSelections(
+      slugs.map((id) => ({
+        id,
+        type: itemTypeHints[id] ?? "content",
+        title: id,
+      })),
+    );
+  }
 
   function update<K extends keyof AdminCollectionFormInput>(
     key: K,
@@ -71,17 +109,6 @@ export function CollectionForm({ mode, recordId, initial }: CollectionFormProps)
     }));
   }
 
-  function handleItemSelections(selections: CatalogPickerSelection[]) {
-    update(
-      "contentSlugs",
-      selections.filter((item) => item.type === "content").map((item) => item.id),
-    );
-    update(
-      "trackSlugs",
-      selections.filter((item) => item.type === "song").map((item) => item.id),
-    );
-  }
-
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
@@ -101,6 +128,7 @@ export function CollectionForm({ mode, recordId, initial }: CollectionFormProps)
         setError(data.error ?? "Could not save collection.");
         return;
       }
+      clearDraft();
       router.push("/admin/collections");
       router.refresh();
     } catch {
@@ -112,6 +140,11 @@ export function CollectionForm({ mode, recordId, initial }: CollectionFormProps)
 
   return (
     <form onSubmit={handleSubmit} className="flex max-w-4xl flex-col gap-6">
+      {draftRestored ? (
+        <p className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-xs text-amber-100/90">
+          Restored your unsaved draft from this browser.
+        </p>
+      ) : null}
       <p className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 px-4 py-3 text-xs text-cyan-100/80">
         Global collections are public by default and owned by your admin account. Add catalog items below — search picks content and songs separately.
       </p>
@@ -223,9 +256,11 @@ export function CollectionForm({ mode, recordId, initial }: CollectionFormProps)
               allowedTypes={["song"]}
               values={form.trackSlugs}
               onChange={(trackSlugs) => update("trackSlugs", trackSlugs)}
+              typeHints={itemTypeHints}
               placeholder="Search songs and OSTs…"
               adminSearch
               resultLimit={40}
+              maxItems={48}
             />
           </Field>
         ) : (
@@ -236,11 +271,13 @@ export function CollectionForm({ mode, recordId, initial }: CollectionFormProps)
             <CatalogMultiSearchPicker
               allowedTypes={["content", "song"]}
               values={itemValues}
-              onChange={() => {}}
-              onSelectionsChange={handleItemSelections}
+              onChange={applyItemSlugs}
+              onSelectionsChange={applyItemSelections}
+              typeHints={itemTypeHints}
               placeholder="Search catalog titles…"
               adminSearch
               resultLimit={40}
+              maxItems={48}
             />
           </Field>
         )}

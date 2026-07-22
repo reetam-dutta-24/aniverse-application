@@ -6,6 +6,7 @@ import {
   listMostLikedCollections,
   listRecentlyUpdatedCollections,
 } from "@/lib/services/collection.service";
+import { listFollowedPublicCollections } from "@/lib/services/collection-follow.service";
 
 /**
  * Collections page — backed by PostgreSQL per user.
@@ -38,10 +39,10 @@ export async function getMostLikedCollections(
   return listMostLikedCollections(userId, 16);
 }
 
-export async function getRecentlyAddedCollections(
+export async function getFollowingCollections(
   userId: string,
 ): Promise<Collection[]> {
-  return listRecentlyUpdatedCollections(userId, 18);
+  return listFollowedPublicCollections(userId);
 }
 
 export async function getRecentlyUsedCollections(

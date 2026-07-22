@@ -15,7 +15,10 @@ import {
   ContentPageSection,
   InteractiveReviewSection,
 } from "@/components/content";
-import { isMovieContentType } from "@/lib/content-media";
+import {
+  isMovieContentType,
+  isVoiceCastContentType,
+} from "@/lib/content-media";
 import { getCommunityMemberPreview } from "@/lib/data/community";
 import { getOptionalUser } from "@/lib/data/user";
 import {
@@ -65,7 +68,7 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
 
   const isMovie = isMovieContentType(content.type);
   const movieEpisode = content.episodes[0];
-  const castLabel = content.type === "anime" ? "voice" : "played";
+  const castLabel = isVoiceCastContentType(content.type) ? "voice" : "actor";
   const relatedAutoMs = 4000;
 
   return (
@@ -123,6 +126,7 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
         emptyMessage={`No featured OSTs linked to ${content.title} yet.`}
         slides={content.featuredOsts.map((track) => ({
           id: track.id,
+          accent: track.accent,
           node: <MusicCard track={track} />,
         }))}
       />
@@ -134,6 +138,7 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
         emptyMessage="No related titles to suggest yet."
         slides={content.relatedContent.map((item) => ({
           id: item.id,
+          accent: item.accent,
           node: <PosterCard item={item} />,
         }))}
       />

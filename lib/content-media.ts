@@ -9,3 +9,12 @@ export function isSerialContentType(type: MediaType): boolean {
 export function isMovieContentType(type: MediaType): boolean {
   return type === "movie" || type === "documentary";
 }
+
+/** Anime uses voice-credit labeling; live-action show/movie uses actor labeling. */
+export function isVoiceCastContentType(type: MediaType): boolean {
+  return type === "anime";
+}
+
+export function resolveCastCreditLabel(type: MediaType): "Voice Actor" | "Actor" {
+  return isVoiceCastContentType(type) ? "Voice Actor" : "Actor";
+}

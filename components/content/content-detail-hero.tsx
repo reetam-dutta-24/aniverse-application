@@ -36,8 +36,7 @@ function isSongMedia(type: MediaType) {
 const DETAIL_CHIP =
   "h-7 shrink-0 px-3 text-[11px] font-medium sm:h-8 sm:px-3.5 sm:text-xs";
 
-const CHIP_ROW =
-  "flex flex-nowrap items-center gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
+const CHIP_ROW = "flex flex-wrap items-center gap-2";
 
 const TITLE_CLASS =
   "text-2xl font-bold leading-tight text-white sm:text-[30px] lg:text-[34px]";
@@ -341,6 +340,8 @@ export function ContentDetailHero({
                 resumeLabel={content.resumeLabel}
                 durationSeconds={content.durationSeconds}
                 audioUrl={content.audioUrl}
+                lyrics={content.lyrics}
+                accent={content.accent}
                 initialFavorited={initialFavorited}
               />
             ) : (

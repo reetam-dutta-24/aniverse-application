@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { getAccentTint, getDetailHeroBoundaryGlow } from "@/lib/card-theme";
 import { formatRating } from "@/lib/format-rating";
 import { CollectionFavoriteCountChip } from "@/components/collection/collection-favorite-count-chip";
+import { CollectionFollowerCountChip } from "@/components/collection/collection-follower-count-chip";
 import { CollectionHeroShareButton } from "@/components/collection/collection-hero-share-button";
 import { Chip, MatchChip } from "@/components/ui/chip";
 import { CollectionActivityPanel } from "@/components/collection/collection-activity-panel";
@@ -23,6 +24,9 @@ export interface CollectionDetailHeroProps {
   /** Hide favorite CTA on the viewer's own collection. */
   canFavorite?: boolean;
   canManage?: boolean;
+  /** Show follow CTA for public collections the viewer does not own. */
+  canFollow?: boolean;
+  initialFollowing?: boolean;
 }
 
 const DETAIL_CHIP =
@@ -43,6 +47,8 @@ export function CollectionDetailHero({
   initialFavorited,
   canFavorite = true,
   canManage = false,
+  canFollow = false,
+  initialFollowing = false,
 }: CollectionDetailHeroProps) {
   const copy = COLLECTION_MEDIA_COPY[variant];
   const tint = getAccentTint(collection.accent);
@@ -120,6 +126,12 @@ export function CollectionDetailHero({
               initialCount={collection.favoriteCount}
               className={DETAIL_CHIP}
             />
+            {collection.visibility === "public" ? (
+              <CollectionFollowerCountChip
+                initialCount={collection.followerCount}
+                className={DETAIL_CHIP}
+              />
+            ) : null}
             <Chip chipKey="mystery" className={DETAIL_CHIP}>
               {collection.visibility === "private" ? "🔒 Private" : "🌍 Public"}
             </Chip>
@@ -145,6 +157,9 @@ export function CollectionDetailHero({
           initialFavorited={initialFavorited}
           canFavorite={canFavorite}
           canManage={canManage}
+          canFollow={canFollow}
+          initialFollowing={initialFollowing}
+          collectionName={collection.name}
         />
       </div>
     </section>

@@ -9,7 +9,7 @@ import {
 import { PaginationDots } from "@/components/dashboard/pagination-dots";
 import { SearchPill } from "@/components/dashboard/search-pill";
 import { useColumnCount } from "@/hooks/use-column-count";
-import { getCardTint, sectionTintSeed } from "@/lib/card-theme";
+import { resolveCardTint, sectionTintSeed } from "@/lib/card-theme";
 import {
   GRID_ROWS,
   POSTER_GRID_COLS_BREAKPOINTS,
@@ -63,7 +63,7 @@ export function WatchlistGridSection({
     if (!hoveredId) return null;
     const item = filtered.find((i) => i.id === hoveredId);
     if (!item) return null;
-    return getCardTint(item.id, tintSeed).glass;
+    return resolveCardTint(item.id, item.accent, tintSeed).glass;
   }, [hoveredId, filtered, tintSeed]);
 
   useEffect(() => {

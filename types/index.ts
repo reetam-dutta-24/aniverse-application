@@ -59,6 +59,8 @@ export interface MusicTrack {
   /** AI compatibility score, 0–100. */
   matchScore?: number;
   imageUrl?: string;
+  /** Admin CMS accent — drives card background tint. */
+  accent?: AccentColor;
 }
 
 export interface Community {
@@ -91,9 +93,13 @@ export interface Collection {
   genreLabelIds?: string[];
   itemCount: number;
   favoriteCount: number;
+  followerCount?: number;
   visibility: CommunityVisibility;
   createdAt?: string;
   updatedAt?: string;
+  /** Raw timestamps for client-side sorting. */
+  createdAtTime?: number;
+  updatedAtTime?: number;
   accent?: AccentColor;
   imageUrl?: string;
 }
@@ -130,6 +136,7 @@ export interface CollectionDetail {
   updatedAt?: string;
   itemCount: number;
   favoriteCount: number;
+  followerCount?: number;
   /** AI compatibility for the collection as a whole. */
   matchScore?: number;
   highlightTags: string[];
@@ -391,6 +398,8 @@ export interface ContentDetail {
   sourceContentSlug?: string;
   /** Playback length in seconds (songs). */
   durationSeconds?: number;
+  /** One line per lyric — synced during inline playback. */
+  lyrics?: string;
 }
 
 export type MemberRole = "owner" | "admin" | "moderator" | "member";

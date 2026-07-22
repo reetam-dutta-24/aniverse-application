@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { MusicCard } from "@/components/cards/music-card";
 import {
@@ -9,8 +9,9 @@ import {
 } from "@/components/carousel/carousel-row-viewport";
 import { PaginationDots } from "@/components/dashboard/pagination-dots";
 import { SearchPill } from "@/components/dashboard/search-pill";
+import { useAutoAdvanceInterval } from "@/hooks/use-auto-advance-interval";
 import { useColumnCount } from "@/hooks/use-column-count";
-import { getCardTint, sectionTintSeed } from "@/lib/card-theme";
+import { resolveCardTint, sectionTintSeed } from "@/lib/card-theme";
 import { CAROUSEL_COLS_BREAKPOINTS } from "@/lib/grid-section-config";
 import type { MusicTrack } from "@/types";
 
@@ -56,6 +57,7 @@ export function MusicCarouselSection({
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [autoPaused, setAutoPaused] = useState(false);
   const { cols, itemsPerPage } = useColumnCount(CAROUSEL_COLS_BREAKPOINTS, 1);
 
   const filtered = useMemo(() => filterTracks(tracks, query), [tracks, query]);
@@ -71,7 +73,7 @@ export function MusicCarouselSection({
     if (!hoveredId) return null;
     const track = filtered.find((t) => t.id === hoveredId);
     if (!track) return null;
-    return getCardTint(track.id, tintSeed).glass;
+    return resolveCardTint(track.id, track.accent, tintSeed).glass;
   }, [hoveredId, filtered, tintSeed]);
 
   useEffect(() => {
@@ -91,17 +93,20 @@ export function MusicCarouselSection({
     setHoveredId(null);
   }
 
-  useEffect(() => {
-    if (!autoAdvanceMs || totalPages <= 1) return;
-    const id = window.setInterval(() => {
-      setPage((current) => {
-        const safe = Math.min(current, totalPages - 1);
-        return (safe + 1) % totalPages;
-      });
-      setHoveredId(null);
-    }, autoAdvanceMs);
-    return () => window.clearInterval(id);
-  }, [autoAdvanceMs, totalPages]);
+  const advancePage = useCallback(() => {
+    setPage((current) => {
+      const safe = Math.min(current, totalPages - 1);
+      return (safe + 1) % totalPages;
+    });
+    setHoveredId(null);
+  }, [totalPages]);
+
+  useAutoAdvanceInterval({
+    intervalMs: autoAdvanceMs,
+    enabled: Boolean(autoAdvanceMs && totalPages > 1),
+    paused: autoPaused,
+    onAdvance: advancePage,
+  });
 
   if (tracks.length === 0) {
     return (
@@ -130,7 +135,11 @@ export function MusicCarouselSection({
         />
       </div>
 
-      <div className="relative px-2">
+      <div
+        className="relative px-2"
+        onMouseEnter={() => setAutoPaused(true)}
+        onMouseLeave={() => setAutoPaused(false)}
+      >
         {totalPages > 1 ? (
           <button
             type="button"

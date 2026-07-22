@@ -10,6 +10,7 @@ import {
   updateCatalogContent,
 } from "@/lib/services/content.service";
 import { contentFormSchema } from "@/lib/validators/admin/content";
+import { formatZodErrors } from "@/lib/validators/admin/format-zod-error";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -43,7 +44,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.issues[0]?.message ?? "Invalid input." },
+        { error: formatZodErrors(parsed.error) },
         { status: 400 },
       );
     }

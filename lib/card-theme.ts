@@ -92,6 +92,18 @@ export function getCardTint(id: string, sectionSeed = 0): CardTint {
   return TINT_POOL[idx];
 }
 
+/** Prefer catalog accent from admin CMS; fall back to deterministic hash tint. */
+export function resolveCardTint(
+  id: string,
+  accent?: AccentColor | string,
+  sectionSeed = 0,
+): CardTint {
+  if (accent && isAccentColor(accent)) {
+    return getAccentTint(accent);
+  }
+  return getCardTint(id, sectionSeed);
+}
+
 export function sectionTintSeed(title: string): number {
   return hashId(title) % TINT_POOL.length;
 }

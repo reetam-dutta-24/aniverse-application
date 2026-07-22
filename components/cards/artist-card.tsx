@@ -6,7 +6,7 @@ import { MicVocal } from "lucide-react";
 import { getArtistDetailPath } from "@/lib/artist-routes";
 import { useCarouselTintSeed } from "@/components/carousel/carousel-section-context";
 import { cn } from "@/lib/utils";
-import { getCardTint } from "@/lib/card-theme";
+import { resolveCardTint } from "@/lib/card-theme";
 import { SLOT_H, SLOT_W } from "@/lib/card-dimensions";
 import type { ContentItem } from "@/types";
 import { Chip, MatchChip, RatingChip } from "@/components/ui/chip";
@@ -45,7 +45,7 @@ export function ArtistCard({
   const contextTintSeed = useCarouselTintSeed();
   const tintSeed = tintSeedProp ?? contextTintSeed;
   const [hovered, setHovered] = useState(false);
-  const tint = getCardTint(item.id, tintSeed);
+  const tint = resolveCardTint(item.id, item.accent, tintSeed);
 
   function handleViewDetails() {
     if (onViewDetails) {

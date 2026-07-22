@@ -42,7 +42,7 @@ export const contentFormSchema = z.object({
   rating: z.coerce.number().min(0).max(10).optional(),
   year: z.coerce.number().int().min(1900).max(2100).optional(),
   meta: z.string().trim().max(120).optional().or(z.literal("")),
-  accent: accentEnum.optional(),
+  accent: z.union([accentEnum, z.literal("")]).optional(),
   trendingLabel: z.string().trim().max(200).optional().or(z.literal("")),
   creditLabel: z.string().trim().max(200).optional().or(z.literal("")),
   highlightTags: z.array(z.string().trim().min(1)).default([]),

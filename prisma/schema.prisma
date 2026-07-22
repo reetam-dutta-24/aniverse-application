@@ -45,6 +45,7 @@ model User {
   preferences           UserPreferences?
   watchlistItems        WatchlistItem[]
   collectionFavorites   CollectionFavorite[]
+  collectionFollows     CollectionFollow[]
   contentFavorites      ContentFavorite[]
   artistFavorites       ArtistFavorite[]
   trackFavorites        TrackFavorite[]
@@ -464,14 +465,16 @@ model Collection {
   visibility    Visibility @default(PUBLIC)
   accent        String?
   imageUrl      String?
-  itemCount     Int        @default(0)
-  favoriteCount Int        @default(0)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  itemCount      Int        @default(0)
+  favoriteCount  Int        @default(0)
+  followerCount  Int        @default(0)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 
   user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   items CollectionItem[]
   favorites CollectionFavorite[]
+  follows CollectionFollow[]
   collaborators CollectionCollaborator[]
 
   @@index([userId])
@@ -494,6 +497,20 @@ model CollectionItem {
 }
 
 model CollectionFavorite {
+  id           String   @id @default(cuid())
+  userId       String
+  collectionId String
+  createdAt    DateTime @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, collectionId])
+  @@index([userId])
+  @@index([collectionId])
+}
+
+model CollectionFollow {
   id           String   @id @default(cuid())
   userId       String
   collectionId String

@@ -22,6 +22,7 @@ import {
   getCollectionDetail,
 } from "@/lib/data/collection-detail";
 import { isCollectionFavorited } from "@/lib/services/favorite.service";
+import { isCollectionFollowed } from "@/lib/services/collection-follow.service";
 
 interface CollectionPageProps {
   params: Promise<{ collectionid: string }>;
@@ -63,9 +64,18 @@ export default async function CollectionDetailPage({
   const canManageCollection =
     !!viewer?.id && collection.ownerId === viewer.id;
 
-  const initialFavorited = viewer?.id
-    ? await isCollectionFavorited(viewer.id, collection.id)
-    : false;
+  const isPublic = collection.visibility === "public";
+  const canFollowCollection =
+    !!viewer?.id && isPublic && !canManageCollection;
+
+  const [initialFavorited, initialFollowing] = viewer?.id
+    ? await Promise.all([
+        isCollectionFavorited(viewer.id, collection.id),
+        canFollowCollection
+          ? isCollectionFollowed(viewer.id, collection.id)
+          : Promise.resolve(false),
+      ])
+    : [false, false];
 
   const playInOrderAction = (
     <Link
@@ -98,6 +108,8 @@ export default async function CollectionDetailPage({
         initialFavorited={initialFavorited}
         canFavorite={Boolean(viewer?.id)}
         canManage={canManageCollection}
+        canFollow={canFollowCollection}
+        initialFollowing={initialFollowing}
         ownerActions={
           canManageCollection ? (
             <CollectionDetailOwnerActions collection={collection} />

@@ -129,6 +129,7 @@ export function mapTrackRecordToSongDetail(
     accent: (row.accent as AccentColor) ?? undefined,
     sourceContentSlug: row.sourceContent?.slug,
     durationSeconds: row.durationSeconds ?? undefined,
+    lyrics: row.lyrics ?? undefined,
     matchScore: undefined,
     engagementStats,
     seasons: [],

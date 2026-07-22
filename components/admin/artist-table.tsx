@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useAppRouter } from "@/hooks/use-app-router";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil } from "lucide-react";
+import { AdminDeleteAction } from "@/components/admin/admin-delete-action";
 import { getArtistDetailPath } from "@/lib/artist-routes";
 
 export interface AdminArtistRow {
@@ -19,15 +19,6 @@ export function AdminArtistTable({
   rows: AdminArtistRow[];
   searchQuery?: string;
 }) {
-  const router = useAppRouter();
-
-  async function handleDelete(recordId: string, title: string) {
-    if (!window.confirm(`Delete "${title}" from the catalog?`)) return;
-    const res = await fetch(`/api/admin/artists/${recordId}`, { method: "DELETE" });
-    if (!res.ok) window.alert("Could not delete.");
-    else router.refresh();
-  }
-
   if (rows.length === 0) {
     return (
       <p className="rounded-2xl border border-white/10 bg-white/5 px-4 py-8 text-center text-sm text-white/60">
@@ -61,9 +52,11 @@ export function AdminArtistTable({
                   <Link href={`/admin/artists/${row.recordId}/edit`} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-white/80 hover:bg-white/10">
                     <Pencil className="size-3.5" /> Edit
                   </Link>
-                  <button type="button" onClick={() => handleDelete(row.recordId, row.title)} className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1 text-xs text-red-400 hover:bg-red-500/10">
-                    <Trash2 className="size-3.5" /> Delete
-                  </button>
+                  <AdminDeleteAction
+                    itemLabel={row.title}
+                    deleteUrl={`/api/admin/artists/${row.recordId}`}
+                    entityName="artist"
+                  />
                 </div>
               </td>
             </tr>

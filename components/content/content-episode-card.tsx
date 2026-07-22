@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { getContentWatchPath } from "@/lib/content-routes";
 import { formatEpisodeDisplayTitle } from "@/lib/format-episode-title";
 import { formatRating } from "@/lib/format-rating";
-import { getAccentTint, getCardTint } from "@/lib/card-theme";
+import { getAccentTint, resolveCardTint } from "@/lib/card-theme";
 import type { AccentColor, Episode } from "@/types";
 import { Chip } from "@/components/ui/chip";
 import { GradientButton } from "@/components/ui/gradient-button";
@@ -22,7 +22,7 @@ export interface ContentEpisodeCardProps {
 
 function resolveTint(contentId: string, contentAccent?: AccentColor) {
   if (contentAccent) return getAccentTint(contentAccent);
-  return getCardTint(contentId);
+  return resolveCardTint(contentId);
 }
 
 /** Episode card — compact default; subtle scale on hover without outer glow. */

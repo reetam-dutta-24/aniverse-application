@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAppRouter } from "@/hooks/use-app-router";
+import { useFormDraft } from "@/hooks/use-form-draft";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { ACCENT_OPTIONS } from "@/lib/catalog-enums";
 import { Field, Section, inputClass } from "@/components/admin/catalog-nested-fields";
@@ -33,7 +34,14 @@ const activityOptions = [
 
 export function CommunityForm({ mode, recordId, initial }: CommunityFormProps) {
   const router = useAppRouter();
-  const [form, setForm] = useState<AdminCommunityFormInput>(initial);
+  const draftKey =
+    mode === "create"
+      ? "aniverse:admin:community:create"
+      : `aniverse:admin:community:edit:${recordId}`;
+  const { form, setForm, clearDraft, draftRestored } = useFormDraft<AdminCommunityFormInput>(
+    draftKey,
+    initial,
+  );
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
@@ -64,6 +72,7 @@ export function CommunityForm({ mode, recordId, initial }: CommunityFormProps) {
         setError(data.error ?? "Could not save community.");
         return;
       }
+      clearDraft();
       router.push("/admin/communities");
       router.refresh();
     } catch {
@@ -75,6 +84,11 @@ export function CommunityForm({ mode, recordId, initial }: CommunityFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="flex max-w-4xl flex-col gap-6">
+      {draftRestored ? (
+        <p className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-xs text-amber-100/90">
+          Restored your unsaved draft from this browser.
+        </p>
+      ) : null}
       <p className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 px-4 py-3 text-xs text-cyan-100/80">
         Global communities are public by default. You are added as the community admin on create.
       </p>

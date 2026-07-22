@@ -18,6 +18,7 @@ import {
 import { AvatarStack } from "@/components/ui/avatar-stack";
 import { HdImage } from "@/components/ui/hd-image";
 import { ToggleCollectionFavoriteButton } from "@/components/forms/toggle-collection-favorite-button";
+import { ToggleCollectionFollowButton } from "@/components/forms/toggle-collection-follow-button";
 import { AddCollectionCollaboratorButton } from "@/components/forms/add-collection-collaborator-button";
 import type { CollectionCurrentActivity, UserSummary } from "@/types";
 
@@ -32,6 +33,9 @@ export interface CollectionActivityPanelProps {
   initialFavorited?: boolean;
   canFavorite?: boolean;
   canManage?: boolean;
+  canFollow?: boolean;
+  initialFollowing?: boolean;
+  collectionName?: string;
 }
 
 /** Right hero panel — image + CTAs capped to hero height. */
@@ -46,6 +50,9 @@ export function CollectionActivityPanel({
   initialFavorited,
   canFavorite = true,
   canManage = false,
+  canFollow = false,
+  initialFollowing = false,
+  collectionName,
 }: CollectionActivityPanelProps) {
   const copy = COLLECTION_MEDIA_COPY[variant];
   const wallpaperImageUrl = fallbackImageUrl || activity?.imageUrl || "";
@@ -101,6 +108,14 @@ export function CollectionActivityPanel({
               <ToggleCollectionFavoriteButton
                 collectionSlug={collectionSlug}
                 initialFavorited={initialFavorited}
+              />
+            ) : null}
+
+            {collectionSlug && canFollow ? (
+              <ToggleCollectionFollowButton
+                collectionSlug={collectionSlug}
+                collectionName={collectionName ?? fallbackTitle ?? "Collection"}
+                initialFollowing={initialFollowing}
               />
             ) : null}
           </div>

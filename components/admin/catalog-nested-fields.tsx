@@ -4,6 +4,8 @@ import React from "react";
 import { ImageUploadInput } from "@/components/ui/image-upload-input";
 import { CatalogMultiSearchPicker } from "@/components/forms/catalog-search-picker";
 import type { SearchResultType } from "@/lib/search/types";
+import { resolveCastCreditLabel } from "@/lib/content-media";
+import type { MediaType } from "@/types";
 import type {
   CatalogReviewInput,
   ContentCharacterInput,
@@ -24,13 +26,13 @@ export function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1.5">
       <span className="text-xs font-semibold uppercase tracking-wide text-white/55">
         {label}
       </span>
       {hint ? <span className="text-xs text-white/40">{hint}</span> : null}
       {children}
-    </label>
+    </div>
   );
 }
 
@@ -71,15 +73,21 @@ export function SlugListEditor({
   onChange: (items: string[]) => void;
   allowedTypes?: SearchResultType[];
 }) {
+  const typeHints = Object.fromEntries(
+    items.map((item) => [item, allowedTypes[0]!]),
+  ) as Record<string, SearchResultType>;
+
   return (
     <Field label={label} hint={hint}>
       <CatalogMultiSearchPicker
         allowedTypes={allowedTypes}
         values={items}
         onChange={onChange}
+        typeHints={typeHints}
         placeholder={placeholder}
         adminSearch
         resultLimit={40}
+        maxItems={48}
       />
     </Field>
   );
@@ -341,10 +349,13 @@ export function EpisodesEditor({
 export function CharactersEditor({
   characters,
   onChange,
+  contentType = "show",
 }: {
   characters: ContentCharacterInput[];
   onChange: (characters: ContentCharacterInput[]) => void;
+  contentType?: MediaType;
 }) {
+  const castFieldLabel = resolveCastCreditLabel(contentType);
   function update(index: number, patch: Partial<ContentCharacterInput>) {
     onChange(characters.map((c, i) => (i === index ? { ...c, ...patch } : c)));
   }
@@ -367,7 +378,7 @@ export function CharactersEditor({
               onChange={(e) => update(index, { role: e.target.value })}
             />
           </Field>
-          <Field label="Voice actor">
+          <Field label={castFieldLabel}>
             <input
               className={inputClass}
               value={character.voiceActor ?? ""}

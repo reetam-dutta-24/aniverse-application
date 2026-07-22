@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useAppRouter } from "@/hooks/use-app-router";
+import { useFormDraft } from "@/hooks/use-form-draft";
 import { GradientButton } from "@/components/ui/gradient-button";
 import {
   ACCENT_OPTIONS,
@@ -44,7 +45,14 @@ const kinds = ["song", "ost", "album"] as const;
 
 export function MusicForm({ mode, recordId, initial, initialLinked }: MusicFormProps) {
   const router = useAppRouter();
-  const [form, setForm] = useState<MusicFormInput>(initial);
+  const draftKey =
+    mode === "create"
+      ? "aniverse:admin:music:create"
+      : `aniverse:admin:music:edit:${recordId}`;
+  const { form, setForm, clearDraft, draftRestored } = useFormDraft<MusicFormInput>(
+    draftKey,
+    initial,
+  );
   const [artistSelection, setArtistSelection] = useState<CatalogPickerSelection | null>(
     () =>
       initialLinked?.artist ??
@@ -125,6 +133,7 @@ export function MusicForm({ mode, recordId, initial, initialLinked }: MusicFormP
         setError(data.error ?? "Could not save track.");
         return;
       }
+      clearDraft();
       router.push("/admin/music");
       router.refresh();
     } catch {
@@ -136,6 +145,11 @@ export function MusicForm({ mode, recordId, initial, initialLinked }: MusicFormP
 
   return (
     <form onSubmit={handleSubmit} className="flex max-w-4xl flex-col gap-6">
+      {draftRestored ? (
+        <p className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-xs text-amber-100/90">
+          Restored your unsaved draft from this browser.
+        </p>
+      ) : null}
       <p className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 px-4 py-3 text-xs text-cyan-100/80">
         KPI stats (Liked By, Currently Listening, Played By, AI Match %) are computed from user activity — not entered here.
       </p>

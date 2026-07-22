@@ -8,7 +8,7 @@ import {
 } from "@/components/dashboard/carousel-row-viewport";
 import { PaginationDots } from "@/components/dashboard/pagination-dots";
 import { SearchPill } from "@/components/dashboard/search-pill";
-import { getCardTint, sectionTintSeed } from "@/lib/card-theme";
+import { resolveCardTint, sectionTintSeed } from "@/lib/card-theme";
 import { MUSIC_GRID_ITEMS_PER_PAGE } from "@/lib/grid-section-config";
 import type { MusicTrack } from "@/types";
 
@@ -61,7 +61,7 @@ export function MusicGridSection({
     if (!hoveredId) return null;
     const track = filtered.find((t) => t.id === hoveredId);
     if (!track) return null;
-    return getCardTint(track.id, tintSeed).glass;
+    return resolveCardTint(track.id, track.accent, tintSeed).glass;
   }, [hoveredId, filtered, tintSeed]);
 
   useEffect(() => {

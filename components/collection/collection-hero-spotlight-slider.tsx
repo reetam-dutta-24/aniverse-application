@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { MusicCard } from "@/components/cards/music-card";
 import { PosterCard } from "@/components/cards/poster-card";
 import { SearchPill } from "@/components/dashboard/search-pill";
+import { useAutoAdvanceInterval } from "@/hooks/use-auto-advance-interval";
 import { SLOT_W } from "@/lib/card-dimensions";
 import { sectionTintSeed } from "@/lib/card-theme";
 import {
@@ -40,6 +41,7 @@ export function CollectionHeroSpotlightSlider({
   const spotlightTitle = title ?? copy.spotlightTitle;
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
+  const [autoPaused, setAutoPaused] = useState(false);
   const tintSeed = sectionTintSeed(spotlightTitle);
   const isMusic = variant === "music";
 
@@ -79,13 +81,16 @@ export function CollectionHeroSpotlightSlider({
     setActiveIndex(0);
   }, [query, variant]);
 
-  useEffect(() => {
-    if (filtered.length <= 1) return;
-    const id = window.setInterval(() => {
-      setActiveIndex((current) => (current + 1) % filtered.length);
-    }, AUTO_ADVANCE_MS);
-    return () => window.clearInterval(id);
+  const advanceSlide = useCallback(() => {
+    setActiveIndex((current) => (current + 1) % filtered.length);
   }, [filtered.length]);
+
+  useAutoAdvanceInterval({
+    intervalMs: AUTO_ADVANCE_MS,
+    enabled: filtered.length > 1,
+    paused: autoPaused,
+    onAdvance: advanceSlide,
+  });
 
   return (
     <div className="mt-1 flex flex-col gap-3">
@@ -101,7 +106,11 @@ export function CollectionHeroSpotlightSlider({
         />
       </div>
 
-      <div className="relative py-4">
+      <div
+        className="relative py-4"
+        onMouseEnter={() => setAutoPaused(true)}
+        onMouseLeave={() => setAutoPaused(false)}
+      >
         {filtered.length > 1 ? (
           <button
             type="button"

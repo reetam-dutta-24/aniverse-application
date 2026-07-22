@@ -19,6 +19,7 @@ export interface CollectionGridSectionProps {
   editable?: boolean;
   /** @deprecated Use `editable` for all cards in the section. */
   highlightFirst?: boolean;
+  emptyMessage?: string;
 }
 
 /** Paginated collection grid — responsive columns, pagination dots only. */
@@ -28,6 +29,7 @@ export function CollectionGridSection({
   collections,
   editable = false,
   highlightFirst = false,
+  emptyMessage = "No collections in this section yet.",
 }: CollectionGridSectionProps) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
@@ -89,7 +91,9 @@ export function CollectionGridSection({
             ))
           ) : (
             <p className="text-sm text-muted" style={{ gridColumn: "1 / -1" }}>
-              No results for &ldquo;{query}&rdquo;
+              {query.trim()
+                ? `No results for "${query}"`
+                : emptyMessage}
             </p>
           )}
           {pageItems.length > 0 && emptySlots > 0

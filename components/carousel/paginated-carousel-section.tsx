@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   CarouselCardSlot,
@@ -11,13 +11,15 @@ import {
   useCarouselTintSeed,
 } from "@/components/carousel/carousel-section-context";
 import { PaginationDots } from "@/components/dashboard/pagination-dots";
+import { useAutoAdvanceInterval } from "@/hooks/use-auto-advance-interval";
 import {
   CAROUSEL_ITEMS_COMMUNITY,
   CAROUSEL_ITEMS_CONTENT,
   CAROUSEL_ITEMS_EPISODE,
   CAROUSEL_ITEMS_REVIEW,
 } from "@/lib/grid-section-config";
-import { getCardTint } from "@/lib/card-theme";
+import { resolveCardTint } from "@/lib/card-theme";
+import type { AccentColor } from "@/lib/catalog-enums";
 import { cn } from "@/lib/utils";
 
 export type PaginatedCarouselVariant =
@@ -36,6 +38,8 @@ const VARIANT_ITEMS: Record<PaginatedCarouselVariant, number> = {
 export interface CarouselSlide {
   id: string;
   node: React.ReactNode;
+  /** Catalog accent from admin CMS — matches card background on hover. */
+  accent?: AccentColor;
   /** Override hover ambience tint (e.g. review avatar color). */
   tintGlass?: string;
 }
@@ -75,6 +79,7 @@ function PaginatedCarouselInner({
 }: Omit<PaginatedCarouselSectionProps, "sectionTitle">) {
   const [page, setPage] = useState(0);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [autoPaused, setAutoPaused] = useState(false);
   const tintSeed = useCarouselTintSeed();
   const perPage = itemsPerPage ?? VARIANT_ITEMS[variant];
 
@@ -86,7 +91,7 @@ function PaginatedCarouselInner({
     if (!rowHover || !hoveredId) return null;
     const slide = slides.find((s) => s.id === hoveredId);
     if (!slide) return null;
-    return slide.tintGlass ?? getCardTint(slide.id, tintSeed).glass;
+    return slide.tintGlass ?? resolveCardTint(slide.id, slide.accent, tintSeed).glass;
   }, [rowHover, hoveredId, slides, tintSeed]);
 
   function goTo(next: number) {
@@ -95,17 +100,20 @@ function PaginatedCarouselInner({
     setHoveredId(null);
   }
 
-  useEffect(() => {
-    if (!autoAdvanceMs || totalPages <= 1) return;
-    const id = window.setInterval(() => {
-      setPage((current) => {
-        const safe = Math.min(current, totalPages - 1);
-        return (safe + 1) % totalPages;
-      });
-      setHoveredId(null);
-    }, autoAdvanceMs);
-    return () => window.clearInterval(id);
-  }, [autoAdvanceMs, totalPages]);
+  const advancePage = useCallback(() => {
+    setPage((current) => {
+      const safe = Math.min(current, totalPages - 1);
+      return (safe + 1) % totalPages;
+    });
+    setHoveredId(null);
+  }, [totalPages]);
+
+  useAutoAdvanceInterval({
+    intervalMs: autoAdvanceMs,
+    enabled: Boolean(autoAdvanceMs && totalPages > 1),
+    paused: autoPaused,
+    onAdvance: advancePage,
+  });
 
   const viewportPadding = compact
     ? "px-4 sm:px-8 lg:px-10"
@@ -115,7 +123,11 @@ function PaginatedCarouselInner({
 
   return (
     <div className={cn("flex flex-col", compact ? "gap-1" : "gap-4", className)}>
-      <div className={cn("relative", overflowVisible && "overflow-visible")}>
+      <div
+        className={cn("relative", overflowVisible && "overflow-visible")}
+        onMouseEnter={() => setAutoPaused(true)}
+        onMouseLeave={() => setAutoPaused(false)}
+      >
         {totalPages > 1 ? (
           <button
             type="button"

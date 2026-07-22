@@ -104,6 +104,11 @@ export function CollectionCard({
               <Chip variant="indigo" className="h-5 text-[10px]">
                 {collection.favoriteCount} Favts
               </Chip>
+              {collection.visibility === "public" ? (
+                <Chip variant="cyan" className="h-5 text-[10px]">
+                  {collection.followerCount ?? 0} Followers
+                </Chip>
+              ) : null}
             </div>
             {collection.createdAt ? (
               <div className="px-2 py-1">

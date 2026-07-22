@@ -15,6 +15,9 @@ const TYPE_LABELS: Record<SearchResultType, string> = {
   community: "Community",
 };
 
+const DEFAULT_ALLOWED_TYPES: SearchResultType[] = ["content", "song"];
+const EMPTY_EXCLUDE_IDS: string[] = [];
+
 export interface CatalogPickerSelection {
   id: string;
   type: SearchResultType;
@@ -42,16 +45,25 @@ interface CatalogSearchInputProps {
   /** Use admin CMS search API (DB-backed, higher limits). */
   adminSearch?: boolean;
   resultLimit?: number;
+  /** When false, empty focus won't open a full browse panel (avoids covering selected items). */
+  browseOnFocus?: boolean;
+  /** Clicks inside this node should not close the dropdown (e.g. selected-item list). */
+  ignoreOutsidePointerRef?: React.RefObject<HTMLElement | null>;
+  /** Increment to force-close the results panel (e.g. when removing a selected item). */
+  dismissSignal?: number;
 }
 
 function CatalogSearchInput({
-  allowedTypes = ["content", "song"],
-  excludeIds = [],
+  allowedTypes = DEFAULT_ALLOWED_TYPES,
+  excludeIds = EMPTY_EXCLUDE_IDS,
   placeholder = "Search titles, artists, anime…",
   onSelect,
   autoFocus = false,
   adminSearch = false,
   resultLimit = 12,
+  browseOnFocus = true,
+  ignoreOutsidePointerRef,
+  dismissSignal = 0,
 }: CatalogSearchInputProps) {
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -69,11 +81,15 @@ function CatalogSearchInput({
   } | null>(null);
   const allowedTypesKey = useMemo(() => allowedTypes.join(","), [allowedTypes]);
   const excludeIdsKey = useMemo(() => excludeIds.join(","), [excludeIds]);
-  const canBrowse = adminSearch && query.trim().length === 0;
+  const canBrowse = adminSearch && browseOnFocus && query.trim().length === 0;
 
   useEffect(() => {
     if (autoFocus) inputRef.current?.focus();
   }, [autoFocus]);
+
+  useEffect(() => {
+    if (dismissSignal > 0) setOpen(false);
+  }, [dismissSignal]);
 
   useEffect(() => {
     const q = query.trim();
@@ -87,6 +103,7 @@ function CatalogSearchInput({
 
     setLoading(true);
     setSearchError(null);
+    const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       try {
         const limit = adminSearch ? Math.max(resultLimit, 24) : resultLimit;
@@ -99,7 +116,10 @@ function CatalogSearchInput({
         const endpoint = adminSearch
           ? `/api/admin/catalog-search?${params.toString()}`
           : `/api/search?q=${encodeURIComponent(q)}&limit=${limit}`;
-        const response = await fetch(endpoint, { cache: "no-store" });
+        const response = await fetch(endpoint, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
         if (!response.ok) {
           setResults([]);
           setSearchError(
@@ -110,28 +130,33 @@ function CatalogSearchInput({
           return;
         }
         const data = (await response.json()) as { results: SearchResult[] };
-        const exclude = new Set(excludeIds);
+        const exclude = new Set(excludeIdsKey ? excludeIdsKey.split(",") : []);
+        const allowedTypeSet = new Set(
+          allowedTypesKey.split(",").filter(Boolean) as SearchResultType[],
+        );
         setResults(
           data.results.filter(
             (result) =>
-              allowedTypes.includes(result.type) && !exclude.has(result.id),
+              allowedTypeSet.has(result.type) && !exclude.has(result.id),
           ),
         );
         setActiveIndex(-1);
-      } catch {
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
         setResults([]);
         setSearchError("Catalog search failed. Check your connection.");
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }, adminSearch ? 150 : 250);
 
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
   }, [
     query,
-    allowedTypes,
     allowedTypesKey,
-    excludeIds,
     excludeIdsKey,
     adminSearch,
     resultLimit,
@@ -142,13 +167,14 @@ function CatalogSearchInput({
     function onPointerDown(event: MouseEvent) {
       const target = event.target as Node;
       if (rootRef.current?.contains(target)) return;
+      if (ignoreOutsidePointerRef?.current?.contains(target)) return;
       const panel = document.getElementById(listId);
       if (panel?.contains(target)) return;
       setOpen(false);
     }
     document.addEventListener("mousedown", onPointerDown);
     return () => document.removeEventListener("mousedown", onPointerDown);
-  }, [listId]);
+  }, [listId, ignoreOutsidePointerRef]);
 
   useEffect(() => {
     if (!open || !rootRef.current) {
@@ -187,7 +213,9 @@ function CatalogSearchInput({
 
   const showPanel =
     open &&
-    (adminSearch ? true : query.trim().length >= 2) &&
+    (adminSearch
+      ? query.trim().length > 0 || canBrowse
+      : query.trim().length >= 2) &&
     typeof document !== "undefined";
 
   const resultsPanel =
@@ -213,7 +241,7 @@ function CatalogSearchInput({
             {excludeIds.length > 0
               ? "No more matches — try a different search."
               : canBrowse
-                ? "No artists in the catalog yet."
+                ? "No matches in the catalog yet."
                 : "No matches found."}
           </p>
         ) : (
@@ -334,6 +362,8 @@ interface CatalogMultiSearchPickerProps {
   maxItems?: number;
   /** Slugs already in the target collection — hidden from search and blocked on add. */
   blockedIds?: string[];
+  /** Known slug → type map for edit forms (keeps remove/save accurate before labels load). */
+  typeHints?: Record<string, SearchResultType>;
   adminSearch?: boolean;
   resultLimit?: number;
 }
@@ -426,18 +456,100 @@ export function CatalogMultiSearchPicker({
   hint = "Search, pick an item, then keep searching to add more — all in one go.",
   maxItems = 24,
   blockedIds = [],
+  typeHints = {},
   adminSearch = false,
   resultLimit = 12,
 }: CatalogMultiSearchPickerProps) {
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const typeHintsRef = useRef(typeHints);
+  typeHintsRef.current = typeHints;
+
   const [labels, setLabels] = useState<Record<string, CatalogPickerSelection>>({});
   const [duplicateNotice, setDuplicateNotice] = useState<string>();
+  const [dismissSignal, setDismissSignal] = useState(0);
+  const allowedTypesKey = useMemo(() => allowedTypes.join(","), [allowedTypes]);
+  const typeHintsKey = useMemo(() => JSON.stringify(typeHints), [typeHints]);
+  const valuesKey = useMemo(() => values.join(","), [values]);
 
-  function syncSelections(nextValues: string[], nextLabels: Record<string, CatalogPickerSelection>) {
-    onChange(nextValues);
-    onSelectionsChange?.(
-      nextValues.map((id) => nextLabels[id] ?? { id, type: allowedTypes[0]!, title: id }),
-    );
+  function resolveSelection(
+    id: string,
+    source: Record<string, CatalogPickerSelection>,
+  ): CatalogPickerSelection {
+    if (source[id]) return source[id];
+    return {
+      id,
+      type: typeHintsRef.current[id] ?? allowedTypes[0]!,
+      title: id,
+    };
   }
+
+  function syncSelections(
+    nextValues: string[],
+    nextLabels: Record<string, CatalogPickerSelection>,
+  ) {
+    onChange(nextValues);
+    onSelectionsChange?.(nextValues.map((id) => resolveSelection(id, nextLabels)));
+  }
+
+  useEffect(() => {
+    setLabels((current) => {
+      const valueSet = new Set(values);
+      let changed = false;
+      const next = { ...current };
+      for (const key of Object.keys(next)) {
+        if (!valueSet.has(key)) {
+          delete next[key];
+          changed = true;
+        }
+      }
+      return changed ? next : current;
+    });
+  }, [valuesKey, values]);
+
+  useEffect(() => {
+    if (!adminSearch || values.length === 0) return;
+
+    let cancelled = false;
+    const missing = values.filter((id) => !labels[id]);
+    if (missing.length === 0) return;
+
+    async function hydrate() {
+      const resolved = await Promise.all(
+        missing.map(async (id) => {
+          const hinted = typeHints[id];
+          const typesToTry = hinted ? [hinted] : allowedTypes;
+          for (const type of typesToTry) {
+            try {
+              const response = await fetch(
+                `/api/admin/catalog-search?slug=${encodeURIComponent(id)}&type=${type}`,
+                { cache: "no-store" },
+              );
+              if (!response.ok) continue;
+              const data = (await response.json()) as { results: SearchResult[] };
+              if (data.results[0]) return toSelection(data.results[0]);
+            } catch {
+              /* try next type */
+            }
+          }
+          return resolveSelection(id, labels);
+        }),
+      );
+
+      if (cancelled) return;
+      setLabels((current) => {
+        const next = { ...current };
+        for (const item of resolved) next[item.id] = item;
+        return next;
+      });
+    }
+
+    void hydrate();
+    return () => {
+      cancelled = true;
+    };
+    // Hydrate only when values/type hints change — not on every labels update.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adminSearch, valuesKey, typeHintsKey, allowedTypesKey]);
 
   function addSelection(selection: CatalogPickerSelection) {
     if (blockedIds.includes(selection.id)) {
@@ -456,6 +568,7 @@ export function CatalogMultiSearchPicker({
   }
 
   function remove(slug: string) {
+    setDismissSignal((count) => count + 1);
     const nextValues = values.filter((value) => value !== slug);
     const nextLabels = { ...labels };
     delete nextLabels[slug];
@@ -466,11 +579,11 @@ export function CatalogMultiSearchPicker({
   const atLimit = values.length >= maxItems;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div ref={pickerRef} className="relative flex flex-col gap-2">
       {values.length > 0 ? (
-        <ul className="flex flex-col gap-2">
+        <ul className="relative z-10 flex flex-col gap-2">
           {values.map((slug) => {
-            const meta = labels[slug];
+            const meta = labels[slug] ?? resolveSelection(slug, labels);
             return (
               <li key={slug}>
                 <div className="flex items-center gap-3 rounded-xl border border-white/15 bg-[#1a0f2e] p-2.5">
@@ -492,18 +605,23 @@ export function CatalogMultiSearchPicker({
                     <p className="truncate text-sm font-medium text-white">
                       {meta?.title ?? slug}
                     </p>
-                    {meta ? (
-                      <p className="truncate text-xs text-white/55">
-                        {TYPE_LABELS[meta.type]}
-                        {meta.subtitle ? ` · ${meta.subtitle}` : ""}
-                      </p>
-                    ) : null}
+                    <p className="truncate text-xs text-white/55">
+                      {TYPE_LABELS[meta.type]}
+                      {meta.subtitle ? ` · ${meta.subtitle}` : ""}
+                    </p>
                   </div>
                   <button
                     type="button"
                     aria-label={`Remove ${meta?.title ?? slug}`}
-                    onClick={() => remove(slug)}
-                    className="rounded-full p-1.5 text-white/55 transition hover:bg-white/10 hover:text-white"
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                    }}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      remove(slug);
+                    }}
+                    className="relative z-10 shrink-0 cursor-pointer rounded-full p-1.5 text-white/55 transition hover:bg-white/10 hover:text-white"
                   >
                     <X className="size-4" />
                   </button>
@@ -525,6 +643,9 @@ export function CatalogMultiSearchPicker({
           autoFocus={values.length === 0}
           adminSearch={adminSearch}
           resultLimit={resultLimit}
+          browseOnFocus={values.length === 0}
+          ignoreOutsidePointerRef={pickerRef}
+          dismissSignal={dismissSignal}
         />
       )}
 
