@@ -82,6 +82,9 @@ export interface Community {
   viewerRole?: MemberRole;
   canEdit?: boolean;
   canDelete?: boolean;
+  memberLimit?: number;
+  createdAtTime?: number;
+  updatedAtTime?: number;
 }
 
 export interface Collection {
@@ -307,6 +310,10 @@ export interface ContentEngagementStat {
   id: string;
   label: string;
   value: string;
+  /** Profile KPI — smooth-scroll target section id. */
+  scrollTarget?: string;
+  /** Reserved empty slot in the profile hero KPI grid. */
+  placeholder?: boolean;
 }
 
 /** Structured metadata block — maps 1:1 to DB columns. */
@@ -467,7 +474,16 @@ export interface AppNotification {
   imageUrl?: string;
   /** Related content the notification links out to. */
   href?: string;
+  /** Interactive action, e.g. friend_request with actionRefId = request id. */
+  actionType?: string;
+  actionRefId?: string;
 }
+
+export type ViewerFriendStatus =
+  | "none"
+  | "friends"
+  | "pending_outgoing"
+  | "pending_incoming";
 
 export interface WatchParty {
   id: string;
@@ -578,14 +594,19 @@ export interface ProfileNowListening {
 
 export interface ProfileCurrentlyWatching {
   title: string;
-  episodeLabel: string;
   contentId: string;
+  /** True when pulled from an in-progress watchlist item. */
+  isActive?: boolean;
+  /** e.g. episode label or format meta */
+  episodeLabel?: string;
+  genres?: Genre[];
+  durationLabel?: string;
 }
 
 /** Mixed content + music entry for the profile hero activity carousel. */
 export type ProfileRecentActivityItem =
-  | { kind: "content"; item: ContentItem }
-  | { kind: "music"; track: MusicTrack };
+  | { id: string; kind: "content"; item: ContentItem }
+  | { id: string; kind: "music"; track: MusicTrack };
 
 /**
  * Full user profile — maps to `/profile/[userid]`.
@@ -606,8 +627,14 @@ export interface UserProfileDetail {
   location: string;
   online: boolean;
   followerCount: number;
-  /** Whether the signed-in viewer follows this profile. */
+  /** Friend relationship between the signed-in viewer and this profile. */
+  viewerFriendStatus?: ViewerFriendStatus;
+  /** Pending request id when viewerFriendStatus is pending_incoming. */
+  incomingFriendRequestId?: string;
+  /** @deprecated Use viewerFriendStatus === "friends". */
   viewerFollows?: boolean;
+  /** Limited view when the profile owner hid their profile from the public. */
+  isPrivatePreview?: boolean;
   joinedAt: string;
   /** e.g. "Currently Watching Death Note Ep 24" */
   activitySubtitle?: string;
@@ -622,12 +649,26 @@ export interface UserProfileDetail {
   followers: UserSummary[];
   followerSummary?: string;
   recentActivity: ProfileRecentActivityItem[];
+  /** Favorite anime, shows, and K-drama titles. */
+  favoriteAnimeShow: ContentItem[];
+  /** Favorite movie titles. */
+  favoriteMovies: ContentItem[];
+  /** Mutual friends on the platform. */
+  friends: UserSummary[];
+  /** Artists the profile owner follows. */
+  followedArtists: ContentItem[];
+  /** Dashboard-style analytics for the profile owner. */
+  analytics?: import("@/lib/data/analytics").AnalyticsData;
+  /** @deprecated Use favoriteAnimeShow / favoriteMovies. */
   currentActivity: ContentItem[];
+  /** @deprecated Split into favoriteAnimeShow / favoriteMovies. */
   likedContent: ContentItem[];
+  /** @deprecated Kept for compatibility. */
   watchedMost: ContentItem[];
   likedSongs: MusicTrack[];
   mostPlayedSongs: MusicTrack[];
   likedAlbums: MusicTrack[];
+  /** @deprecated Use followedArtists. */
   topArtists: ContentItem[];
   collections: Collection[];
   communities: Community[];

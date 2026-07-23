@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { ArtistCard, CollectionCard, CommunityCard, MusicCard, PosterCard } from "@/components/cards";
 import { WelcomeBanner } from "@/components/dashboard";
 import { ContentPageSection } from "@/components/content/content-page-section";
-import { getCommunityMemberPreview } from "@/lib/data/community";
 import { getCurrentUser } from "@/lib/data/user";
 import {
   countFavorites,
@@ -25,10 +24,7 @@ function EmptySection({ label }: { label: string }) {
 
 export default async function FavoritesPage() {
   const user = await getCurrentUser();
-  const [catalog, members] = await Promise.all([
-    getUserFavoritesCatalog(user.id),
-    getCommunityMemberPreview(user.id),
-  ]);
+  const catalog = await getUserFavoritesCatalog(user.id);
   const total = countFavorites(catalog);
 
   const sections = [
@@ -149,12 +145,9 @@ export default async function FavoritesPage() {
               rowHover={false}
               slides={section.items.map((community) => ({
                 id: community.id,
+                accent: community.accent,
                 node: (
-                  <CommunityCard
-                    community={community}
-                    members={members}
-                    ctaMode="join"
-                  />
+                  <CommunityCard community={community} ctaMode="view" />
                 ),
               }))}
               className="px-0"

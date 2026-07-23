@@ -140,7 +140,6 @@ export function SearchResultsView({ data }: SearchResultsViewProps) {
         title="👥 From Your And Other Global Communities"
         searchPlaceholder="Search communities…"
         communities={data.communities}
-        members={members}
         ctaMode="view"
       />
     </div>

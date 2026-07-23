@@ -13,6 +13,8 @@ import { mapContentToItem } from "@/lib/mappers/content.mapper";
 import { mapUserSummary } from "@/lib/mappers/community.mapper";
 import { mapTrackToMusicTrack } from "@/lib/mappers/music.mapper";
 import { formatEngagementCount } from "@/lib/services/content.service";
+import { PROFILE_SECTION_IDS } from "@/lib/profile-section-ids";
+import type { AnalyticsData } from "@/lib/data/analytics";
 import type {
   ContentEngagementStat,
   ProfileRecentActivityItem,
@@ -63,43 +65,75 @@ function formatJoinedAt(date: Date): string {
 }
 
 export function buildEngagementStats(counts: {
-  watchlist: number;
-  collections: number;
-  reviews: number;
-  communities: number;
-  favorites: number;
+  friends: number;
+  artistsFollowing: number;
   watchMinutes: number;
+  songsPlayed: number;
+  collections: number;
+  favorites: number;
+  communitiesJoined: number;
+  contentWatched: number;
 }): ContentEngagementStat[] {
   return [
     {
-      id: "watchlist",
-      label: "Watchlist Titles",
-      value: formatEngagementCount(counts.watchlist),
+      id: "friends",
+      label: "Friends",
+      value: formatEngagementCount(counts.friends),
+      scrollTarget: PROFILE_SECTION_IDS.friends,
     },
     {
-      id: "collections",
-      label: "Collections",
-      value: formatEngagementCount(counts.collections),
-    },
-    {
-      id: "reviews",
-      label: "Reviews",
-      value: formatEngagementCount(counts.reviews),
-    },
-    {
-      id: "communities",
-      label: "Communities",
-      value: formatEngagementCount(counts.communities),
-    },
-    {
-      id: "favorites",
-      label: "Favorites",
-      value: formatEngagementCount(counts.favorites),
+      id: "artistsFollowing",
+      label: "Artists Following",
+      value: formatEngagementCount(counts.artistsFollowing),
+      scrollTarget: PROFILE_SECTION_IDS.artists,
     },
     {
       id: "watchtime",
       label: "Watch Time (min)",
       value: formatEngagementCount(counts.watchMinutes),
+      scrollTarget: PROFILE_SECTION_IDS.analytics,
+    },
+    {
+      id: "songsPlayed",
+      label: "Songs Played",
+      value: formatEngagementCount(counts.songsPlayed),
+      scrollTarget: PROFILE_SECTION_IDS.favoriteSongs,
+    },
+    {
+      id: "collections",
+      label: "Collections",
+      value: formatEngagementCount(counts.collections),
+      scrollTarget: PROFILE_SECTION_IDS.collections,
+    },
+    {
+      id: "favorites",
+      label: "Favorites",
+      value: formatEngagementCount(counts.favorites),
+      scrollTarget: PROFILE_SECTION_IDS.favoriteAnime,
+    },
+    {
+      id: "communitiesJoined",
+      label: "Communities Joined",
+      value: formatEngagementCount(counts.communitiesJoined),
+      scrollTarget: PROFILE_SECTION_IDS.communities,
+    },
+    {
+      id: "contentWatched",
+      label: "Content Watched",
+      value: formatEngagementCount(counts.contentWatched),
+      scrollTarget: PROFILE_SECTION_IDS.recentActivity,
+    },
+    {
+      id: "kpi-placeholder-1",
+      label: "—",
+      value: "—",
+      placeholder: true,
+    },
+    {
+      id: "kpi-placeholder-2",
+      label: "—",
+      value: "—",
+      placeholder: true,
     },
   ];
 }
@@ -124,13 +158,20 @@ export function buildProfileDetail(input: {
     selections: unknown;
   } | null;
   counts: {
-    watchlist: number;
-    collections: number;
-    reviews: number;
-    communities: number;
-    favorites: number;
+    friends: number;
+    artistsFollowing: number;
     watchMinutes: number;
+    songsPlayed: number;
+    collections: number;
+    favorites: number;
+    communitiesJoined: number;
+    contentWatched: number;
   };
+  favoriteAnimeShow: ReturnType<typeof mapContentToItem>[];
+  favoriteMovies: ReturnType<typeof mapContentToItem>[];
+  friends: ReturnType<typeof mapUserSummary>[];
+  followedArtists: ReturnType<typeof mapArtistToContentItem>[];
+  analytics?: AnalyticsData;
   currentActivity: ReturnType<typeof mapContentToItem>[];
   likedContent: ReturnType<typeof mapContentToItem>[];
   watchedMost: ReturnType<typeof mapContentToItem>[];
@@ -148,7 +189,11 @@ export function buildProfileDetail(input: {
   followerCount?: number;
   followers?: ReturnType<typeof mapUserSummary>[];
   followerSummary?: string;
+  viewerFriendStatus?: UserProfileDetail["viewerFriendStatus"];
+  incomingFriendRequestId?: string;
   viewerFollows?: boolean;
+  isPrivatePreview?: boolean;
+  online?: boolean;
 }): UserProfileDetail {
   const summaryChips = asStringArray(input.tasteProfile?.summaryChips);
   const selections =
@@ -191,7 +236,7 @@ export function buildProfileDetail(input: {
     profileAccent,
     portraitUrl,
     location: input.user.location || "Earth",
-    online: false,
+    online: input.online ?? false,
     followerCount: input.followerCount ?? 0,
     joinedAt: formatJoinedAt(input.user.createdAt),
     activitySubtitle: input.activitySubtitle,
@@ -207,8 +252,16 @@ export function buildProfileDetail(input: {
     favoriteGenres,
     followers: input.followers ?? [],
     followerSummary: input.followerSummary,
+    viewerFriendStatus: input.viewerFriendStatus,
+    incomingFriendRequestId: input.incomingFriendRequestId,
     viewerFollows: input.viewerFollows,
+    isPrivatePreview: input.isPrivatePreview,
     recentActivity: input.recentActivity,
+    favoriteAnimeShow: input.favoriteAnimeShow,
+    favoriteMovies: input.favoriteMovies,
+    friends: input.friends,
+    followedArtists: input.followedArtists,
+    analytics: input.analytics,
     currentActivity: input.currentActivity,
     likedContent: input.likedContent,
     watchedMost: input.watchedMost,

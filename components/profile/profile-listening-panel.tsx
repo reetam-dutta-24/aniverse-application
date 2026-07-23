@@ -64,6 +64,9 @@ export function ProfileListeningPanel({
 }: ProfileListeningPanelProps) {
   const [editOpen, setEditOpen] = useState(false);
   const [friendCount, setFriendCount] = useState(profile.followerCount);
+  const [friendStatus, setFriendStatus] = useState(
+    profile.viewerFriendStatus ?? "none",
+  );
   const {
     portraitUrl,
     name: userName,
@@ -74,7 +77,7 @@ export function ProfileListeningPanel({
     followerSummary,
     favoriteTypes,
     favoriteGenres,
-    viewerFollows,
+    incomingFriendRequestId,
   } = profile;
 
   const friendText =
@@ -150,19 +153,39 @@ export function ProfileListeningPanel({
               {currentlyWatching ? (
                 <>
                   <p className="text-sm text-white sm:text-[15px]">
-                    And Watching{" "}
-                    <span className="font-semibold">
-                      {currentlyWatching.title}
-                    </span>
-                  </p>
-                  <p className="text-sm">
+                    {currentlyWatching.isActive ? "And Watching " : "Last Watched "}
                     <Link
                       href={getContentDetailPath(currentlyWatching.contentId)}
-                      className={ACCENT_LINK}
+                      className="font-semibold underline decoration-white/70 underline-offset-2 transition-colors hover:text-white/90"
                     >
-                      {currentlyWatching.episodeLabel}
+                      {currentlyWatching.title}
                     </Link>
                   </p>
+                  {currentlyWatching.genres && currentlyWatching.genres.length > 0 ? (
+                    <p className="text-sm text-white sm:text-[15px]">
+                      {currentlyWatching.genres.map((genre, index) => (
+                        <span key={genre.id}>
+                          {index > 0 ? ", " : null}
+                          <span className={ACCENT_LINK}>{genre.label}</span>
+                        </span>
+                      ))}
+                      {currentlyWatching.durationLabel ? (
+                        <span className={ACCENT_LINK}>
+                          {", "}
+                          {currentlyWatching.durationLabel}
+                        </span>
+                      ) : null}
+                    </p>
+                  ) : currentlyWatching.episodeLabel ? (
+                    <p className="text-sm">
+                      <Link
+                        href={getContentDetailPath(currentlyWatching.contentId)}
+                        className={ACCENT_LINK}
+                      >
+                        {currentlyWatching.episodeLabel}
+                      </Link>
+                    </p>
+                  ) : null}
                 </>
               ) : null}
             </div>
@@ -236,10 +259,14 @@ export function ProfileListeningPanel({
               <div className={cn(DETAIL_HERO_BTN_PAIR, "justify-center pt-0.5")}>
                 <ToggleUserFriendButton
                   handle={handle}
-                  initialFollowing={viewerFollows}
+                  initialStatus={friendStatus}
+                  incomingFriendRequestId={incomingFriendRequestId}
                   onFriendCountChange={setFriendCount}
+                  onStatusChange={setFriendStatus}
                 />
-                <MessageUserButton handle={handle} name={userName} />
+                {friendStatus === "friends" ? (
+                  <MessageUserButton handle={handle} name={userName} />
+                ) : null}
               </div>
             )}
           </div>

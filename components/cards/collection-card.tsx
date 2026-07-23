@@ -9,6 +9,7 @@ import { getAccentStyle } from "@/lib/accents";
 import type { Collection } from "@/types";
 import { Chip } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
+import { CardHeaderImage } from "@/components/cards/card-header-image";
 import { DeleteCollectionButton } from "@/components/forms/delete-collection-button";
 import { EditCollectionButton } from "@/components/forms/edit-collection-button";
 import { cardDeleteActionClass, cardEditActionClass } from "@/lib/form-action-styles";
@@ -21,29 +22,6 @@ export interface CollectionCardProps
   /** Landing page — visual demo only, no navigation. */
   demo?: boolean;
   onView?: () => void;
-}
-
-function CardHeaderImage({
-  imageUrl,
-  accentClass,
-}: {
-  imageUrl?: string;
-  accentClass: string;
-}) {
-  if (imageUrl) {
-    return (
-      <div className="relative h-[84px] w-full shrink-0 overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={imageUrl}
-          alt=""
-          className="size-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
-      </div>
-    );
-  }
-  return <div className={cn("h-[84px] w-full shrink-0", accentClass)} />;
 }
 
 /** Collection card — image header, accent glow on hover, View Collection CTA. */

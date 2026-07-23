@@ -12,5 +12,7 @@ export function mapNotificationRow(row: Notification): AppNotification {
     read: row.read,
     imageUrl: row.imageUrl ?? undefined,
     href: row.href ?? undefined,
+    actionType: row.actionType ?? undefined,
+    actionRefId: row.actionRefId ?? undefined,
   };
 }

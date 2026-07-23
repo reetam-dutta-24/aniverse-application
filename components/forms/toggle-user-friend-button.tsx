@@ -1,28 +1,54 @@
 "use client";
 
 import { useState } from "react";
-import { UserCheck, UserPlus } from "lucide-react";
+import { UserCheck, UserMinus, UserPlus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { detailHeroBtnBase } from "@/lib/detail-route-ui";
+import type { ViewerFriendStatus } from "@/types";
 
 interface ToggleUserFriendButtonProps {
   handle: string;
-  initialFollowing?: boolean;
+  initialStatus?: ViewerFriendStatus;
+  incomingFriendRequestId?: string;
   className?: string;
   onFriendCountChange?: (count: number) => void;
+  onStatusChange?: (status: ViewerFriendStatus) => void;
 }
 
 export function ToggleUserFriendButton({
   handle,
-  initialFollowing = false,
+  initialStatus = "none",
+  incomingFriendRequestId,
   className,
   onFriendCountChange,
+  onStatusChange,
 }: ToggleUserFriendButtonProps) {
-  const [isFriend, setIsFriend] = useState(initialFollowing);
+  const [status, setStatus] = useState<ViewerFriendStatus>(initialStatus);
+  const [requestId, setRequestId] = useState(incomingFriendRequestId);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
 
-  async function handleToggle() {
+  function applyResult(data: Record<string, unknown>) {
+    if (typeof data.friendStatus === "string") {
+      const next = data.friendStatus as ViewerFriendStatus;
+      setStatus(next);
+      onStatusChange?.(next);
+    } else if (typeof data.following === "boolean") {
+      const next = data.following ? "friends" : "none";
+      setStatus(next);
+      onStatusChange?.(next);
+    }
+
+    const count =
+      typeof data.friendCount === "number"
+        ? data.friendCount
+        : data.followerCount;
+    if (typeof count === "number") {
+      onFriendCountChange?.(count);
+    }
+  }
+
+  async function handlePrimaryAction() {
     setLoading(true);
     setError(undefined);
     try {
@@ -38,14 +64,7 @@ export function ToggleUserFriendButton({
             : "Could not update friend status.",
         );
       }
-      setIsFriend(Boolean(data.following));
-      const count =
-        typeof data.friendCount === "number"
-          ? data.friendCount
-          : data.followerCount;
-      if (typeof count === "number") {
-        onFriendCountChange?.(count);
-      }
+      applyResult(data as Record<string, unknown>);
     } catch (toggleError) {
       setError(
         toggleError instanceof Error
@@ -57,28 +76,127 @@ export function ToggleUserFriendButton({
     }
   }
 
+  async function handleAccept() {
+    if (!requestId) return;
+    setLoading(true);
+    setError(undefined);
+    try {
+      const response = await fetch(
+        `/api/friend-requests/${encodeURIComponent(requestId)}/accept`,
+        { method: "POST" },
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(
+          typeof data.error === "string"
+            ? data.error
+            : "Could not accept friend request.",
+        );
+      }
+      applyResult(data as Record<string, unknown>);
+    } catch (acceptError) {
+      setError(
+        acceptError instanceof Error
+          ? acceptError.message
+          : "Could not accept friend request.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDecline() {
+    if (!requestId) return;
+    setLoading(true);
+    setError(undefined);
+    try {
+      const response = await fetch(
+        `/api/friend-requests/${encodeURIComponent(requestId)}/reject`,
+        { method: "POST" },
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(
+          typeof data.error === "string"
+            ? data.error
+            : "Could not decline friend request.",
+        );
+      }
+      setStatus("none");
+      onStatusChange?.("none");
+    } catch (declineError) {
+      setError(
+        declineError instanceof Error
+          ? declineError.message
+          : "Could not decline friend request.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (status === "pending_incoming") {
+    return (
+      <div className={cn("min-w-0 flex-1", className)}>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            disabled={loading || !requestId}
+            onClick={() => void handleAccept()}
+            className={detailHeroBtnBase(
+              "flex-1 border-transparent bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white",
+            )}
+          >
+            <UserCheck className="size-3.5 shrink-0" />
+            <span className="truncate">Accept</span>
+          </button>
+          <button
+            type="button"
+            disabled={loading || !requestId}
+            onClick={() => void handleDecline()}
+            aria-label="Decline friend request"
+            className={detailHeroBtnBase(
+              "w-11 shrink-0 border-2 border-brand-magenta bg-black/70 px-0 text-white",
+            )}
+          >
+            <X className="size-3.5 shrink-0 text-brand-magenta" />
+          </button>
+        </div>
+        {error ? (
+          <p className="mt-1 text-center text-[10px] text-red-400">{error}</p>
+        ) : null}
+      </div>
+    );
+  }
+
+  const isFriend = status === "friends";
+  const isPending = status === "pending_outgoing";
+
   return (
-    <div className="min-w-0 flex-1">
+    <div className={cn("min-w-0 flex-1", className)}>
       <button
         type="button"
         disabled={loading}
-        onClick={() => void handleToggle()}
+        onClick={() => void handlePrimaryAction()}
         className={cn(
           detailHeroBtnBase(
-            isFriend
+            isFriend || isPending
               ? "border-2 border-brand-magenta bg-black/70 text-white"
               : "border-transparent bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white",
           ),
-          className,
         )}
         aria-pressed={isFriend}
       >
         {isFriend ? (
           <UserCheck className="size-3.5 shrink-0 text-brand-magenta" />
+        ) : isPending ? (
+          <UserMinus className="size-3.5 shrink-0 text-brand-magenta" />
         ) : (
           <UserPlus className="size-3.5 shrink-0" />
         )}
-        <span className="truncate">{isFriend ? "Friends" : "Add Friend"}</span>
+        <span className="truncate">
+          {isFriend ? "Friends" : isPending ? "Request Sent" : "Add Friend"}
+        </span>
       </button>
       {error ? (
         <p className="mt-1 text-center text-[10px] text-red-400">{error}</p>

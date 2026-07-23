@@ -21,7 +21,9 @@ export interface ArtistKpiSectionProps {
 const STAT_ICONS: Record<string, LucideIcon> = {
   posts: MessageSquare,
   members: Users,
-  friends: UserPlus,
+  friends: Users,
+  artistsFollowing: Headphones,
+  songsPlayed: Play,
   rank: Trophy,
   likes: Heart,
   followers: Users,
@@ -32,6 +34,9 @@ const STAT_ICONS: Record<string, LucideIcon> = {
   listeners: Headphones,
   playlist: ListMusic,
   plays: Play,
+  watchlist: ListMusic,
+  reviews: MessageSquare,
+  favorites: Heart,
 };
 
 function StatIcon({ stat }: { stat: ContentEngagementStat }) {

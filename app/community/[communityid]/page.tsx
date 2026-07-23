@@ -110,7 +110,6 @@ export default async function CommunityDetailPage({
             node: (
               <CommunityCard
                 community={entry}
-                members={members}
                 ctaMode="join"
               />
             ),

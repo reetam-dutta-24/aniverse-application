@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { io, type Socket } from "socket.io-client";
 import { getSocketUrl } from "@/lib/env/socket";
 import { Pencil, Trash2 } from "lucide-react";
+import { DmUserAvatar } from "@/components/messages/dm-user-avatar";
+import { refreshMessagesUnread } from "@/lib/messages-store";
 
 interface DmPeer {
   id: string;
@@ -17,6 +19,7 @@ interface DmPeer {
 interface DmConversation {
   id: string;
   peer: DmPeer;
+  unreadCount?: number;
   lastMessage?: {
     id: string;
     content: string;
@@ -38,6 +41,15 @@ interface DmMessage {
   sender?: DmPeer;
 }
 
+function UnreadBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-brand-magenta px-1.5 text-[10px] font-bold text-white shadow-glow-pink-soft">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
+
 export function DashboardMessagesPanel() {
   const searchParams = useSearchParams();
   const targetHandle = searchParams.get("user")?.trim() ?? "";
@@ -48,6 +60,7 @@ export function DashboardMessagesPanel() {
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string>();
   const [editingId, setEditingId] = useState<string>();
   const [editDraft, setEditDraft] = useState("");
   const socketRef = useRef<Socket | null>(null);
@@ -55,6 +68,11 @@ export function DashboardMessagesPanel() {
   const activeConversation = useMemo(
     () => conversations.find((entry) => entry.id === activeId),
     [conversations, activeId],
+  );
+
+  const totalUnreadChats = useMemo(
+    () => conversations.filter((entry) => (entry.unreadCount ?? 0) > 0).length,
+    [conversations],
   );
 
   const loadConversations = useCallback(async () => {
@@ -65,6 +83,7 @@ export function DashboardMessagesPanel() {
     if (response.ok && Array.isArray(data.conversations)) {
       setConversations(data.conversations as DmConversation[]);
     }
+    void refreshMessagesUnread();
   }, []);
 
   const loadMessages = useCallback(async (conversationId: string) => {
@@ -75,6 +94,12 @@ export function DashboardMessagesPanel() {
     const data = await response.json().catch(() => ({}));
     if (response.ok && Array.isArray(data.messages)) {
       setMessages(data.messages as DmMessage[]);
+      setConversations((current) =>
+        current.map((entry) =>
+          entry.id === conversationId ? { ...entry, unreadCount: 0 } : entry,
+        ),
+      );
+      void refreshMessagesUnread();
     }
   }, []);
 
@@ -104,7 +129,10 @@ export function DashboardMessagesPanel() {
     });
 
     socket.on("dm:message", (message: DmMessage) => {
-      if (message.conversationId !== activeId) return;
+      if (message.conversationId !== activeId) {
+        void loadConversations();
+        return;
+      }
       setMessages((current) => [...current, message]);
       void loadConversations();
     });
@@ -133,6 +161,7 @@ export function DashboardMessagesPanel() {
     if (!draft.trim()) return;
 
     setSending(true);
+    setSendError(undefined);
     try {
       if (activeConversation) {
         const response = await fetch("/api/dm/send", {
@@ -144,13 +173,19 @@ export function DashboardMessagesPanel() {
             content: draft.trim(),
           }),
         });
+        const data = await response.json().catch(() => ({}));
         if (response.ok) {
           setDraft("");
-          const data = await response.json();
           if (data.conversationId && !activeId) {
             setActiveId(data.conversationId);
           }
           await loadConversations();
+        } else {
+          setSendError(
+            typeof data.error === "string"
+              ? data.error
+              : "Could not send message.",
+          );
         }
       } else if (targetHandle) {
         const response = await fetch("/api/dm/send", {
@@ -162,11 +197,17 @@ export function DashboardMessagesPanel() {
             content: draft.trim(),
           }),
         });
+        const data = await response.json().catch(() => ({}));
         if (response.ok) {
           setDraft("");
-          const data = await response.json();
           if (data.conversationId) setActiveId(data.conversationId);
           await loadConversations();
+        } else {
+          setSendError(
+            typeof data.error === "string"
+              ? data.error
+              : "Could not send message.",
+          );
         }
       }
     } finally {
@@ -203,119 +244,180 @@ export function DashboardMessagesPanel() {
   }
 
   return (
-    <div className="grid min-h-[70vh] grid-cols-1 gap-4 lg:grid-cols-[280px_1fr]">
+    <div className="grid min-h-[70vh] grid-cols-1 gap-4 lg:grid-cols-[300px_1fr]">
       <aside className="rounded-2xl border border-white/10 bg-white/5 p-3">
-        <h2 className="mb-3 px-2 text-sm font-semibold text-white">Conversations</h2>
+        <div className="mb-3 flex items-center justify-between px-2">
+          <h2 className="text-sm font-semibold text-white">Conversations</h2>
+          {totalUnreadChats > 0 ? (
+            <span className="rounded-full bg-brand-magenta/20 px-2 py-0.5 text-[10px] font-semibold text-brand-pink">
+              {totalUnreadChats} unread
+            </span>
+          ) : null}
+        </div>
         {loading ? (
           <p className="px-2 text-xs text-white/60">Loading…</p>
         ) : conversations.length === 0 ? (
           <p className="px-2 text-xs text-white/60">No conversations yet.</p>
         ) : (
           <ul className="flex flex-col gap-1">
-            {conversations.map((entry) => (
-              <li key={entry.id}>
-                <button
-                  type="button"
-                  onClick={() => setActiveId(entry.id)}
-                  className={`w-full rounded-xl px-3 py-2 text-left transition ${
-                    activeId === entry.id ? "bg-white/15" : "hover:bg-white/8"
-                  }`}
-                >
-                  <p className="truncate text-sm font-medium text-white">
-                    {entry.peer.name}
-                  </p>
-                  <p className="truncate text-[11px] text-white/55">
-                    @{entry.peer.handle}
-                  </p>
-                </button>
-              </li>
-            ))}
+            {conversations.map((entry) => {
+              const unread = entry.unreadCount ?? 0;
+              const isActive = activeId === entry.id;
+              return (
+                <li key={entry.id}>
+                  <button
+                    type="button"
+                    onClick={() => setActiveId(entry.id)}
+                    className={`flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition ${
+                      isActive ? "bg-white/15" : "hover:bg-white/8"
+                    } ${unread > 0 && !isActive ? "border border-brand-magenta/30" : ""}`}
+                  >
+                    <DmUserAvatar
+                      name={entry.peer.name}
+                      avatarColor={entry.peer.avatarColor}
+                      avatarUrl={entry.peer.avatarUrl}
+                      size="sm"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p
+                          className={`truncate text-sm font-medium ${
+                            unread > 0 ? "text-white" : "text-white/90"
+                          }`}
+                        >
+                          {entry.peer.name}
+                        </p>
+                        <UnreadBadge count={unread} />
+                      </div>
+                      <p className="truncate text-[11px] text-white/55">
+                        @{entry.peer.handle}
+                      </p>
+                      {entry.lastMessage ? (
+                        <p className="mt-0.5 truncate text-[11px] text-white/45">
+                          {entry.lastMessage.content}
+                        </p>
+                      ) : null}
+                    </div>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </aside>
 
       <section className="flex min-h-[60vh] flex-col rounded-2xl border border-white/10 bg-white/5">
-        <div className="border-b border-white/10 px-4 py-3">
-          <h2 className="text-sm font-semibold text-white">
-            {activeConversation?.peer.name ??
-              (targetHandle ? `@${targetHandle}` : "Select a conversation")}
-          </h2>
+        <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
+          {activeConversation ? (
+            <DmUserAvatar
+              name={activeConversation.peer.name}
+              avatarColor={activeConversation.peer.avatarColor}
+              avatarUrl={activeConversation.peer.avatarUrl}
+              size="sm"
+            />
+          ) : null}
+          <div className="min-w-0">
+            <h2 className="truncate text-sm font-semibold text-white">
+              {activeConversation?.peer.name ??
+                (targetHandle ? `@${targetHandle}` : "Select a conversation")}
+            </h2>
+            {activeConversation ? (
+              <p className="truncate text-[11px] text-white/55">
+                @{activeConversation.peer.handle}
+              </p>
+            ) : null}
+          </div>
         </div>
 
         <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`flex flex-col gap-1 ${
-                message.isOwn ? "items-end" : "items-start"
+              className={`flex gap-2 ${
+                message.isOwn ? "flex-row-reverse" : "flex-row"
               }`}
             >
-              {message.warnNonFriend && !message.isOwn ? (
-                <p className="rounded-full bg-amber-500/20 px-3 py-1 text-[10px] font-medium text-amber-200">
-                  This person is not your friend
-                </p>
+              {!message.isOwn && message.sender ? (
+                <DmUserAvatar
+                  name={message.sender.name}
+                  avatarColor={message.sender.avatarColor}
+                  avatarUrl={message.sender.avatarUrl}
+                  size="sm"
+                  className="mt-1"
+                />
               ) : null}
-              {editingId === message.id ? (
-                <div className="flex w-full max-w-md flex-col gap-2">
-                  <textarea
-                    value={editDraft}
-                    onChange={(event) => setEditDraft(event.target.value)}
-                    className="min-h-[72px] rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-sm text-white"
-                  />
-                  <div className="flex gap-2">
+              <div
+                className={`flex max-w-[80%] flex-col gap-1 ${
+                  message.isOwn ? "items-end" : "items-start"
+                }`}
+              >
+                {message.warnNonFriend && !message.isOwn ? (
+                  <p className="rounded-full bg-amber-500/20 px-3 py-1 text-[10px] font-medium text-amber-200">
+                    This person is not your friend
+                  </p>
+                ) : null}
+                {editingId === message.id ? (
+                  <div className="flex w-full max-w-md flex-col gap-2">
+                    <textarea
+                      value={editDraft}
+                      onChange={(event) => setEditDraft(event.target.value)}
+                      className="min-h-[72px] rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-sm text-white"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void handleSaveEdit(message.id)}
+                        className="rounded-lg bg-brand-pink/80 px-3 py-1.5 text-xs font-semibold text-white"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingId(undefined)}
+                        className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/80"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className={`rounded-2xl px-3 py-2 text-sm ${
+                      message.isOwn
+                        ? "bg-brand-pink/25 text-white"
+                        : "bg-black/40 text-white/90"
+                    }`}
+                  >
+                    {message.content}
+                    {message.editedAt ? (
+                      <span className="mt-1 block text-[10px] text-white/45">
+                        edited
+                      </span>
+                    ) : null}
+                  </div>
+                )}
+                {message.isOwn && editingId !== message.id ? (
+                  <div className="flex gap-2 text-white/50">
                     <button
                       type="button"
-                      onClick={() => void handleSaveEdit(message.id)}
-                      className="rounded-lg bg-brand-pink/80 px-3 py-1.5 text-xs font-semibold text-white"
+                      onClick={() => {
+                        setEditingId(message.id);
+                        setEditDraft(message.content);
+                      }}
+                      aria-label="Edit message"
                     >
-                      Save
+                      <Pencil className="size-3.5" />
                     </button>
                     <button
                       type="button"
-                      onClick={() => setEditingId(undefined)}
-                      className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/80"
+                      onClick={() => void handleDelete(message.id)}
+                      aria-label="Delete message"
                     >
-                      Cancel
+                      <Trash2 className="size-3.5" />
                     </button>
                   </div>
-                </div>
-              ) : (
-                <div
-                  className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
-                    message.isOwn
-                      ? "bg-brand-pink/25 text-white"
-                      : "bg-black/40 text-white/90"
-                  }`}
-                >
-                  {message.content}
-                  {message.editedAt ? (
-                    <span className="mt-1 block text-[10px] text-white/45">
-                      edited
-                    </span>
-                  ) : null}
-                </div>
-              )}
-              {message.isOwn && editingId !== message.id ? (
-                <div className="flex gap-2 text-white/50">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingId(message.id);
-                      setEditDraft(message.content);
-                    }}
-                    aria-label="Edit message"
-                  >
-                    <Pencil className="size-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleDelete(message.id)}
-                    aria-label="Delete message"
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
-                </div>
-              ) : null}
+                ) : null}
+              </div>
             </div>
           ))}
         </div>
@@ -344,6 +446,9 @@ export function DashboardMessagesPanel() {
               Send
             </button>
           </div>
+          {sendError ? (
+            <p className="mt-2 text-xs text-red-400">{sendError}</p>
+          ) : null}
         </form>
       </section>
     </div>

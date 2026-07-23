@@ -104,7 +104,6 @@ export function HighlightsSection() {
         <ScrollFadeIn direction="right">
           <CommunityCard
             community={community}
-            members={members}
             className="shadow-glow-cyan"
             demo
           />

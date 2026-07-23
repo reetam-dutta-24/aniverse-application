@@ -3,7 +3,8 @@
 import { cn } from "@/lib/utils";
 import { getAccentStyle } from "@/lib/accents";
 import { AvatarStack } from "@/components/ui/avatar-stack";
-import { CommunityDashboardFeedPost } from "@/components/community/community-dashboard-feed-post";
+import { CommunityFriendInvitePanel } from "@/components/community/community-friend-invite-panel";
+import { CommunitySettingsDangerZone } from "@/components/community/community-settings-danger-zone";
 import { CommunityChatPanel } from "@/components/community/community-chat-panel";
 import { sectionToChatChannel } from "@/lib/community-chat";
 import {
@@ -365,38 +366,76 @@ export function CommunityDashboardSectionContent({
         </>
       );
 
+    case "members":
+      if (community.visibility !== "private" || !community.canDelete) {
+        return (
+          <ScrollBody>
+            <p className="text-sm text-white/55">
+              Friend invites are only available to admins of private communities.
+            </p>
+          </ScrollBody>
+        );
+      }
+      return (
+        <>
+          <SectionHeader>
+            <p className="text-sm font-medium text-white/85">👥 Invite Friends</p>
+            <span className="text-xs text-white/50">Admin · Private community</span>
+          </SectionHeader>
+          <ScrollBody>
+            <CommunityFriendInvitePanel communitySlug={communitySlug} />
+          </ScrollBody>
+        </>
+      );
+
     case "settings":
       return (
         <>
           <SectionHeader>
             <p className="text-sm font-medium text-white/85">⚙️ Community Settings</p>
-            <span className="text-xs text-white/50">Admin only</span>
+            <span className="text-xs text-white/50">
+              {community.canDelete ? "Admin" : community.viewerRole ?? "Member"}
+            </span>
           </SectionHeader>
           <ScrollBody className="flex max-w-xl flex-col gap-3">
-            <SettingsToggle
-              label="Allow member posts"
-              description="Let members publish posts in the community feed."
-              defaultChecked={community.dashboardSettings.allowMemberPosts}
-            />
-            <SettingsToggle
-              label="Require post approval"
-              description="Moderators must approve posts before they go live."
-              defaultChecked={community.dashboardSettings.requireApproval}
-            />
-            <SettingsToggle
-              label="Show online status"
-              description="Display online indicators on member cards."
-              defaultChecked={community.dashboardSettings.showOnlineStatus}
-            />
-            <SettingsToggle
-              label="Enable watch parties"
-              description="Allow members to create and join watch channels."
-              defaultChecked={community.dashboardSettings.enableWatchParties}
-            />
-            <SettingsToggle
-              label="Enable voice channels"
-              description="Allow voice channel creation and joining."
-              defaultChecked={community.dashboardSettings.enableVoiceChannels}
+            {community.canEdit ? (
+              <>
+                <SettingsToggle
+                  label="Allow member posts"
+                  description="Let members publish posts in the community feed."
+                  defaultChecked={community.dashboardSettings.allowMemberPosts}
+                />
+                <SettingsToggle
+                  label="Require post approval"
+                  description="Moderators must approve posts before they go live."
+                  defaultChecked={community.dashboardSettings.requireApproval}
+                />
+                <SettingsToggle
+                  label="Show online status"
+                  description="Display online indicators on member cards."
+                  defaultChecked={community.dashboardSettings.showOnlineStatus}
+                />
+                <SettingsToggle
+                  label="Enable watch parties"
+                  description="Allow members to create and join watch channels."
+                  defaultChecked={community.dashboardSettings.enableWatchParties}
+                />
+                <SettingsToggle
+                  label="Enable voice channels"
+                  description="Allow voice channel creation and joining."
+                  defaultChecked={community.dashboardSettings.enableVoiceChannels}
+                />
+              </>
+            ) : (
+              <p className="text-sm text-white/55">
+                Community preference toggles are managed by admins and moderators.
+              </p>
+            )}
+            <CommunitySettingsDangerZone
+              communitySlug={communitySlug}
+              communityName={community.name}
+              viewerRole={community.viewerRole}
+              canDelete={community.canDelete}
             />
           </ScrollBody>
         </>

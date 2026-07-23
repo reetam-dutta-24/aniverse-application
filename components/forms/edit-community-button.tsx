@@ -16,6 +16,7 @@ import {
 } from "@/components/forms/form-shell";
 import { ACCENT_OPTIONS } from "@/lib/catalog-enums";
 import { communityCategories } from "@/lib/validators/community";
+import { CommunityJoinCodePanel } from "@/components/forms/community-join-code-panel";
 
 export interface CommunityEditValues {
   slug: string;
@@ -27,6 +28,8 @@ export interface CommunityEditValues {
   accent?: string;
   imageUrl?: string;
   wallpaperUrl?: string;
+  memberLimit?: number;
+  canDelete?: boolean;
 }
 
 export function EditCommunityButton({
@@ -53,6 +56,9 @@ export function EditCommunityButton({
   const [accent, setAccent] = useState(community.accent ?? "cyan");
   const [imageUrl, setImageUrl] = useState(community.imageUrl ?? "");
   const [wallpaperUrl, setWallpaperUrl] = useState(community.wallpaperUrl ?? "");
+  const [memberLimit, setMemberLimit] = useState(
+    community.memberLimit != null ? String(community.memberLimit) : "50",
+  );
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
 
@@ -68,6 +74,9 @@ export function EditCommunityButton({
     setAccent(community.accent ?? "cyan");
     setImageUrl(community.imageUrl ?? "");
     setWallpaperUrl(community.wallpaperUrl ?? "");
+    setMemberLimit(
+      community.memberLimit != null ? String(community.memberLimit) : "50",
+    );
     setError(undefined);
   }, [open, community]);
 
@@ -88,6 +97,9 @@ export function EditCommunityButton({
         accent,
         imageUrl: imageUrl || "",
         wallpaperUrl: wallpaperUrl || "",
+        ...(visibility === "PRIVATE"
+          ? { memberLimit: Number(memberLimit) || 50 }
+          : {}),
       }),
     });
 
@@ -186,6 +198,25 @@ export function EditCommunityButton({
           <FormField label="Wallpaper">
             <ImageUploadInput value={wallpaperUrl} onChange={setWallpaperUrl} />
           </FormField>
+
+          {visibility === "PRIVATE" ? (
+            <>
+              <FormField label="Member limit">
+                <TextInput
+                  type="number"
+                  min={2}
+                  max={500}
+                  value={memberLimit}
+                  onChange={(e) => setMemberLimit(e.target.value)}
+                />
+              </FormField>
+              <CommunityJoinCodePanel
+                communitySlug={community.slug}
+                visibility="private"
+                canManage={community.canDelete ?? false}
+              />
+            </>
+          ) : null}
 
           <FormError message={error} />
           <FormActions onCancel={() => setOpen(false)} submitLabel="Save Changes" loading={loading} />

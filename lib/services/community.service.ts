@@ -24,14 +24,22 @@ import {
 } from "@/lib/services/feed.service";
 import { notifyCommunityPost } from "@/lib/services/notification.service";
 import { getLikedPostIds } from "@/lib/services/like.service";
+import { areUsersFriends, listUserFriends } from "@/lib/services/follow.service";
 import {
   listCommunityVoiceChannels,
   listCommunityWatchChannels,
 } from "@/lib/services/community-channel.service";
+import {
+  generateJoinCode,
+  hashJoinCode,
+  joinCodeLookup as buildJoinCodeLookup,
+  normalizeJoinCode,
+  verifyJoinCode,
+} from "@/lib/community-join-code";
 
 const communityInclude = {
   members: {
-    take: 12,
+    take: 100,
     orderBy: { joinedAt: "asc" },
     include: {
       user: {
@@ -64,6 +72,57 @@ async function syncCommunityMemberCount(communityId: string) {
     data: { memberCount },
   });
   return memberCount;
+}
+
+async function buildPrivateJoinCredentials(input: {
+  joinCode?: string;
+  memberLimit?: number;
+}) {
+  const memberLimit = input.memberLimit ?? 50;
+  const plainCode = input.joinCode?.trim()
+    ? normalizeJoinCode(input.joinCode)
+    : generateJoinCode();
+  const lookup = buildJoinCodeLookup(plainCode);
+  const hash = await hashJoinCode(plainCode);
+  return { memberLimit, plainCode, lookup, hash };
+}
+
+async function assertCommunityHasCapacity(community: {
+  id: string;
+  memberCount: number;
+  memberLimit: number | null;
+}) {
+  if (
+    community.memberLimit != null &&
+    community.memberCount >= community.memberLimit
+  ) {
+    throw new CommunityForbiddenError(
+      "This community has reached its member limit.",
+    );
+  }
+}
+
+async function addCommunityMember(
+  userId: string,
+  community: {
+    id: string;
+    memberCount: number;
+    memberLimit: number | null;
+    slug: string;
+  },
+) {
+  await assertCommunityHasCapacity(community);
+
+  const existing = await prisma.communityMember.findUnique({
+    where: { userId_communityId: { userId, communityId: community.id } },
+  });
+  if (existing) return { membership: existing, slug: community.slug, joined: false };
+
+  const membership = await prisma.communityMember.create({
+    data: { userId, communityId: community.id, role: "MEMBER" },
+  });
+  await syncCommunityMemberCount(community.id);
+  return { membership, slug: community.slug, joined: true };
 }
 
 async function syncCommunityPostCount(communityId: string) {
@@ -164,6 +223,22 @@ export async function getCommunityStatsForUser(userId: string) {
 export async function createCommunity(userId: string, input: CommunityFormInput) {
   const slug = input.slug?.trim() || slugify(input.name);
 
+  let memberLimit: number | null = null;
+  let joinCodeLookup: string | null = null;
+  let joinCodeHash: string | null = null;
+  let issuedJoinCode: string | undefined;
+
+  if (input.visibility === "PRIVATE") {
+    const credentials = await buildPrivateJoinCredentials({
+      joinCode: input.joinCode,
+      memberLimit: input.memberLimit,
+    });
+    memberLimit = credentials.memberLimit;
+    joinCodeLookup = credentials.lookup;
+    joinCodeHash = credentials.hash;
+    issuedJoinCode = credentials.plainCode;
+  }
+
   const community = await prisma.community.create({
     data: {
       slug,
@@ -176,6 +251,9 @@ export async function createCommunity(userId: string, input: CommunityFormInput)
       imageUrl: input.imageUrl?.trim() || null,
       wallpaperUrl: input.wallpaperUrl?.trim() || null,
       memberCount: 1,
+      memberLimit,
+      joinCodeLookup,
+      joinCodeHash,
     },
   });
 
@@ -187,7 +265,8 @@ export async function createCommunity(userId: string, input: CommunityFormInput)
     },
   });
 
-  return getCommunityRecordBySlug(community.slug);
+  const row = await getCommunityRecordBySlug(community.slug);
+  return { row, joinCode: issuedJoinCode };
 }
 
 export async function updateCommunity(
@@ -205,7 +284,29 @@ export async function updateCommunity(
   });
   if (!membership) throw new CommunityNotFoundError("Community not found.");
 
-  return prisma.community.update({
+  const becomingPrivate = input.visibility === "PRIVATE";
+  const becomingPublic = input.visibility === "PUBLIC";
+  let joinCredentials:
+    | Awaited<ReturnType<typeof buildPrivateJoinCredentials>>
+    | undefined;
+
+  if (becomingPrivate && membership.community.visibility !== "PRIVATE") {
+    joinCredentials = await buildPrivateJoinCredentials({
+      memberLimit: input.memberLimit ?? membership.community.memberLimit ?? 50,
+      joinCode: input.joinCode,
+    });
+  } else if (
+    becomingPrivate &&
+    membership.community.visibility === "PRIVATE" &&
+    input.joinCode?.trim()
+  ) {
+    joinCredentials = await buildPrivateJoinCredentials({
+      joinCode: input.joinCode,
+      memberLimit: input.memberLimit ?? membership.community.memberLimit ?? 50,
+    });
+  }
+
+  const row = await prisma.community.update({
     where: { id: membership.communityId },
     data: {
       ...(input.name ? { name: input.name.trim() } : {}),
@@ -222,9 +323,31 @@ export async function updateCommunity(
       ...(input.wallpaperUrl !== undefined
         ? { wallpaperUrl: input.wallpaperUrl?.trim() || null }
         : {}),
+      ...(input.memberLimit !== undefined
+        ? { memberLimit: input.memberLimit }
+        : {}),
+      ...(becomingPublic
+        ? {
+            memberLimit: null,
+            joinCodeLookup: null,
+            joinCodeHash: null,
+          }
+        : {}),
+      ...(joinCredentials
+        ? {
+            memberLimit: joinCredentials.memberLimit,
+            joinCodeLookup: joinCredentials.lookup,
+            joinCodeHash: joinCredentials.hash,
+          }
+        : {}),
     },
     include: communityInclude,
   });
+
+  return {
+    row,
+    joinCode: joinCredentials?.plainCode,
+  };
 }
 
 export async function deleteCommunity(userId: string, slug: string) {
@@ -240,19 +363,99 @@ export async function joinCommunity(userId: string, slug: string) {
   const community = await prisma.community.findUnique({ where: { slug } });
   if (!community) throw new CommunityNotFoundError("Community not found.");
   if (community.visibility === "PRIVATE") {
-    throw new CommunityForbiddenError("This community is private.");
+    throw new CommunityForbiddenError(
+      "This community is private. Use a room code to join.",
+    );
   }
 
-  const existing = await prisma.communityMember.findUnique({
-    where: { userId_communityId: { userId, communityId: community.id } },
-  });
-  if (existing) return existing;
+  return addCommunityMember(userId, community);
+}
 
-  const membership = await prisma.communityMember.create({
-    data: { userId, communityId: community.id, role: "MEMBER" },
+export async function joinCommunityByCode(userId: string, rawCode: string) {
+  const normalized = normalizeJoinCode(rawCode);
+  if (normalized.length < 4) {
+    throw new CommunityForbiddenError("Enter a valid room code.");
+  }
+
+  const lookup = buildJoinCodeLookup(normalized);
+  const community = await prisma.community.findUnique({
+    where: { joinCodeLookup: lookup },
   });
-  await syncCommunityMemberCount(community.id);
-  return membership;
+
+  if (!community?.joinCodeHash || community.visibility !== "PRIVATE") {
+    throw new CommunityNotFoundError("Invalid room code.");
+  }
+
+  const valid = await verifyJoinCode(normalized, community.joinCodeHash);
+  if (!valid) {
+    throw new CommunityNotFoundError("Invalid room code.");
+  }
+
+  return addCommunityMember(userId, community);
+}
+
+export async function regenerateCommunityJoinCode(userId: string, slug: string) {
+  const membership = await prisma.communityMember.findFirst({
+    where: {
+      userId,
+      community: { slug },
+      role: "ADMIN",
+    },
+    include: { community: true },
+  });
+  if (!membership) throw new CommunityNotFoundError("Community not found.");
+  if (membership.community.visibility !== "PRIVATE") {
+    throw new CommunityForbiddenError(
+      "Room codes are only used for private communities.",
+    );
+  }
+
+  const credentials = await buildPrivateJoinCredentials({
+    memberLimit: membership.community.memberLimit ?? 50,
+  });
+
+  await prisma.community.update({
+    where: { id: membership.communityId },
+    data: {
+      joinCodeLookup: credentials.lookup,
+      joinCodeHash: credentials.hash,
+    },
+  });
+
+  return {
+    joinCode: credentials.plainCode,
+    memberLimit: credentials.memberLimit,
+  };
+}
+
+export async function getCommunityJoinCodeStatus(userId: string, slug: string) {
+  const membership = await prisma.communityMember.findFirst({
+    where: {
+      userId,
+      community: { slug },
+      role: { in: ["ADMIN", "MODERATOR"] },
+    },
+    include: {
+      community: {
+        select: {
+          visibility: true,
+          memberLimit: true,
+          memberCount: true,
+          joinCodeHash: true,
+        },
+      },
+    },
+  });
+  if (!membership) return null;
+
+  const { community } = membership;
+  return {
+    isPrivate: community.visibility === "PRIVATE",
+    hasJoinCode: Boolean(community.joinCodeHash),
+    memberLimit: community.memberLimit,
+    memberCount: community.memberCount,
+    canManage: membership.role === "ADMIN",
+  };
 }
 
 export async function leaveCommunity(userId: string, slug: string) {
@@ -516,9 +719,10 @@ export async function getCommunityDetailBySlug(
     viewerUserId,
     likedPostIds,
     memberPreview: row.members.map((member) => mapUserSummary(member.user)),
-    onlineMembers: row.members.slice(0, 8).map((member) => ({
+    onlineMembers: row.members.map((member) => ({
       id: member.user.id,
       name: member.user.name,
+      handle: member.user.handle,
       avatarColor: member.user.avatarColor,
       avatarUrl: member.user.avatarUrl ?? undefined,
       role:
@@ -556,6 +760,162 @@ export async function listUserJoinedCommunities(userId: string) {
     orderBy: { joinedAt: "desc" },
   });
   return rows.map((row) => row.community);
+}
+
+async function requireCommunityAdmin(userId: string, slug: string) {
+  const membership = await prisma.communityMember.findFirst({
+    where: { userId, community: { slug }, role: "ADMIN" },
+    include: { community: true },
+  });
+  if (!membership) {
+    throw new CommunityForbiddenError("Only community admins can do this.");
+  }
+  return membership;
+}
+
+export async function listCommunityMembers(slug: string) {
+  const community = await prisma.community.findUnique({ where: { slug } });
+  if (!community) throw new CommunityNotFoundError("Community not found.");
+
+  const members = await prisma.communityMember.findMany({
+    where: { communityId: community.id },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          handle: true,
+          avatarColor: true,
+          avatarUrl: true,
+        },
+      },
+    },
+    orderBy: [{ role: "asc" }, { joinedAt: "asc" }],
+  });
+
+  return members.map((member) => ({
+    id: member.user.id,
+    name: member.user.name,
+    handle: member.user.handle,
+    avatarColor: member.user.avatarColor,
+    avatarUrl: member.user.avatarUrl ?? undefined,
+    role:
+      member.role === "ADMIN"
+        ? ("admin" as const)
+        : member.role === "MODERATOR"
+          ? ("moderator" as const)
+          : ("member" as const),
+    joinedAt: member.joinedAt,
+  }));
+}
+
+export async function listInviteableFriendsForCommunity(
+  adminId: string,
+  slug: string,
+) {
+  const membership = await requireCommunityAdmin(adminId, slug);
+  if (membership.community.visibility !== "PRIVATE") {
+    throw new CommunityForbiddenError(
+      "Friend invites are only available for private communities.",
+    );
+  }
+
+  const friends = await listUserFriends(adminId, 100);
+  const memberIds = new Set(
+    (
+      await prisma.communityMember.findMany({
+        where: { communityId: membership.communityId },
+        select: { userId: true },
+      })
+    ).map((row) => row.userId),
+  );
+
+  return friends
+    .filter((friend) => !memberIds.has(friend.id))
+    .map((friend) => ({
+      id: friend.id,
+      name: friend.name,
+      handle: friend.handle,
+      avatarColor: friend.avatarColor,
+      avatarUrl: friend.avatarUrl ?? undefined,
+    }));
+}
+
+export async function addFriendToCommunity(
+  adminId: string,
+  slug: string,
+  friendUserId: string,
+) {
+  const membership = await requireCommunityAdmin(adminId, slug);
+  if (membership.community.visibility !== "PRIVATE") {
+    throw new CommunityForbiddenError(
+      "Friend invites are only available for private communities.",
+    );
+  }
+
+  const friends = await areUsersFriends(adminId, friendUserId);
+  if (!friends) {
+    throw new CommunityForbiddenError("You can only add mutual friends.");
+  }
+
+  return addCommunityMember(friendUserId, membership.community);
+}
+
+export async function removeCommunityMember(
+  actorId: string,
+  slug: string,
+  targetUserId: string,
+) {
+  const actorMembership = await requireCommunityAdmin(actorId, slug);
+  const target = await prisma.communityMember.findUnique({
+    where: {
+      userId_communityId: {
+        userId: targetUserId,
+        communityId: actorMembership.communityId,
+      },
+    },
+  });
+  if (!target) throw new CommunityNotFoundError("Member not found.");
+  if (target.userId === actorId) {
+    throw new CommunityForbiddenError("Use leave community to remove yourself.");
+  }
+  if (target.role === "ADMIN") {
+    throw new CommunityForbiddenError("Cannot remove another admin.");
+  }
+
+  await prisma.communityMember.delete({
+    where: { id: target.id },
+  });
+  await syncCommunityMemberCount(actorMembership.communityId);
+  return { removed: true };
+}
+
+export async function updateCommunityMemberRole(
+  adminId: string,
+  slug: string,
+  targetUserId: string,
+  role: "MODERATOR" | "MEMBER",
+) {
+  await requireCommunityAdmin(adminId, slug);
+
+  const target = await prisma.communityMember.findFirst({
+    where: {
+      userId: targetUserId,
+      community: { slug },
+    },
+  });
+  if (!target) throw new CommunityNotFoundError("Member not found.");
+  if (target.role === "ADMIN") {
+    throw new CommunityForbiddenError("Cannot change an admin's role.");
+  }
+  if (target.userId === adminId) {
+    throw new CommunityForbiddenError("You cannot change your own role.");
+  }
+
+  return prisma.communityMember.update({
+    where: { id: target.id },
+    data: { role },
+  });
 }
 
 export class CommunityNotFoundError extends Error {

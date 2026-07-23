@@ -55,15 +55,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const row = await createCommunity(auth.userId, parsed.data);
-    if (!row) {
+    const result = await createCommunity(auth.userId, parsed.data);
+    if (!result.row) {
       return NextResponse.json(
         { error: "Could not create community." },
         { status: 500 },
       );
     }
     return NextResponse.json(
-      { community: mapCommunityToCard(row) },
+      {
+        community: mapCommunityToCard(result.row),
+        joinCode: result.joinCode,
+      },
       { status: 201 },
     );
   } catch (error) {

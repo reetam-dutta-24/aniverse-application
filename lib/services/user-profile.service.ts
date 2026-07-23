@@ -12,8 +12,10 @@ import { mapTrackToMusicTrack } from "@/lib/mappers/music.mapper";
 import {
   getFollowerCount,
   getRecentFollowers,
-  isUserFollowing,
+  getViewerFriendStatus,
+  listUserFriends,
 } from "@/lib/services/follow.service";
+import { getAnalyticsForUser } from "@/lib/services/analytics.service";
 import { getLikedReviewIds } from "@/lib/services/like.service";
 import { normalizeProfileSlug } from "@/lib/profile-routes";
 import { normalizeHandle } from "@/lib/services/user.service";
@@ -23,6 +25,38 @@ import type { UserProfileDetail } from "@/types";
 const contentInclude = {
   genres: { include: { genre: true } },
 } as const;
+
+const ANIME_SHOW_TYPES = new Set(["ANIME", "SHOW", "KDRAMA"]);
+
+const ONLINE_WINDOW_MS = 30 * 60 * 1000;
+
+async function resolveUserOnline(
+  userId: string,
+  viewerUserId?: string,
+): Promise<boolean> {
+  if (viewerUserId === userId) return true;
+
+  const [latestWatch, latestListen] = await Promise.all([
+    prisma.watchEvent.findFirst({
+      where: { userId },
+      orderBy: { watchedAt: "desc" },
+      select: { watchedAt: true },
+    }),
+    prisma.listenEvent.findFirst({
+      where: { userId },
+      orderBy: { listenedAt: "desc" },
+      select: { listenedAt: true },
+    }),
+  ]);
+
+  const latestActivity = Math.max(
+    latestWatch?.watchedAt.getTime() ?? 0,
+    latestListen?.listenedAt.getTime() ?? 0,
+  );
+
+  if (latestActivity === 0) return false;
+  return Date.now() - latestActivity <= ONLINE_WINDOW_MS;
+}
 
 export class UserProfileNotFoundError extends Error {
   constructor() {
@@ -118,6 +152,91 @@ function topContentByWatchCount(
     .map((entry) => mapContentToItem(entry.content));
 }
 
+function favoritesByContentTypes<
+  T extends { content: Parameters<typeof mapContentToItem>[0] },
+>(rows: T[], types: Set<string>, limit = 8) {
+  return rows
+    .filter((row) => types.has(row.content.type))
+    .slice(0, limit)
+    .map((row) => mapContentToItem(row.content));
+}
+
+function buildRecentActivity(
+  watchRows: Array<{
+    id: string;
+    content: Parameters<typeof mapContentToItem>[0];
+    watchedAt: Date;
+  }>,
+  listenRows: Array<{
+    id: string;
+    track: Parameters<typeof mapTrackToMusicTrack>[0];
+    listenedAt: Date;
+  }>,
+  limit = 24,
+): import("@/types").ProfileRecentActivityItem[] {
+  type Entry = import("@/types").ProfileRecentActivityItem & { at: number };
+
+  const entries: Entry[] = [
+    ...watchRows.map((row) => ({
+      id: `watch-${row.id}`,
+      kind: "content" as const,
+      item: mapContentToItem(row.content),
+      at: row.watchedAt.getTime(),
+    })),
+    ...listenRows.map((row) => ({
+      id: `listen-${row.id}`,
+      kind: "music" as const,
+      track: mapTrackToMusicTrack(row.track),
+      at: row.listenedAt.getTime(),
+    })),
+  ];
+
+  entries.sort((a, b) => b.at - a.at);
+
+  const seen = new Set<string>();
+  const unique: Entry[] = [];
+
+  for (const entry of entries) {
+    const key =
+      entry.kind === "content"
+        ? `content:${entry.item.id}`
+        : `music:${entry.track.id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(entry);
+    if (unique.length >= limit) break;
+  }
+
+  return unique.map(({ at: _at, ...rest }) => rest);
+}
+
+function buildCurrentlyWatching(
+  activeWatch:
+    | {
+        content: Parameters<typeof mapContentToItem>[0];
+        status: string;
+      }
+    | undefined,
+  latestWatch:
+    | {
+        content: Parameters<typeof mapContentToItem>[0];
+      }
+    | undefined,
+) {
+  const source = activeWatch?.content ?? latestWatch?.content;
+  if (!source) return undefined;
+
+  const item = mapContentToItem(source);
+  return {
+    title: item.title,
+    contentId: item.id,
+    isActive: Boolean(activeWatch),
+    episodeLabel: activeWatch ? item.meta : undefined,
+    genres: item.genres,
+    durationLabel: item.meta,
+  };
+}
+
 export async function getUserProfileDetail(
   profileSlug: string,
   viewerUserId?: string,
@@ -127,7 +246,53 @@ export async function getUserProfileDetail(
 
   const isOwner = viewerUserId === user.id;
   const isPublic = user.preferences?.publicProfile ?? true;
-  if (!isPublic && !isOwner) return null;
+  const viewerFriend =
+    viewerUserId && !isOwner
+      ? await getViewerFriendStatus(viewerUserId, user.id)
+      : { status: "none" as const };
+  const isFriend = viewerFriend.status === "friends";
+
+  if (!isPublic && !isOwner && !isFriend) {
+    const followerCount = await getFollowerCount(user.id);
+    return buildProfileDetail({
+      user: { ...user, bio: "This profile is private." },
+      tasteProfile: null,
+      counts: {
+        friends: followerCount,
+        artistsFollowing: 0,
+        watchMinutes: 0,
+        songsPlayed: 0,
+        collections: 0,
+        favorites: 0,
+        communitiesJoined: 0,
+        contentWatched: 0,
+      },
+      favoriteAnimeShow: [],
+      favoriteMovies: [],
+      friends: [],
+      followedArtists: [],
+      currentActivity: [],
+      likedContent: [],
+      watchedMost: [],
+      likedSongs: [],
+      mostPlayedSongs: [],
+      likedAlbums: [],
+      topArtists: [],
+      collections: [],
+      communities: [],
+      reviews: [],
+      recentActivity: [],
+      followerCount,
+      followers: [],
+      followerSummary:
+        followerCount > 0 ? `${followerCount} friends` : undefined,
+      viewerFriendStatus: viewerFriend.status,
+      incomingFriendRequestId: viewerFriend.incomingFriendRequestId,
+      viewerFollows: false,
+      activitySubtitle: "This profile is private",
+      isPrivatePreview: true,
+    });
+  }
 
   const showHistory = isOwner || (user.preferences?.showWatchHistory ?? false);
 
@@ -138,14 +303,22 @@ export async function getUserProfileDetail(
     communityRows,
     reviewRows,
     listenRows,
+    activityWatchRows,
     watchRows,
     albumRows,
     artistFollowRows,
+    trackFavoriteRows,
     counts,
     watchMinutes,
+    listenCount,
+    artistFollowCount,
     followerCount,
     recentFollowers,
-    viewerFollows,
+    friendRows,
+    analytics,
+    communitiesCount,
+    watchedContentRows,
+    isOnline,
   ] = await Promise.all([
     prisma.watchlistItem.findMany({
       where: { userId: user.id },
@@ -168,10 +341,13 @@ export async function getUserProfileDetail(
       take: 12,
     }),
     prisma.communityMember.findMany({
-      where: { userId: user.id },
+      where: {
+        userId: user.id,
+        ...(isOwner ? {} : { community: { visibility: "PUBLIC" } }),
+      },
       include: { community: true },
       orderBy: { joinedAt: "desc" },
-      take: 8,
+      take: 12,
     }),
     prisma.review.findMany({
       where: { authorId: user.id },
@@ -187,20 +363,26 @@ export async function getUserProfileDetail(
         },
       },
       orderBy: { createdAt: "desc" },
-      take: 8,
+      take: 12,
     }),
     prisma.listenEvent.findMany({
       where: { userId: user.id },
-      include: { track: true },
+      include: { track: { include: { artistRef: true } } },
       orderBy: { listenedAt: "desc" },
-      take: 40,
+      take: 80,
+    }),
+    prisma.watchEvent.findMany({
+      where: { userId: user.id },
+      include: { content: { include: contentInclude } },
+      orderBy: { watchedAt: "desc" },
+      take: 80,
     }),
     showHistory
       ? prisma.watchEvent.findMany({
           where: { userId: user.id },
           include: { content: { include: contentInclude } },
           orderBy: { watchedAt: "desc" },
-          take: 40,
+          take: 80,
         })
       : Promise.resolve([]),
     prisma.musicTrack.findMany({
@@ -226,24 +408,35 @@ export async function getUserProfileDetail(
       where: { userId: user.id },
       include: { artist: true },
       orderBy: { createdAt: "desc" },
-      take: 8,
+      take: 12,
+    }),
+    prisma.trackFavorite.findMany({
+      where: { userId: user.id },
+      include: { track: { include: { artistRef: true } } },
+      orderBy: { createdAt: "desc" },
+      take: 12,
     }),
     Promise.all([
-      prisma.watchlistItem.count({ where: { userId: user.id } }),
       prisma.collection.count({ where: { userId: user.id } }),
-      prisma.review.count({ where: { authorId: user.id } }),
-      prisma.communityMember.count({ where: { userId: user.id } }),
       prisma.contentFavorite.count({ where: { userId: user.id } }),
     ]),
     prisma.watchEvent.aggregate({
       where: { userId: user.id },
       _sum: { minutes: true },
     }),
+    prisma.listenEvent.count({ where: { userId: user.id } }),
+    prisma.artistFollow.count({ where: { userId: user.id } }),
     getFollowerCount(user.id),
     getRecentFollowers(user.id, 3),
-    viewerUserId && !isOwner
-      ? isUserFollowing(viewerUserId, user.handle)
-      : Promise.resolve(false),
+    listUserFriends(user.id, 24),
+    getAnalyticsForUser(user.id),
+    prisma.communityMember.count({ where: { userId: user.id } }),
+    prisma.watchEvent.findMany({
+      where: { userId: user.id },
+      distinct: ["contentId"],
+      select: { contentId: true },
+    }),
+    resolveUserOnline(user.id, viewerUserId),
   ]);
 
   const likedReviewIds = await getLikedReviewIds(
@@ -251,13 +444,31 @@ export async function getUserProfileDetail(
     reviewRows.map((row) => row.id),
   );
 
-  const [
-    watchlistCount,
-    collectionsCount,
-    reviewsCount,
-    communitiesCount,
-    favoritesCount,
-  ] = counts;
+  const [collectionsCount, favoritesCount] = counts;
+
+  let favoriteAnimeShow = favoritesByContentTypes(
+    favoriteRows,
+    ANIME_SHOW_TYPES,
+    8,
+  );
+  if (favoriteAnimeShow.length === 0 && showHistory) {
+    favoriteAnimeShow = topContentByWatchCount(
+      watchRows.filter((row) => ANIME_SHOW_TYPES.has(row.content.type)),
+      8,
+    );
+  }
+
+  let favoriteMovies = favoritesByContentTypes(
+    favoriteRows,
+    new Set(["MOVIE"]),
+    8,
+  );
+  if (favoriteMovies.length === 0 && showHistory) {
+    favoriteMovies = topContentByWatchCount(
+      watchRows.filter((row) => row.content.type === "MOVIE"),
+      8,
+    );
+  }
 
   const watchingItems = watchlistRows
     .filter((row) => row.status === "WATCHING")
@@ -279,31 +490,42 @@ export async function getUserProfileDetail(
         .slice(0, 8)
         .map((row) => mapContentToItem(row.content));
 
-  const likedSongs = uniqueTracks(listenRows, 8);
+  const favoriteSongRows =
+    trackFavoriteRows.length > 0
+      ? trackFavoriteRows.map((row) => row.track)
+      : listenRows.map((row) => row.track);
+
+  const likedSongs = uniqueTracks(
+    favoriteSongRows.map((track) => ({ track })),
+    8,
+  );
   const mostPlayedSongs = topTracksByPlayCount(listenRows, 8);
   const likedAlbums = albumRows.map(mapTrackToMusicTrack);
 
-  const topArtists = artistFollowRows.map((row) => mapArtistToContentItem(row.artist));
+  const followedArtists = artistFollowRows.map((row) =>
+    mapArtistToContentItem(row.artist),
+  );
+  const topArtists = followedArtists;
 
-  const recentActivity = [
-    ...watchlistRows.slice(0, 4).map(
-      (row) =>
-        ({
-          kind: "content" as const,
-          item: mapContentToItem(row.content),
-        }) satisfies import("@/types").ProfileRecentActivityItem,
-    ),
-    ...listenRows.slice(0, 4).map(
-      (row) =>
-        ({
-          kind: "music" as const,
-          track: mapTrackToMusicTrack(row.track),
-        }) satisfies import("@/types").ProfileRecentActivityItem,
-    ),
-  ].slice(0, 6);
+  const recentActivity = buildRecentActivity(
+    activityWatchRows,
+    listenRows,
+    24,
+  );
 
   const activeWatch = watchlistRows.find((row) => row.status === "WATCHING");
+  const latestWatch = activityWatchRows[0] ?? watchRows[0];
   const latestListen = listenRows[0];
+  const currentlyWatching = buildCurrentlyWatching(activeWatch, latestWatch);
+
+  const activitySubtitle = (() => {
+    if (recentActivity.length === 0) return undefined;
+    const latest = recentActivity[0];
+    if (latest.kind === "content") {
+      return `Recently watched ${latest.item.title}`;
+    }
+    return `Recently listened to ${latest.track.title}`;
+  })();
 
   const followerSummary =
     followerCount > recentFollowers.length
@@ -316,13 +538,20 @@ export async function getUserProfileDetail(
     user,
     tasteProfile: user.tasteProfile,
     counts: {
-      watchlist: watchlistCount,
-      collections: collectionsCount,
-      reviews: reviewsCount,
-      communities: communitiesCount,
-      favorites: favoritesCount,
+      friends: followerCount,
+      artistsFollowing: artistFollowCount,
       watchMinutes: watchMinutes._sum.minutes ?? 0,
+      songsPlayed: listenCount,
+      collections: collectionsCount,
+      favorites: favoritesCount,
+      communitiesJoined: communitiesCount,
+      contentWatched: watchedContentRows.length,
     },
+    favoriteAnimeShow,
+    favoriteMovies,
+    friends: friendRows.map(mapUserSummary),
+    followedArtists,
+    analytics,
     currentActivity,
     likedContent,
     watchedMost,
@@ -339,29 +568,22 @@ export async function getUserProfileDetail(
     nowListening: latestListen
       ? {
           title: latestListen.track.title,
-          artist: latestListen.track.artist,
-          artistId: latestListen.track.artist
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-"),
+          artist: latestListen.track.artistRef?.title ?? latestListen.track.artist,
+          artistId: latestListen.track.artistRef?.slug,
           songId: latestListen.track.slug,
         }
       : undefined,
-    currentlyWatching: activeWatch
-      ? {
-          title: activeWatch.content.title,
-          episodeLabel: activeWatch.content.meta ?? undefined,
-          contentId: activeWatch.content.slug,
-        }
-      : undefined,
-    activitySubtitle: activeWatch
-      ? `Currently Watching ${activeWatch.content.title}`
-      : latestListen
-        ? `Listening to ${latestListen.track.title}`
-        : undefined,
+    currentlyWatching,
+    activitySubtitle,
     followerCount,
     followers: recentFollowers.map(mapUserSummary),
     followerSummary,
-    viewerFollows: isOwner ? undefined : viewerFollows,
+    viewerFriendStatus: isOwner ? undefined : viewerFriend.status,
+    incomingFriendRequestId: isOwner
+      ? undefined
+      : viewerFriend.incomingFriendRequestId,
+    viewerFollows: isOwner ? undefined : viewerFriend.status === "friends",
+    online: isOnline,
   });
 }
 
@@ -374,20 +596,10 @@ export async function searchUserProfiles(
 
   const rows = await prisma.user.findMany({
     where: {
-      AND: [
-        {
-          OR: [
-            { name: { contains: q, mode: "insensitive" } },
-            { handle: { contains: normalizeHandle(q), mode: "insensitive" } },
-            { bio: { contains: q, mode: "insensitive" } },
-          ],
-        },
-        {
-          OR: [
-            { preferences: { is: null } },
-            { preferences: { is: { publicProfile: true } } },
-          ],
-        },
+      OR: [
+        { name: { contains: q, mode: "insensitive" } },
+        { handle: { contains: normalizeHandle(q), mode: "insensitive" } },
+        { bio: { contains: q, mode: "insensitive" } },
       ],
     },
     select: {

@@ -105,7 +105,6 @@ export default async function SongDetailPage({ params }: SongPageProps) {
           node: (
             <CommunityCard
               community={community}
-              members={members}
               ctaMode="join"
             />
           ),

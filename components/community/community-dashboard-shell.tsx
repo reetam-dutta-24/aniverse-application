@@ -19,6 +19,7 @@ export interface CommunityDashboardShellProps {
   communityName: string;
   navItems: CommunityDashboardNavItem[];
   onlineMembers: Member[];
+  canManageMembers?: boolean;
   children: React.ReactNode;
   className?: string;
 }
@@ -29,6 +30,7 @@ export function CommunityDashboardShell({
   communityName,
   navItems,
   onlineMembers,
+  canManageMembers = false,
   children,
   className,
 }: CommunityDashboardShellProps) {
@@ -116,6 +118,8 @@ export function CommunityDashboardShell({
                   <CommunityDashboardMemberCard
                     key={member.id}
                     member={member}
+                    communitySlug={communityId}
+                    canManage={canManageMembers}
                   />
                 ))}
               </div>

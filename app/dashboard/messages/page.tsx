@@ -7,7 +7,7 @@ export default function DashboardMessagesPage() {
       <div>
         <h1 className="text-2xl font-bold text-white">Messages</h1>
         <p className="mt-1 text-sm text-white/70">
-          Direct messages with your friends. Messages from non-friends arrive with a warning.
+          Direct messages with mutual friends. Send a friend request first — once they accept, you can chat here.
         </p>
       </div>
       <Suspense fallback={<p className="text-sm text-white/60">Loading messages…</p>}>

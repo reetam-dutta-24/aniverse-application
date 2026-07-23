@@ -130,7 +130,6 @@ export default async function ArtistDetailPage({ params }: ArtistPageProps) {
             node: (
               <CommunityCard
                 community={community}
-                members={members}
                 ctaMode="join"
               />
             ),

@@ -37,6 +37,7 @@ export default async function CommunityDashboardLayout({
       communityName={community.name}
       navItems={community.dashboardNav}
       onlineMembers={community.onlineMembers}
+      canManageMembers={community.canDelete}
     >
       {children}
     </CommunityDashboardShell>

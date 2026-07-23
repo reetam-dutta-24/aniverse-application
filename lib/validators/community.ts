@@ -16,7 +16,7 @@ export const communityCategories = [
   "Mixed",
 ] as const;
 
-export const communityFormSchema = z.object({
+const communityFormFieldsSchema = z.object({
   name: z.string().min(2, "Name is required.").max(120),
   slug: z
     .string()
@@ -33,9 +33,53 @@ export const communityFormSchema = z.object({
   accent: z.enum(accentValues).optional(),
   imageUrl: imageUrlField,
   wallpaperUrl: imageUrlField,
+  /** Max members for private communities (room-code access). */
+  memberLimit: z.coerce.number().int().min(2).max(500).optional(),
+  /** Optional custom room code; auto-generated when omitted for private communities. */
+  joinCode: z
+    .string()
+    .min(6, "Room code must be at least 6 characters.")
+    .max(32)
+    .optional(),
 });
 
-export const communityUpdateSchema = communityFormSchema.partial();
+function refinePrivateMemberLimit(
+  value: {
+    visibility?: "PUBLIC" | "PRIVATE";
+    memberLimit?: number | null;
+  },
+  ctx: z.RefinementCtx,
+) {
+  if (
+    value.visibility === "PRIVATE" &&
+    value.memberLimit != null &&
+    value.memberLimit < 2
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Member limit must be at least 2 for private communities.",
+      path: ["memberLimit"],
+    });
+  }
+}
+
+export const communityFormSchema = communityFormFieldsSchema.superRefine(
+  refinePrivateMemberLimit,
+);
+
+export const communityUpdateSchema = communityFormFieldsSchema
+  .partial()
+  .extend({
+    memberLimit: z.coerce.number().int().min(2).max(500).nullable().optional(),
+  })
+  .superRefine(refinePrivateMemberLimit);
+
+export const joinCommunityByCodeSchema = z.object({
+  joinCode: z
+    .string()
+    .min(4, "Enter the private room code shared by the community admin.")
+    .max(32),
+});
 
 export const communityPostFormSchema = z.object({
   title: z.string().min(1, "Post title is required.").max(200),
@@ -90,3 +134,4 @@ export type VoiceChannelFormInput = z.infer<typeof voiceChannelFormSchema>;
 export type VoiceChannelUpdateInput = z.infer<typeof voiceChannelUpdateSchema>;
 export type WatchChannelFormInput = z.infer<typeof watchChannelFormSchema>;
 export type WatchChannelUpdateInput = z.infer<typeof watchChannelUpdateSchema>;
+export type JoinCommunityByCodeInput = z.infer<typeof joinCommunityByCodeSchema>;

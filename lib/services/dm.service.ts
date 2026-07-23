@@ -25,6 +25,13 @@ export function normalizeParticipantPair(userAId: string, userBId: string) {
 export async function getOrCreateConversation(userAId: string, userBId: string) {
   if (userAId === userBId) throw new DmForbiddenError("Cannot message yourself.");
 
+  const friends = await areUsersFriends(userAId, userBId);
+  if (!friends) {
+    throw new DmForbiddenError(
+      "You can only message users who are your friends. Send a friend request first.",
+    );
+  }
+
   const pair = normalizeParticipantPair(userAId, userBId);
   const existing = await prisma.directConversation.findUnique({
     where: {
@@ -65,36 +72,49 @@ export async function listConversationsForUser(userId: string) {
         orderBy: { createdAt: "desc" },
         take: 1,
       },
+      reads: {
+        where: { userId },
+        take: 1,
+      },
     },
     orderBy: { updatedAt: "desc" },
     take: 50,
   });
 
-  return rows.map((row) => {
-    const peer =
-      row.participantLowId === userId ? row.participantHigh : row.participantLow;
-    const last = row.messages[0];
-    return {
-      id: row.id,
-      peer: {
-        id: peer.id,
-        name: peer.name,
-        handle: peer.handle,
-        avatarColor: peer.avatarColor,
-        avatarUrl: peer.avatarUrl ?? undefined,
-      },
-      lastMessage: last
-        ? {
-            id: last.id,
-            content: last.content,
-            senderId: last.senderId,
-            warnNonFriend: last.warnNonFriend,
-            createdAt: formatPostedAt(last.createdAt),
-          }
-        : undefined,
-      updatedAt: row.updatedAt,
-    };
-  });
+  return Promise.all(
+    rows.map(async (row) => {
+      const peer =
+        row.participantLowId === userId ? row.participantHigh : row.participantLow;
+      const last = row.messages[0];
+      const lastReadAt = row.reads[0]?.lastReadAt ?? null;
+      const unreadCount = await getUnreadCountForConversation(
+        row.id,
+        userId,
+        lastReadAt,
+      );
+      return {
+        id: row.id,
+        peer: {
+          id: peer.id,
+          name: peer.name,
+          handle: peer.handle,
+          avatarColor: peer.avatarColor,
+          avatarUrl: peer.avatarUrl ?? undefined,
+        },
+        lastMessage: last
+          ? {
+              id: last.id,
+              content: last.content,
+              senderId: last.senderId,
+              warnNonFriend: last.warnNonFriend,
+              createdAt: formatPostedAt(last.createdAt),
+            }
+          : undefined,
+        updatedAt: row.updatedAt,
+        unreadCount,
+      };
+    }),
+  );
 }
 
 export async function listMessagesForConversation(
@@ -113,6 +133,16 @@ export async function listMessagesForConversation(
     throw new DmForbiddenError();
   }
 
+  const peerId =
+    conversation.participantLowId === userId
+      ? conversation.participantHighId
+      : conversation.participantLowId;
+  if (!(await areUsersFriends(userId, peerId))) {
+    throw new DmForbiddenError(
+      "You can only message users who are your friends.",
+    );
+  }
+
   const rows = await prisma.directMessage.findMany({
     where: { conversationId, deletedAt: null },
     orderBy: { createdAt: "asc" },
@@ -129,6 +159,8 @@ export async function listMessagesForConversation(
       },
     },
   });
+
+  await markConversationRead(userId, conversationId);
 
   return rows.map((row) => ({
     id: row.id,
@@ -161,8 +193,6 @@ export async function sendDirectMessage(
   if (!recipient) throw new DmNotFoundError("User not found.");
 
   const conversation = await getOrCreateConversation(senderId, recipient.id);
-  const friends = await areUsersFriends(senderId, recipient.id);
-  const warnNonFriend = !friends;
 
   const message = await prisma.$transaction(async (tx) => {
     const row = await tx.directMessage.create({
@@ -170,7 +200,7 @@ export async function sendDirectMessage(
         conversationId: conversation.id,
         senderId,
         content: content.trim(),
-        warnNonFriend,
+        warnNonFriend: false,
       },
       include: {
         sender: {
@@ -264,4 +294,83 @@ export async function deleteDirectMessage(userId: string, messageId: string) {
 
 export function getDmRoomId(conversationId: string) {
   return `dm:${conversationId}`;
+}
+
+async function getUnreadCountForConversation(
+  conversationId: string,
+  userId: string,
+  lastReadAt: Date | null,
+): Promise<number> {
+  return prisma.directMessage.count({
+    where: {
+      conversationId,
+      deletedAt: null,
+      senderId: { not: userId },
+      ...(lastReadAt ? { createdAt: { gt: lastReadAt } } : {}),
+    },
+  });
+}
+
+export async function markConversationRead(
+  userId: string,
+  conversationId: string,
+) {
+  const conversation = await prisma.directConversation.findUnique({
+    where: { id: conversationId },
+  });
+  if (!conversation) throw new DmNotFoundError();
+  if (
+    conversation.participantLowId !== userId &&
+    conversation.participantHighId !== userId
+  ) {
+    throw new DmForbiddenError();
+  }
+
+  const now = new Date();
+  await prisma.directConversationRead.upsert({
+    where: {
+      conversationId_userId: { conversationId, userId },
+    },
+    create: { conversationId, userId, lastReadAt: now },
+    update: { lastReadAt: now },
+  });
+  return { conversationId, readAt: now };
+}
+
+export async function getDmUnreadSummary(userId: string) {
+  const conversations = await prisma.directConversation.findMany({
+    where: {
+      OR: [{ participantLowId: userId }, { participantHighId: userId }],
+    },
+    select: { id: true },
+  });
+  if (conversations.length === 0) {
+    return { unreadChatCount: 0, totalUnreadMessages: 0 };
+  }
+
+  const conversationIds = conversations.map((row) => row.id);
+  const reads = await prisma.directConversationRead.findMany({
+    where: { userId, conversationId: { in: conversationIds } },
+    select: { conversationId: true, lastReadAt: true },
+  });
+  const readByConversation = new Map(
+    reads.map((row) => [row.conversationId, row.lastReadAt]),
+  );
+
+  let unreadChatCount = 0;
+  let totalUnreadMessages = 0;
+
+  for (const conversation of conversations) {
+    const unread = await getUnreadCountForConversation(
+      conversation.id,
+      userId,
+      readByConversation.get(conversation.id) ?? null,
+    );
+    if (unread > 0) {
+      unreadChatCount += 1;
+      totalUnreadMessages += unread;
+    }
+  }
+
+  return { unreadChatCount, totalUnreadMessages };
 }

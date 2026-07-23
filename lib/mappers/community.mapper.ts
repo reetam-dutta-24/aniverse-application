@@ -75,6 +75,7 @@ export function mapCommunityToCard(row: Community): AppCommunity {
   return {
     id: row.slug,
     name: row.name,
+    description: row.description ?? undefined,
     category: row.category,
     memberCount: row.memberCount,
     postCount: row.postCount,
@@ -85,6 +86,9 @@ export function mapCommunityToCard(row: Community): AppCommunity {
     lastActiveAt: formatRelativeTime(row.updatedAt),
     accent: (row.accent as AccentColor) ?? undefined,
     imageUrl: row.imageUrl ?? undefined,
+    memberLimit: row.memberLimit ?? undefined,
+    createdAtTime: row.createdAt.getTime(),
+    updatedAtTime: row.updatedAt.getTime(),
   };
 }
 
@@ -245,6 +249,14 @@ export function mapCommunityToDetail(
     ? mapMemberRole(viewerMembership.role)
     : undefined;
 
+  const dashboardNav: CommunityDashboardNavItem[] = [
+    ...defaultDashboardNav.filter((item) => item.id !== "settings"),
+    ...(row.visibility === "PRIVATE" && viewerRole === "admin"
+      ? [{ id: "members" as const, label: "Invite Friends" }]
+      : []),
+    { id: "settings", label: "Settings" },
+  ];
+
   const engagementStats: ContentEngagementStat[] = [
     { id: "posts", label: "Posts", value: String(row.postCount) },
     { id: "members", label: "Members", value: String(row.memberCount) },
@@ -303,7 +315,7 @@ export function mapCommunityToDetail(
     ),
     dashboardPosts: posts,
     onlineMembers,
-    dashboardNav: defaultDashboardNav,
+    dashboardNav,
     dashboardChatMessages: [],
     dashboardAnimeChatMessages: [],
     dashboardWatchParties: watchChannels,

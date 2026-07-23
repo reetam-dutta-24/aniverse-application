@@ -1,7 +1,10 @@
 "use client";
 
-import { Pencil } from "lucide-react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Crown, Shield, UserMinus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DmUserAvatar } from "@/components/messages/dm-user-avatar";
 import type { Member, MemberRole } from "@/types";
 
 const ROLE_LABELS: Record<MemberRole, string> = {
@@ -13,68 +16,155 @@ const ROLE_LABELS: Record<MemberRole, string> = {
 
 export interface CommunityDashboardMemberCardProps {
   member: Member;
+  communitySlug?: string;
+  canManage?: boolean;
   className?: string;
 }
 
-/** Figma dashboard member row — avatar, name, role, online, edit. */
 export function CommunityDashboardMemberCard({
   member,
+  communitySlug,
+  canManage = false,
   className,
 }: CommunityDashboardMemberCardProps) {
-  const initial = member.name.trim().charAt(0).toUpperCase();
+  const router = useRouter();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string>();
+
+  async function updateRole(nextRole: "moderator" | "member") {
+    if (!communitySlug) return;
+    setBusy(`role-${nextRole}`);
+    setError(undefined);
+    try {
+      const response = await fetch(
+        `/api/communities/${encodeURIComponent(communitySlug)}/members/${encodeURIComponent(member.id)}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ role: nextRole }),
+        },
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(
+          typeof data.error === "string" ? data.error : "Could not update role.",
+        );
+      }
+      router.refresh();
+    } catch (roleError) {
+      setError(
+        roleError instanceof Error ? roleError.message : "Could not update role.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function removeMember() {
+    if (!communitySlug) return;
+    if (!window.confirm(`Remove ${member.name} from this community?`)) return;
+    setBusy("remove");
+    setError(undefined);
+    try {
+      const response = await fetch(
+        `/api/communities/${encodeURIComponent(communitySlug)}/members/${encodeURIComponent(member.id)}`,
+        { method: "DELETE", credentials: "include" },
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(
+          typeof data.error === "string" ? data.error : "Could not remove member.",
+        );
+      }
+      router.refresh();
+    } catch (removeError) {
+      setError(
+        removeError instanceof Error
+          ? removeError.message
+          : "Could not remove member.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const showActions =
+    canManage && member.role !== "admin" && member.role !== "owner";
 
   return (
-    <div
-      className={cn(
-        "flex items-center gap-2.5 rounded-[14px] border border-white/[0.07] bg-black/35 px-3 py-2.5 shadow-card-inner backdrop-blur-sm",
-        className,
-      )}
-    >
-      <div className="relative shrink-0">
-        <span
-          className="flex size-9 items-center justify-center rounded-full text-sm font-bold text-black"
-          style={{
-            backgroundColor: member.avatarColor ?? "#ff00cc",
-          }}
-        >
-          {member.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={member.avatarUrl}
-              alt={member.name}
-              className="size-full rounded-full object-cover"
-            />
-          ) : (
-            initial
-          )}
-        </span>
-        {member.online ? (
-          <span
-            aria-hidden
-            className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-surface bg-emerald-500/70"
+    <div className={cn("flex flex-col gap-1", className)}>
+      <div
+        className={cn(
+          "flex items-center gap-2.5 rounded-[14px] border border-white/[0.07] bg-black/35 px-3 py-2.5 shadow-card-inner backdrop-blur-sm",
+        )}
+      >
+        <div className="relative shrink-0">
+          <DmUserAvatar
+            name={member.name}
+            avatarColor={member.avatarColor}
+            avatarUrl={member.avatarUrl}
+            size="sm"
           />
-        ) : null}
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-white/85">{member.name}</p>
-        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-          <span className="text-[10px] font-medium text-white/50">
-            {ROLE_LABELS[member.role]}
-          </span>
           {member.online ? (
-            <span className="text-[10px] italic text-emerald-400/60">Online</span>
+            <span
+              aria-hidden
+              className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-surface bg-emerald-500/70"
+            />
           ) : null}
         </div>
-      </div>
 
-      <button
-        type="button"
-        aria-label={`Edit ${member.name}`}
-        className="shrink-0 text-white/55 transition-colors hover:text-white"
-      >
-        <Pencil className="size-3.5" />
-      </button>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-white/85">{member.name}</p>
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+            <span className="text-[10px] font-medium text-white/50">
+              {ROLE_LABELS[member.role]}
+            </span>
+            {member.handle ? (
+              <span className="text-[10px] text-white/40">@{member.handle}</span>
+            ) : null}
+            {member.online ? (
+              <span className="text-[10px] italic text-emerald-400/60">Online</span>
+            ) : null}
+          </div>
+        </div>
+
+        {showActions ? (
+          <div className="flex shrink-0 flex-col gap-1">
+            {member.role === "member" ? (
+              <button
+                type="button"
+                disabled={busy !== null}
+                onClick={() => void updateRole("moderator")}
+                title="Make moderator"
+                className="rounded-md p-1 text-white/55 transition hover:bg-white/10 hover:text-white"
+              >
+                <Shield className="size-3.5" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={busy !== null}
+                onClick={() => void updateRole("member")}
+                title="Remove moderator role"
+                className="rounded-md p-1 text-white/55 transition hover:bg-white/10 hover:text-white"
+              >
+                <Crown className="size-3.5" />
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={busy !== null}
+              onClick={() => void removeMember()}
+              title="Remove member"
+              className="rounded-md p-1 text-red-300/70 transition hover:bg-red-500/10 hover:text-red-300"
+            >
+              <UserMinus className="size-3.5" />
+            </button>
+          </div>
+        ) : null}
+      </div>
+      {error ? <p className="px-1 text-[10px] text-red-400">{error}</p> : null}
     </div>
   );
 }

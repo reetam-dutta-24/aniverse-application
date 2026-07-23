@@ -209,7 +209,6 @@ export default async function CollectionDetailPage({
             node: (
               <CommunityCard
                 community={community}
-                members={members}
                 ctaMode="join"
               />
             ),

@@ -40,8 +40,11 @@ export async function PATCH(request: Request, context: RouteContext) {
       );
     }
 
-    const row = await updateCommunity(authResult.userId, slug, parsed.data);
-    return NextResponse.json({ community: mapCommunityToCard(row) });
+    const result = await updateCommunity(authResult.userId, slug, parsed.data);
+    return NextResponse.json({
+      community: mapCommunityToCard(result.row),
+      joinCode: result.joinCode,
+    });
   } catch (error) {
     if (error instanceof CommunityNotFoundError) {
       return NextResponse.json({ error: error.message }, { status: 404 });

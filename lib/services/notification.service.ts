@@ -20,6 +20,8 @@ export interface CreateNotificationInput {
   description?: string;
   imageUrl?: string;
   href?: string;
+  actionType?: string | null;
+  actionRefId?: string | null;
   read?: boolean;
   createdAt?: Date;
 }
@@ -52,6 +54,8 @@ export async function createNotification(input: CreateNotificationInput) {
       description: input.description ?? null,
       imageUrl: input.imageUrl ?? null,
       href: input.href ?? null,
+      actionType: input.actionType ?? null,
+      actionRefId: input.actionRefId ?? null,
       read: input.read ?? false,
       createdAt: input.createdAt,
     },
@@ -71,7 +75,9 @@ const CATEGORY_PREF_MAP: Record<string, NotificationPreferenceKey | null> = {
   "Music Drop": "musicDrops",
   Community: "communityPosts",
   Recap: "weeklyRecap",
-  Social: "communityPosts",
+  Social: null,
+  "Friend Request": null,
+  "Friend Request Accepted": null,
   Watchlist: null,
   Collection: null,
   "AI Match": null,
@@ -190,6 +196,97 @@ export async function notifyCommunityPost(
   });
 }
 
+export async function notifyFriendRequest(input: {
+  requestId: string;
+  requesterId: string;
+  requesterName: string;
+  requesterHandle: string;
+  requesterAvatarUrl?: string;
+  recipientId: string;
+  recipientHandle: string;
+}) {
+  if (input.requesterId === input.recipientId) return;
+
+  const existing = await prisma.notification.findFirst({
+    where: {
+      userId: input.recipientId,
+      actionType: "friend_request",
+      actionRefId: input.requestId,
+    },
+    select: { id: true },
+  });
+  if (existing) return;
+
+  await createNotification({
+    userId: input.recipientId,
+    title: "Friend Request",
+    category: "Friend Request",
+    description: `${input.requesterName} sent you a friend request.`,
+    imageUrl: input.requesterAvatarUrl,
+    href: `/profile/${input.requesterHandle}`,
+    actionType: "friend_request",
+    actionRefId: input.requestId,
+  });
+}
+
+export async function notifyFriendRequestAccepted(input: {
+  accepterId: string;
+  accepterName: string;
+  accepterHandle: string;
+  requesterId: string;
+}) {
+  if (input.accepterId === input.requesterId) return;
+
+  await createNotification({
+    userId: input.requesterId,
+    title: "Friend Request Accepted",
+    category: "Friend Request Accepted",
+    description: `${input.accepterName} accepted your friend request. You can now message each other.`,
+    href: `/profile/${input.accepterHandle}`,
+  });
+}
+
+/** Create notifications for pending friend requests that pre-date notification delivery fixes. */
+export async function backfillFriendRequestNotifications() {
+  const pending = await prisma.friendRequest.findMany({
+    where: { status: "PENDING" },
+    include: {
+      requester: {
+        select: {
+          id: true,
+          name: true,
+          handle: true,
+          avatarUrl: true,
+        },
+      },
+      recipient: { select: { id: true } },
+    },
+  });
+
+  for (const request of pending) {
+    const existing = await prisma.notification.findFirst({
+      where: {
+        userId: request.recipient.id,
+        actionType: "friend_request",
+        actionRefId: request.id,
+      },
+      select: { id: true },
+    });
+    if (existing) continue;
+
+    await notifyFriendRequest({
+      requestId: request.id,
+      requesterId: request.requester.id,
+      requesterName: request.requester.name,
+      requesterHandle: request.requester.handle,
+      requesterAvatarUrl: request.requester.avatarUrl ?? undefined,
+      recipientId: request.recipient.id,
+      recipientHandle: "",
+    });
+  }
+}
+
+/** @deprecated Instant follow — replaced by friend request flow. */
 export async function notifyUserFollow(input: {
   followerId: string;
   followerName: string;

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useAppRouter } from "@/hooks/use-app-router";
 import { Plus } from "lucide-react";
 import { GradientButton } from "@/components/ui/gradient-button";
+import { Button } from "@/components/ui/button";
 import { ImageUploadInput } from "@/components/ui/image-upload-input";
 import {
   FormActions,
@@ -33,6 +34,9 @@ export function CreateCommunityButton() {
   const [accent, setAccent] = useState("cyan");
   const [imageUrl, setImageUrl] = useState("");
   const [wallpaperUrl, setWallpaperUrl] = useState("");
+  const [memberLimit, setMemberLimit] = useState("50");
+  const [joinCode, setJoinCode] = useState("");
+  const [issuedJoinCode, setIssuedJoinCode] = useState<string>();
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
 
@@ -59,6 +63,12 @@ export function CreateCommunityButton() {
         accent,
         imageUrl: imageUrl || undefined,
         wallpaperUrl: wallpaperUrl || undefined,
+        ...(visibility === "PRIVATE"
+          ? {
+              memberLimit: Number(memberLimit) || 50,
+              joinCode: joinCode.trim() || undefined,
+            }
+          : {}),
       }),
     });
 
@@ -70,10 +80,29 @@ export function CreateCommunityButton() {
       return;
     }
 
+    if (visibility === "PRIVATE" && typeof data.joinCode === "string") {
+      setIssuedJoinCode(data.joinCode);
+      setLoading(false);
+      return;
+    }
+
     setOpen(false);
     setName("");
     setSlug("");
     setDescription("");
+    setJoinCode("");
+    setIssuedJoinCode(undefined);
+    router.refresh();
+  }
+
+  function handleClose() {
+    setOpen(false);
+    setName("");
+    setSlug("");
+    setDescription("");
+    setJoinCode("");
+    setIssuedJoinCode(undefined);
+    setError(undefined);
     router.refresh();
   }
 
@@ -92,8 +121,29 @@ export function CreateCommunityButton() {
         open={open}
         title="Create Community"
         description="Launch a fan space with posts, members, and discovery metadata."
-        onClose={() => setOpen(false)}
+        onClose={handleClose}
       >
+        {issuedJoinCode ? (
+          <div className="flex flex-col gap-4">
+            <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-4">
+              <p className="text-sm font-semibold text-emerald-300">
+                Private community created
+              </p>
+              <p className="mt-2 text-xs text-white/70">
+                Share this encrypted room code with members you want to invite:
+              </p>
+              <p className="mt-2 font-mono text-lg font-bold tracking-wide text-white">
+                {issuedJoinCode}
+              </p>
+              <p className="mt-2 text-[11px] text-white/55">
+                Limit: {memberLimit} members · shown once
+              </p>
+            </div>
+            <Button type="button" variant="gradient" onClick={handleClose}>
+              Done
+            </Button>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <FormField label="Name">
             <TextInput
@@ -198,13 +248,45 @@ export function CreateCommunityButton() {
             />
           </FormField>
 
+          {visibility === "PRIVATE" ? (
+            <>
+              <FormField
+                label="Member limit"
+                hint="Maximum members who can join with the room code."
+              >
+                <TextInput
+                  type="number"
+                  min={2}
+                  max={500}
+                  value={memberLimit}
+                  onChange={(event) => setMemberLimit(event.target.value)}
+                  required
+                />
+              </FormField>
+              <FormField
+                label="Custom room code (optional)"
+                hint="Leave blank to auto-generate an encrypted ROOM-XXXXXX key."
+              >
+                <TextInput
+                  value={joinCode}
+                  onChange={(event) =>
+                    setJoinCode(event.target.value.toUpperCase())
+                  }
+                  placeholder="ROOM-MYCODE"
+                  autoComplete="off"
+                />
+              </FormField>
+            </>
+          ) : null}
+
           <FormError message={error} />
           <FormActions
-            onCancel={() => setOpen(false)}
+            onCancel={handleClose}
             submitLabel="Create Community"
             loading={loading}
           />
         </form>
+        )}
       </FormShell>
     </>
   );

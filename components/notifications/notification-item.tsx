@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Clock } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowRight, Check, Clock, X } from "lucide-react";
 import { markNotificationRead } from "@/lib/notifications-store";
 import { cn } from "@/lib/utils";
 import { Chip } from "@/components/ui/chip";
@@ -16,6 +18,79 @@ export interface NotificationItemProps {
   onNavigate?: () => void;
 }
 
+function FriendRequestActions({
+  requestId,
+  onDone,
+}: {
+  requestId: string;
+  onDone?: () => void;
+}) {
+  const router = useRouter();
+  const [loading, setLoading] = useState<"accept" | "reject" | null>(null);
+  const [error, setError] = useState<string>();
+
+  async function respond(action: "accept" | "reject") {
+    setLoading(action);
+    setError(undefined);
+    try {
+      const response = await fetch(
+        `/api/friend-requests/${encodeURIComponent(requestId)}/${action}`,
+        { method: "POST" },
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(
+          typeof data.error === "string"
+            ? data.error
+            : `Could not ${action} friend request.`,
+        );
+      }
+      onDone?.();
+      router.refresh();
+    } catch (respondError) {
+      setError(
+        respondError instanceof Error
+          ? respondError.message
+          : "Could not respond to friend request.",
+      );
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={loading !== null}
+          onClick={(event) => {
+            event.stopPropagation();
+            void respond("accept");
+          }}
+          className="flex items-center gap-1 rounded-full border border-brand-magenta bg-brand-magenta/15 px-3 py-1 text-[11px] font-semibold text-white transition-colors hover:bg-brand-magenta/25 disabled:opacity-50"
+        >
+          <Check className="size-3.5 text-brand-magenta" />
+          Accept
+        </button>
+        <button
+          type="button"
+          disabled={loading !== null}
+          onClick={(event) => {
+            event.stopPropagation();
+            void respond("reject");
+          }}
+          className="flex items-center gap-1 rounded-full border border-white/20 px-3 py-1 text-[11px] font-semibold text-white/85 transition-colors hover:bg-white/10 disabled:opacity-50"
+        >
+          <X className="size-3.5" />
+          Decline
+        </button>
+      </div>
+      {error ? <p className="text-[11px] text-red-400">{error}</p> : null}
+    </div>
+  );
+}
+
 /** Single notification — neon border and glow while unread; clicking an
  *  unread notification marks it read everywhere (bell badge included). */
 export function NotificationItem({
@@ -25,6 +100,8 @@ export function NotificationItem({
   onNavigate,
 }: NotificationItemProps) {
   const unread = !notification.read;
+  const isFriendRequest =
+    notification.actionType === "friend_request" && notification.actionRefId;
 
   const containerClass = cn(
     "flex w-full overflow-hidden rounded-[14px] bg-glass-purple text-left shadow-card-inner transition-shadow duration-300",
@@ -128,6 +205,12 @@ export function NotificationItem({
             {notification.description}
           </p>
         ) : null}
+        {isFriendRequest && unread ? (
+          <FriendRequestActions
+            requestId={notification.actionRefId!}
+            onDone={() => void markNotificationRead(notification.id)}
+          />
+        ) : null}
         <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
           <p
             className={cn(
@@ -143,7 +226,7 @@ export function NotificationItem({
               onClick={() => void markNotificationRead(notification.id)}
               className="flex items-center gap-1 rounded-full border border-brand-magenta px-3 py-1 text-[11px] font-semibold text-white transition-colors hover:bg-brand-magenta/15"
             >
-              Open Content
+              View Profile
               <ArrowRight className="size-3.5 text-brand-magenta" />
             </Link>
           ) : null}

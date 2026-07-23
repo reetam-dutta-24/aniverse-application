@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { getProfileFriendsPath } from "@/lib/profile-routes";
 import { getAccentTint, getDetailHeroBoundaryGlow } from "@/lib/card-theme";
 import { Chip } from "@/components/ui/chip";
-import { ProfileHeroActivitySlider } from "@/components/profile/profile-hero-activity-slider";
+import { ProfileHeroKpiGrid } from "@/components/profile/profile-hero-kpi-grid";
 import { ProfileListeningPanel } from "@/components/profile/profile-listening-panel";
 import type { UserProfileDetail } from "@/types";
 
@@ -51,19 +51,24 @@ function ProfileAvatar({
   );
 }
 
-function OnlineIndicator({ className }: { className?: string }) {
+function PresenceIndicator({ online }: { online: boolean }) {
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 text-sm italic text-white",
-        className,
+        "inline-flex shrink-0 items-center gap-1.5 text-sm italic",
+        online ? "text-emerald-300" : "text-white/45",
       )}
     >
       <span
         aria-hidden
-        className="size-2 shrink-0 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+        className={cn(
+          "size-2 shrink-0 rounded-full",
+          online
+            ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+            : "bg-white/35",
+        )}
       />
-      Online
+      {online ? "Online" : "Offline"}
     </span>
   );
 }
@@ -85,7 +90,7 @@ export function ProfileDetailHero({ profile, isOwner }: ProfileDetailHeroProps) 
       />
 
       <div className="relative grid w-full grid-cols-1 items-stretch overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(300px,34vw)] lg:h-[calc(100dvh-4.5rem)] lg:max-h-[calc(100dvh-4.5rem)]">
-        <div className="flex min-h-0 flex-col gap-3 overflow-hidden px-5 py-5 sm:px-8 sm:py-6 lg:gap-2.5 lg:px-10 lg:py-5 xl:px-14">
+        <div className="flex min-h-0 flex-col gap-3 overflow-y-auto px-5 py-5 sm:px-8 sm:py-6 lg:gap-2.5 lg:px-10 lg:py-5 xl:px-14">
           <div className="flex shrink-0 items-start gap-3 sm:gap-4">
             <ProfileAvatar
               name={profile.name}
@@ -95,7 +100,7 @@ export function ProfileDetailHero({ profile, isOwner }: ProfileDetailHeroProps) 
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <div className="flex items-start justify-between gap-3">
                 <h1 className={cn(TITLE_CLASS, "min-w-0")}>{profile.name}</h1>
-                {profile.online ? <OnlineIndicator /> : null}
+                <PresenceIndicator online={profile.online} />
               </div>
               <p className="text-sm text-white/75 sm:text-[15px]">
                 Username:{" "}
@@ -108,15 +113,6 @@ export function ProfileDetailHero({ profile, isOwner }: ProfileDetailHeroProps) 
             <Chip variant="indigo" className={DETAIL_CHIP}>
               {profile.location}
             </Chip>
-            {profile.online ? (
-              <Chip variant="blue" className={cn(DETAIL_CHIP, "gap-1.5")}>
-                <span
-                  aria-hidden
-                  className="size-2 shrink-0 rounded-full bg-emerald-400"
-                />
-                Online
-              </Chip>
-            ) : null}
             <Chip chipKey="movie" className={DETAIL_CHIP}>
               <Link href={getProfileFriendsPath(profile.handle)} className="hover:underline">
                 {profile.followerCount} Friends
@@ -129,16 +125,14 @@ export function ProfileDetailHero({ profile, isOwner }: ProfileDetailHeroProps) 
 
           <div className="flex shrink-0 flex-col gap-1">
             <h2 className="text-sm font-bold text-white sm:text-base">📝 Bio</h2>
-            <p className="line-clamp-2 max-w-3xl text-sm leading-relaxed text-white/85 sm:text-[15px] sm:leading-6">
+            <p className="line-clamp-3 max-w-3xl text-sm leading-relaxed text-white/85 sm:text-[15px] sm:leading-6 lg:line-clamp-4">
               {profile.bio}
             </p>
           </div>
 
-          <ProfileHeroActivitySlider
-            userName={profile.name}
-            activitySubtitle={profile.activitySubtitle}
-            items={profile.recentActivity}
-          />
+          {!profile.isPrivatePreview ? (
+            <ProfileHeroKpiGrid stats={profile.engagementStats} />
+          ) : null}
         </div>
 
         <ProfileListeningPanel profile={profile} isOwner={isOwner} />

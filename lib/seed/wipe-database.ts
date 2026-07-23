@@ -5,11 +5,13 @@ export async function wipeDatabase(prisma: PrismaClient) {
   await prisma.$executeRawUnsafe(`
     TRUNCATE TABLE
       "DirectMessage",
+      "DirectConversationRead",
       "DirectConversation",
       "CollectionCollaborator",
       "ReviewLike",
       "CommunityPostLike",
       "UserFollow",
+      "FriendRequest",
       "Review",
       "CatalogReview",
       "Notification",

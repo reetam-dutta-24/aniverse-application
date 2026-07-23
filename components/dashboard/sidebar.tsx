@@ -20,6 +20,7 @@ import {
   type DashboardUser,
 } from "@/components/dashboard/user-profile-menu";
 import { cn } from "@/lib/utils";
+import { MessagesNavBadge } from "@/components/messages/messages-nav-badge";
 
 const navItems = [
   { label: "Home", href: "/dashboard", icon: Home },
@@ -81,7 +82,8 @@ export function DashboardSidebar({
               )}
             >
               <item.icon className="size-4 shrink-0" />
-              {item.label}
+              <span className="min-w-0 flex-1 truncate">{item.label}</span>
+              {item.href === "/dashboard/messages" ? <MessagesNavBadge /> : null}
             </Link>
           );
         })}

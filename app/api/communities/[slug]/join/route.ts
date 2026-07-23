@@ -18,8 +18,11 @@ export async function POST(_request: Request, context: RouteContext) {
   const { slug } = await context.params;
 
   try {
-    await joinCommunity(auth.userId, slug);
-    return NextResponse.json({ ok: true }, { status: 201 });
+    const result = await joinCommunity(auth.userId, slug);
+    return NextResponse.json(
+      { ok: true, slug: result.slug, joined: result.joined },
+      { status: 201 },
+    );
   } catch (error) {
     if (error instanceof CommunityNotFoundError) {
       return NextResponse.json({ error: error.message }, { status: 404 });

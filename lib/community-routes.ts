@@ -6,6 +6,7 @@ export const COMMUNITY_DASHBOARD_SECTIONS = [
   "announcements",
   "analytics",
   "anime-chat",
+  "members",
   "settings",
 ] as const;
 

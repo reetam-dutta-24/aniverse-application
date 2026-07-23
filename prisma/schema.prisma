@@ -65,12 +65,15 @@ model User {
   listenEvents          ListenEvent[]
   followers             UserFollow[]          @relation("UserFollowsReceived")
   following             UserFollow[]          @relation("UserFollowsGiven")
+  friendRequestsSent     FriendRequest[]      @relation("FriendRequestsSent")
+  friendRequestsReceived FriendRequest[]      @relation("FriendRequestsReceived")
   postLikes             CommunityPostLike[]
   reviewLikes           ReviewLike[]
   collectionCollaborations CollectionCollaborator[]
   directConversationsLow  DirectConversation[] @relation("DmParticipantLow")
   directConversationsHigh DirectConversation[] @relation("DmParticipantHigh")
   directMessagesSent      DirectMessage[]
+  directConversationReads DirectConversationRead[]
 
   @@index([handle])
 }
@@ -601,6 +604,9 @@ model Community {
   wallpaperUrl  String?
   memberCount   Int        @default(0)
   postCount     Int        @default(0)
+  memberLimit   Int?
+  joinCodeLookup String?   @unique
+  joinCodeHash  String?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
@@ -784,6 +790,27 @@ model UserFollow {
   @@index([followingId])
 }
 
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model FriendRequest {
+  id          String              @id @default(cuid())
+  requesterId String
+  recipientId String
+  status      FriendRequestStatus @default(PENDING)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  requester User @relation("FriendRequestsSent", fields: [requesterId], references: [id], onDelete: Cascade)
+  recipient User @relation("FriendRequestsReceived", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, recipientId])
+  @@index([recipientId, status])
+}
+
 model CommunityPostLike {
   id        String   @id @default(cuid())
   userId    String
@@ -835,10 +862,24 @@ model DirectConversation {
   participantLow  User            @relation("DmParticipantLow", fields: [participantLowId], references: [id], onDelete: Cascade)
   participantHigh User            @relation("DmParticipantHigh", fields: [participantHighId], references: [id], onDelete: Cascade)
   messages        DirectMessage[]
+  reads           DirectConversationRead[]
 
   @@unique([participantLowId, participantHighId])
   @@index([participantLowId])
   @@index([participantHighId])
+}
+
+model DirectConversationRead {
+  id             String   @id @default(cuid())
+  conversationId String
+  userId         String
+  lastReadAt     DateTime @default(now())
+
+  conversation DirectConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
 }
 
 model DirectMessage {
@@ -868,6 +909,8 @@ model Notification {
   description String?  @db.Text
   imageUrl    String?
   href        String?
+  actionType  String?
+  actionRefId String?
   read        Boolean  @default(false)
   createdAt   DateTime @default(now())
 

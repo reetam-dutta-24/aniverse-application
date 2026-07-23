@@ -258,46 +258,27 @@ export function ContentPlayView({ session }: ContentPlayViewProps) {
           ) : null}
         </div>
 
-        <div
-          ref={containerRef}
-          className="group relative overflow-hidden rounded-2xl bg-black shadow-2xl"
-          style={{ border: `1px solid ${theme.border}`, boxShadow: theme.glow }}
-          onMouseMove={() => setShowControls(true)}
-          onMouseLeave={() => {
-            if (isPlaying) setShowControls(false);
-          }}
-        >
-          {videoUrl ? (
+        <div className="relative">
+          {videoUrl && isPlaying ? (
             <>
               <div
                 aria-hidden
-                className={cn(
-                  "pointer-events-none absolute inset-0 z-[1] transition-opacity duration-700",
-                  isPlaying ? "opacity-100" : "opacity-0",
-                )}
+                className="pointer-events-none absolute -inset-3 z-0 rounded-[1.35rem] opacity-100 transition-opacity duration-700"
                 style={{
-                  boxShadow: isPlaying ? theme.fairyInnerShadow : undefined,
+                  boxShadow: theme.fairyInnerShadow,
                 }}
               />
               <div
                 aria-hidden
-                className={cn(
-                  "pointer-events-none absolute inset-0 z-[2] transition-opacity duration-700",
-                  isPlaying ? "opacity-100 animate-pulse" : "opacity-0",
-                )}
+                className="pointer-events-none absolute -inset-2 z-0 animate-pulse rounded-[1.25rem] opacity-100 transition-opacity duration-700"
                 style={{
-                  background: isPlaying
-                    ? `${fairyGlow.radialWash}, ${fairyGlow.edgeSparkle}`
-                    : undefined,
+                  background: `${fairyGlow.radialWash}, ${fairyGlow.edgeSparkle}`,
                   animationDuration: "4s",
                 }}
               />
               <div
                 aria-hidden
-                className={cn(
-                  "pointer-events-none absolute inset-0 z-[3] transition-opacity duration-500",
-                  isPlaying ? "opacity-100" : "opacity-0",
-                )}
+                className="pointer-events-none absolute -inset-1 z-0 rounded-[1.15rem] opacity-100 transition-opacity duration-500"
                 style={{
                   background: `linear-gradient(to top, rgba(${theme.rgb[0]},${theme.rgb[1]},${theme.rgb[2]},0.38) 0%, rgba(${theme.rgb[0]},${theme.rgb[1]},${theme.rgb[2]},0.12) 40%, transparent 78%)`,
                 }}
@@ -305,6 +286,15 @@ export function ContentPlayView({ session }: ContentPlayViewProps) {
             </>
           ) : null}
 
+          <div
+            ref={containerRef}
+            className="group relative z-10 overflow-hidden rounded-2xl bg-black shadow-2xl"
+            style={{ border: `1px solid ${theme.border}`, boxShadow: theme.glow }}
+            onMouseMove={() => setShowControls(true)}
+            onMouseLeave={() => {
+              if (isPlaying) setShowControls(false);
+            }}
+          >
           {videoUrl ? (
             <video
               ref={videoRef}
@@ -431,6 +421,7 @@ export function ContentPlayView({ session }: ContentPlayViewProps) {
               </div>
             </div>
           ) : null}
+        </div>
         </div>
 
         {showEpisodeDetails ? (

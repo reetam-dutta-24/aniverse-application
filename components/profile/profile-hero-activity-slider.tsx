@@ -150,11 +150,7 @@ export function ProfileHeroActivitySlider({
 
                 return (
                   <div
-                    key={
-                      entry.kind === "content"
-                        ? entry.item.id
-                        : entry.track.id
-                    }
+                    key={entry.id}
                     className={cn(
                       "pointer-events-none relative shrink-0 origin-center scale-[0.82] sm:scale-[0.88] lg:scale-[0.8]",
                       isActive

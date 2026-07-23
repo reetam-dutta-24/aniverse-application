@@ -9,13 +9,12 @@ import {
   CARD_GRID_COLS_BREAKPOINTS,
   COMMUNITY_GRID_ROWS,
 } from "@/lib/grid-section-config";
-import type { Community, UserSummary } from "@/types";
+import type { Community } from "@/types";
 
 export interface CommunityGridSectionProps {
   title: string;
   searchPlaceholder: string;
   communities: Community[];
-  members?: UserSummary[];
   ctaMode?: "view" | "join";
 }
 
@@ -24,7 +23,6 @@ export function CommunityGridSection({
   title,
   searchPlaceholder,
   communities,
-  members,
   ctaMode = "view",
 }: CommunityGridSectionProps) {
   const [query, setQuery] = useState("");
@@ -82,7 +80,6 @@ export function CommunityGridSection({
               <CommunityCard
                 key={community.id}
                 community={community}
-                members={members}
                 ctaMode={ctaMode}
               />
             ))

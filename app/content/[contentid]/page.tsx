@@ -162,7 +162,6 @@ export default async function ContentDetailPage({ params }: ContentPageProps) {
           node: (
             <CommunityCard
               community={community}
-              members={members}
               ctaMode="join"
             />
           ),
