@@ -115,6 +115,142 @@ export async function verifyPassword(
   return bcrypt.compare(plain, hash);
 }
 
+async function uniqueHandle(
+  tx: Pick<typeof prisma, "user">,
+  seed: string,
+): Promise<string> {
+  const base = normalizeHandle(seed) || "user";
+  let handle = base;
+  let suffix = 0;
+
+  while (await tx.user.findUnique({ where: { handle }, select: { id: true } })) {
+    suffix += 1;
+    handle = `${base}_${suffix}`.slice(0, 30);
+  }
+
+  return handle;
+}
+
+/** Link an OAuth provider to an existing user or create a new account. */
+export async function findOrCreateOAuthUser(input: {
+  email: string;
+  name: string;
+  image?: string | null;
+  provider: string;
+  providerAccountId: string;
+}) {
+  const email = input.email.trim().toLowerCase();
+  if (!email) {
+    throw new Error("OAuth account is missing an email address.");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const linked = await tx.account.findUnique({
+      where: {
+        provider_providerAccountId: {
+          provider: input.provider,
+          providerAccountId: input.providerAccountId,
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            handle: true,
+            name: true,
+            avatarUrl: true,
+            onboardingCompletedAt: true,
+            role: true,
+          },
+        },
+      },
+    });
+
+    if (linked) {
+      if (input.image && !linked.user.avatarUrl) {
+        return tx.user.update({
+          where: { id: linked.user.id },
+          data: { avatarUrl: input.image },
+          select: {
+            id: true,
+            email: true,
+            handle: true,
+            name: true,
+            avatarUrl: true,
+            onboardingCompletedAt: true,
+            role: true,
+          },
+        });
+      }
+      return linked.user;
+    }
+
+    let user = await tx.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        handle: true,
+        name: true,
+        avatarUrl: true,
+        onboardingCompletedAt: true,
+        role: true,
+      },
+    });
+
+    if (!user) {
+      const handle = await uniqueHandle(tx, input.name || email.split("@")[0]);
+      user = await tx.user.create({
+        data: {
+          email,
+          handle,
+          name: input.name.trim() || handle,
+          avatarUrl: input.image ?? undefined,
+          avatarColor: pickAvatarColor(email),
+          profileAccent: "pink",
+          emailVerified: new Date(),
+          preferences: { create: {} },
+        },
+        select: {
+          id: true,
+          email: true,
+          handle: true,
+          name: true,
+          avatarUrl: true,
+          onboardingCompletedAt: true,
+          role: true,
+        },
+      });
+    } else if (input.image && !user.avatarUrl) {
+      user = await tx.user.update({
+        where: { id: user.id },
+        data: { avatarUrl: input.image },
+        select: {
+          id: true,
+          email: true,
+          handle: true,
+          name: true,
+          avatarUrl: true,
+          onboardingCompletedAt: true,
+          role: true,
+        },
+      });
+    }
+
+    await tx.account.create({
+      data: {
+        userId: user.id,
+        type: "oauth",
+        provider: input.provider,
+        providerAccountId: input.providerAccountId,
+      },
+    });
+
+    return user;
+  });
+}
+
 /** Load the logged-in user for dashboard layouts and pages. */
 export async function getUserById(id: string) {
   return prisma.user.findUnique({

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AuthCard } from "@/components/auth/auth-card";
 import { LoginForm } from "@/components/auth/login-form";
 import { redirectAuthenticatedAway } from "@/lib/auth-guards";
+import { isDiscordAuthEnabled, isGoogleAuthEnabled } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Sign In — AniVerse",
@@ -17,7 +18,10 @@ export default async function LoginPage() {
       subtitle="Sign in to continue your entertainment universe."
       sparkle
     >
-      <LoginForm />
+      <LoginForm
+        googleEnabled={isGoogleAuthEnabled()}
+        discordEnabled={isDiscordAuthEnabled()}
+      />
     </AuthCard>
   );
 }

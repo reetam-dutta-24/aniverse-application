@@ -35,7 +35,7 @@ export default async function DiscoverPage() {
     trendingMusic,
     continueListening,
   ] = await Promise.all([
-    getActiveFilters(),
+    getActiveFilters(user.id),
     getTrendingThisWeek(),
     getRecommendedForYou(),
     getNewReleases(),

@@ -1,4 +1,7 @@
 import type { ContentItem, MusicTrack } from "@/types";
+import { tasteProfileToActiveFilters } from "@/lib/mappers/active-taste.mapper";
+import { getTasteProfileForUser } from "@/lib/services/onboarding.service";
+import { prisma } from "@/lib/prisma";
 import {
   getContinueListening as getContinueListeningFromDb,
   getContinueWatchingContent,
@@ -14,21 +17,21 @@ import {
  * Async accessors keep the same shape for dashboard UI components.
  */
 
-export interface ActiveFilter {
-  id: string;
-  label: string;
-  tone: "magenta" | "yellow" | "red";
-}
+export type { ActiveTasteFilter as ActiveFilter } from "@/lib/mappers/active-taste.mapper";
 
-export async function getActiveFilters(): Promise<ActiveFilter[]> {
-  return [
-    { id: "anime", label: "Anime", tone: "magenta" },
-    { id: "movie", label: "Movies", tone: "magenta" },
-    { id: "kdrama", label: "K-Drama", tone: "yellow" },
-    { id: "comedy", label: "Comedy", tone: "yellow" },
-    { id: "thriller", label: "Thriller", tone: "red" },
-    { id: "rating", label: "8.5+", tone: "magenta" },
-  ];
+export async function getActiveFilters(userId: string) {
+  const [tasteProfile, user] = await Promise.all([
+    getTasteProfileForUser(userId),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { aiTasteScore: true },
+    }),
+  ]);
+
+  if (!tasteProfile?.selections) return [];
+
+  const tasteScore = user?.aiTasteScore ?? tasteProfile.tasteScore;
+  return tasteProfileToActiveFilters(tasteProfile.selections, tasteScore);
 }
 
 export async function getTrendingThisWeek(): Promise<ContentItem[]> {

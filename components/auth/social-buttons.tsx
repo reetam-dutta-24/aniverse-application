@@ -36,10 +36,18 @@ function DiscordIcon() {
 export interface SocialButtonsProps {
   /** Sent to NextAuth as callbackUrl after OAuth completes. */
   callbackUrl?: string;
+  googleEnabled?: boolean;
+  discordEnabled?: boolean;
 }
 
 /** Google / Discord OAuth buttons with an "or continue with" divider. */
-export function SocialButtons({ callbackUrl = "/dashboard" }: SocialButtonsProps) {
+export function SocialButtons({
+  callbackUrl = "/dashboard",
+  googleEnabled = true,
+  discordEnabled = true,
+}: SocialButtonsProps) {
+  if (!googleEnabled && !discordEnabled) return null;
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
@@ -47,23 +55,29 @@ export function SocialButtons({ callbackUrl = "/dashboard" }: SocialButtonsProps
         <span className="text-xs text-muted/80">or continue with</span>
         <span className="h-px flex-1 bg-white/15" />
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={() => signIn("google", { callbackUrl })}
-          className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-white/20 bg-white/5 text-sm font-medium text-white transition-colors hover:bg-white/10"
-        >
-          <GoogleIcon />
-          Google
-        </button>
-        <button
-          type="button"
-          onClick={() => signIn("discord", { callbackUrl })}
-          className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-white/20 bg-white/5 text-sm font-medium text-white transition-colors hover:bg-white/10"
-        >
-          <DiscordIcon />
-          Discord
-        </button>
+      <div
+        className={`grid gap-3 ${googleEnabled && discordEnabled ? "grid-cols-2" : "grid-cols-1"}`}
+      >
+        {googleEnabled ? (
+          <button
+            type="button"
+            onClick={() => signIn("google", { callbackUrl })}
+            className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-white/20 bg-white/5 text-sm font-medium text-white transition-colors hover:bg-white/10"
+          >
+            <GoogleIcon />
+            Google
+          </button>
+        ) : null}
+        {discordEnabled ? (
+          <button
+            type="button"
+            onClick={() => signIn("discord", { callbackUrl })}
+            className="flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-white/20 bg-white/5 text-sm font-medium text-white transition-colors hover:bg-white/10"
+          >
+            <DiscordIcon />
+            Discord
+          </button>
+        ) : null}
       </div>
     </div>
   );

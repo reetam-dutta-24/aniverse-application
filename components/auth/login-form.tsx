@@ -9,7 +9,15 @@ import { AuthInput } from "@/components/auth/auth-input";
 import { SocialButtons } from "@/components/auth/social-buttons";
 import { GradientButton } from "@/components/ui/gradient-button";
 
-export function LoginForm() {
+export interface LoginFormProps {
+  googleEnabled?: boolean;
+  discordEnabled?: boolean;
+}
+
+export function LoginForm({
+  googleEnabled = false,
+  discordEnabled = false,
+}: LoginFormProps) {
   const router = useAppRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -79,7 +87,10 @@ export function LoginForm() {
         {pending ? "Signing In..." : "Sign In"}
       </GradientButton>
 
-      <SocialButtons />
+      <SocialButtons
+        googleEnabled={googleEnabled}
+        discordEnabled={discordEnabled}
+      />
 
       <p className="mt-1 text-center text-xs text-white">
         Don&apos;t have an account?{" "}

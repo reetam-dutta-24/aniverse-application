@@ -179,6 +179,16 @@ export function DashboardMessagesPanel() {
           if (data.conversationId && !activeId) {
             setActiveId(data.conversationId);
           }
+          if (data.message) {
+            setMessages((current) => {
+              const next = data.message as DmMessage;
+              if (current.some((entry) => entry.id === next.id)) return current;
+              return [...current, next];
+            });
+          } else {
+            const conversationId = data.conversationId ?? activeId;
+            if (conversationId) await loadMessages(conversationId);
+          }
           await loadConversations();
         } else {
           setSendError(
@@ -201,6 +211,15 @@ export function DashboardMessagesPanel() {
         if (response.ok) {
           setDraft("");
           if (data.conversationId) setActiveId(data.conversationId);
+          if (data.message) {
+            setMessages((current) => {
+              const next = data.message as DmMessage;
+              if (current.some((entry) => entry.id === next.id)) return current;
+              return [...current, next];
+            });
+          } else if (data.conversationId) {
+            await loadMessages(data.conversationId);
+          }
           await loadConversations();
         } else {
           setSendError(

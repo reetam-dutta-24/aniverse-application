@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import Discord from "next-auth/providers/discord";
 import {
+  findOrCreateOAuthUser,
   findUserForLogin,
   verifyPassword,
 } from "@/lib/services/user.service";
@@ -40,10 +41,21 @@ const providers: NextAuthConfig["providers"] = [
 ];
 
 if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
-  providers.push(Google);
+  providers.push(
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET,
+    }),
+  );
 }
+
 if (process.env.AUTH_DISCORD_ID && process.env.AUTH_DISCORD_SECRET) {
-  providers.push(Discord);
+  providers.push(
+    Discord({
+      clientId: process.env.AUTH_DISCORD_ID,
+      clientSecret: process.env.AUTH_DISCORD_SECRET,
+    }),
+  );
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -56,11 +68,32 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   trustHost: true,
   callbacks: {
-    /**
-     * JWT callback — runs when a user signs in.
-     * We copy the database user id into the token so every request
-     * knows who is logged in without hitting the DB on every call.
-     */
+    async signIn({ user, account }) {
+      if (!account || account.provider === "credentials") return true;
+      if (!user.email) return false;
+
+      try {
+        const dbUser = await findOrCreateOAuthUser({
+          email: user.email,
+          name: user.name ?? user.email.split("@")[0],
+          image: user.image,
+          provider: account.provider,
+          providerAccountId: account.providerAccountId,
+        });
+
+        user.id = dbUser.id;
+        user.handle = dbUser.handle;
+        user.onboardingCompleted = !!dbUser.onboardingCompletedAt;
+        user.role = dbUser.role;
+        user.name = dbUser.name;
+        user.email = dbUser.email;
+        user.image = dbUser.avatarUrl ?? user.image;
+        return true;
+      } catch (error) {
+        console.error("[auth signIn oauth]", error);
+        return false;
+      }
+    },
     async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
@@ -69,7 +102,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.role = user.role;
       }
 
-      // Client calls session.update() after onboarding completes
       if (trigger === "update" && session?.onboardingCompleted === true) {
         token.onboardingCompleted = true;
       }
@@ -81,9 +113,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.id = token.id as string;
         session.user.handle = token.handle as string;
         session.user.onboardingCompleted = token.onboardingCompleted === true;
-        session.user.role = (token.role as import("@prisma/client").PlatformRole) ?? "USER";
+        session.user.role =
+          (token.role as import("@prisma/client").PlatformRole) ?? "USER";
       }
       return session;
     },
   },
 });
+
+export function isGoogleAuthEnabled() {
+  return Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
+}
+
+export function isDiscordAuthEnabled() {
+  return Boolean(process.env.AUTH_DISCORD_ID && process.env.AUTH_DISCORD_SECRET);
+}

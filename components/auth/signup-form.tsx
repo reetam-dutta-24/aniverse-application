@@ -10,7 +10,13 @@ import { SocialButtons } from "@/components/auth/social-buttons";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { clearLegacyOnboardingProfile } from "@/lib/onboarding-store";
 
-export function SignupForm() {
+export function SignupForm({
+  googleEnabled = false,
+  discordEnabled = false,
+}: {
+  googleEnabled?: boolean;
+  discordEnabled?: boolean;
+}) {
   const router = useAppRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -139,7 +145,11 @@ export function SignupForm() {
         {pending ? "Creating Account..." : "Create Account"}
       </GradientButton>
 
-      <SocialButtons />
+      <SocialButtons
+        callbackUrl="/onboarding"
+        googleEnabled={googleEnabled}
+        discordEnabled={discordEnabled}
+      />
 
       <p className="mt-1 text-center text-xs text-white">
         Already have an account?{" "}
